@@ -52,9 +52,11 @@ See [PRIVACY.md](PRIVACY.md).
 
 This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
-## Code signing policy
+## Windows executable and signing
 
-**Free code signing provided by SignPath.io, certificate by SignPath Foundation.**
+Bridge Timer is distributed as a portable `BridgeTimer.exe`: there is no installer.
+
+Current public builds are unsigned. Windows may therefore show a SmartScreen or reputation warning on first launch. The source and build workflow are public in this repository.
 
 See [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md).
 
