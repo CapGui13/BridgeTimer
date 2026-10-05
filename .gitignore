@@ -1,0 +1,4 @@
+dist/
+signed/
+resource_windows_amd64.syso
+*.log
