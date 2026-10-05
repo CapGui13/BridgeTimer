@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -140,6 +141,18 @@ var (
 	awakeMu sync.Mutex
 	nativeAwake bool
 )
+
+func configureWebView2Rendering() {
+	const flag = "--disable-lcd-text"
+	current := strings.TrimSpace(os.Getenv("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"))
+	if current == "" {
+		_ = os.Setenv("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", flag)
+		return
+	}
+	if !strings.Contains(current, flag) {
+		_ = os.Setenv("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", current+" "+flag)
+	}
+}
 
 func enableNativeDPIAwareness() {
 	// WebView2 must be created by a DPI-aware process. Otherwise Windows can
@@ -681,6 +694,7 @@ func main() {
 	defer runtime.UnlockOSThread()
 
 	enableNativeDPIAwareness()
+	configureWebView2Rendering()
 
 	if !acquireSingleInstance() {
 		return

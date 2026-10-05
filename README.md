@@ -8,7 +8,7 @@ The application uses an embedded Microsoft Edge WebView2 view so the timer keeps
 
 ## Current version
 
-**1.7.5**
+**1.7.6**
 
 Run `BridgeTimer.exe`. No installer is required.
 
@@ -28,6 +28,7 @@ Run `BridgeTimer.exe`. No installer is required.
 - Per-Monitor DPI Awareness V2;
 - native Windows anti-sleep protection while the timer is running;
 - hidden diagnostics with `Ctrl+Shift+D`;
+- WebView2 grayscale text antialiasing experiment (`--disable-lcd-text`) for cleaner large timer digits;
 - single-instance Windows application.
 
 ## Build
