@@ -1,32 +1,29 @@
 # Code signing policy
 
-**Free code signing provided by SignPath.io, certificate by SignPath Foundation.**
+Bridge Timer is currently distributed as an **unsigned portable Windows executable**.
 
-Bridge Timer uses code signing only for official Windows release binaries built from this repository.
+A request for the SignPath Foundation free code-signing program was reviewed in October 2026 but was not approved because the project did not yet meet the program's public visibility/adoption threshold. This was not a technical rejection of Bridge Timer.
 
-## Team roles
+## Current distribution
 
-- **Committer / author:** [CapGui13](https://github.com/CapGui13)
-- **Reviewer:** [CapGui13](https://github.com/CapGui13)
-- **Approver:** [CapGui13](https://github.com/CapGui13)
-
-Bridge Timer is currently a single-maintainer project. Signing requests for official releases are manually approved.
-
-## Build and signing rules
-
-- Release binaries are built from source code and build scripts in this repository.
-- Release builds use GitHub-hosted runners.
+- The Windows application is delivered as a single `BridgeTimer.exe`.
+- No installer is used.
+- Official binaries are built from this repository on GitHub-hosted Windows runners.
 - Dependency versions are pinned in `go.mod` and `go.sum`.
-- The Windows artifact to be signed is `BridgeTimer.exe`.
-- Product metadata is fixed to **Bridge Timer** and version metadata must match the release version.
-- Private signing keys are not stored in this repository or GitHub Actions; signing keys are managed by SignPath / SignPath Foundation.
-- Official signing uses SignPath origin verification and trusted-build-system verification when enabled for the project.
+- Product and file-version metadata must match the source version.
+- Because current builds are unsigned, Windows may display a SmartScreen or reputation warning on first launch.
+
+## Future signing
+
+Code signing may be added later through a suitable certificate provider or through SignPath Foundation if the project becomes eligible.
+
+No private signing key is stored in this repository.
 
 ## Privacy
 
 See [PRIVACY.md](PRIVACY.md).
 
-This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person operating it.
 
 ## Reporting a concern
 
