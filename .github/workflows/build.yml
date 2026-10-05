@@ -22,6 +22,8 @@ jobs:
         run: go mod download
       - name: Patch WebView2 dark title before first ShowWindow
         run: python patch_webview_dark.py
+      - name: Regression guard
+        run: python checks/check_regressions.py
       - name: Generate Windows resources
         shell: pwsh
         run: |

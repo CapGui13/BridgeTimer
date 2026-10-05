@@ -27,6 +27,7 @@ var timerHTML []byte
 
 const (
 	appTitle = "Bridge Timer"
+	appVersion = "1.7.7"
 	host = "127.0.0.1"
 	port = 43831
 
@@ -120,6 +121,7 @@ var (
 	getWindowRect = user32.NewProc("GetWindowRect")
 	createMutexW = kernel32.NewProc("CreateMutexW")
 	closeHandle = kernel32.NewProc("CloseHandle")
+	moveFileExW = kernel32.NewProc("MoveFileExW")
 	setThreadExecutionState = kernel32.NewProc("SetThreadExecutionState")
 	dwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
 	getSaveFileNameW = comdlg32.NewProc("GetSaveFileNameW")
@@ -140,6 +142,7 @@ var (
 
 	awakeMu sync.Mutex
 	nativeAwake bool
+	logFile *os.File
 )
 
 func configureWebView2Rendering() {
@@ -187,6 +190,7 @@ func setNativeAwake(on bool) bool {
 	awakeMu.Lock()
 	nativeAwake = on
 	awakeMu.Unlock()
+	log.Printf("anti-sleep: %t", on)
 	return true
 }
 
@@ -194,6 +198,76 @@ func isNativeAwake() bool {
 	awakeMu.Lock()
 	defer awakeMu.Unlock()
 	return nativeAwake
+}
+
+func logPath() string {
+	return filepath.Join(appDataPath(), "BridgeTimer.log")
+}
+
+func initLogging() func() {
+	path := logPath()
+	if fi, err := os.Stat(path); err == nil && fi.Size() > 1024*1024 {
+		bak := path + ".bak"
+		_ = os.Remove(bak)
+		_ = os.Rename(path, bak)
+	}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return func() {}
+	}
+	logFile = f
+	log.SetOutput(f)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+	log.Printf("Bridge Timer %s starting", appVersion)
+	return func() {
+		log.Printf("Bridge Timer %s stopping", appVersion)
+		_ = f.Sync()
+		_ = f.Close()
+		logFile = nil
+	}
+}
+
+func tailLogLines(maxLines int) string {
+	b, err := os.ReadFile(logPath())
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n")
+	if len(lines) > maxLines {
+		lines = lines[len(lines)-maxLines:]
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
+}
+
+func atomicWriteFile(path string, data []byte, perm os.FileMode) error {
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, perm); err != nil {
+		return err
+	}
+	if old, err := os.ReadFile(path); err == nil {
+		_ = os.WriteFile(path+".bak", old, perm)
+	}
+	from, _ := syscall.UTF16PtrFromString(tmp)
+	to, _ := syscall.UTF16PtrFromString(path)
+	const moveFileReplaceExisting = 0x1
+	const moveFileWriteThrough = 0x8
+	ok, _, callErr := moveFileExW.Call(
+		uintptr(unsafe.Pointer(from)),
+		uintptr(unsafe.Pointer(to)),
+		moveFileReplaceExisting|moveFileWriteThrough,
+	)
+	if ok != 0 {
+		return nil
+	}
+	_ = os.Remove(path)
+	if err := os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		if callErr != nil && callErr != syscall.Errno(0) {
+			return fmt.Errorf("MoveFileExW: %v; rename: %w", callErr, err)
+		}
+		return err
+	}
+	return nil
 }
 
 func appDataPath() string {
@@ -237,9 +311,9 @@ func windowStatePath() string {
 	return filepath.Join(appDataPath(), "window.json")
 }
 
-func loadWindowState() (savedWindowState, bool) {
+func readWindowStateFile(path string) (savedWindowState, bool) {
 	var x savedWindowState
-	b, err := os.ReadFile(windowStatePath())
+	b, err := os.ReadFile(path)
 	if err != nil || json.Unmarshal(b, &x) != nil {
 		return x, false
 	}
@@ -252,6 +326,18 @@ func loadWindowState() (savedWindowState, bool) {
 		return x, false
 	}
 	return x, true
+}
+
+func loadWindowState() (savedWindowState, bool) {
+	path := windowStatePath()
+	if x, ok := readWindowStateFile(path); ok {
+		return x, true
+	}
+	if x, ok := readWindowStateFile(path + ".bak"); ok {
+		log.Printf("window state: recovered from backup")
+		return x, true
+	}
+	return savedWindowState{}, false
 }
 
 func restoreWindowState(hwnd uintptr) {
@@ -283,7 +369,9 @@ func saveWindowState(hwnd uintptr) {
 	}
 	b, err := json.Marshal(x)
 	if err == nil {
-		_ = os.WriteFile(windowStatePath(), b, 0600)
+		if err := atomicWriteFile(windowStatePath(), b, 0600); err != nil {
+			log.Printf("window state save: %v", err)
+		}
 	}
 }
 
@@ -348,6 +436,8 @@ type nativeDiagInfo struct {
 	Version         string `json:"version"`
 	AppData         string `json:"appData"`
 	WindowStatePath string `json:"windowStatePath"`
+	LogPath         string `json:"logPath"`
+	RecentLog       string `json:"recentLog"`
 	WindowLeft      int32  `json:"windowLeft"`
 	WindowTop       int32  `json:"windowTop"`
 	WindowRight     int32  `json:"windowRight"`
@@ -450,6 +540,7 @@ func setProjectionMonitor(hwnd uintptr, requested int) nativeMonitorStatus {
 		requested = len(mons)
 	}
 	selectedMonitor = requested - 1
+	log.Printf("projection monitor: %d/%d", selectedMonitor+1, len(mons))
 	if fullscreen {
 		moveFullscreenToSelectedLocked(hwnd)
 	}
@@ -466,6 +557,7 @@ func cycleProjectionMonitor(hwnd uintptr) nativeMonitorStatus {
 		return nativeMonitorStatus{Selected: 1, Count: 1}
 	}
 	selectedMonitor = (selectedMonitor + 1) % len(mons)
+	log.Printf("projection monitor cycled: %d/%d", selectedMonitor+1, len(mons))
 	if fullscreen {
 		moveFullscreenToSelectedLocked(hwnd)
 	}
@@ -510,6 +602,7 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 			moveFullscreenToSelectedLocked(hwnd)
 		}
 		fullscreen = true
+		log.Printf("fullscreen: on")
 		return true
 	}
 
@@ -522,6 +615,7 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 		swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
 	)
 	fullscreen = false
+	log.Printf("fullscreen: off")
 	applyDarkTitleBar(hwnd)
 	return false
 }
@@ -537,9 +631,11 @@ func getNativeDiagnostics(hwnd uintptr) nativeDiagInfo {
 	fullscreenMu.Unlock()
 
 	return nativeDiagInfo{
-		Version:         "1.7.5",
+		Version:         appVersion,
 		AppData:         appDataPath(),
 		WindowStatePath: windowStatePath(),
+		LogPath:         logPath(),
+		RecentLog:       tailLogLines(20),
 		WindowLeft:      r.Left,
 		WindowTop:       r.Top,
 		WindowRight:     r.Right,
@@ -629,6 +725,7 @@ func exportBridgeTimerFile(hwnd uintptr, payload string) bool {
 		log.Printf("export config: %v", err)
 		return false
 	}
+	log.Printf("export config: %s", path)
 	return true
 }
 
@@ -661,6 +758,7 @@ func importBridgeTimerFile(hwnd uintptr) string {
 		log.Printf("import config: %v", err)
 		return ""
 	}
+	log.Printf("import config: %s", path)
 	return string(b)
 }
 
@@ -701,6 +799,10 @@ func main() {
 	}
 	defer releaseSingleInstance()
 	defer setNativeAwake(false)
+
+	stopLogging := initLogging()
+	defer stopLogging()
+	log.Printf("WebView2 args: %s", os.Getenv("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"))
 
 	srv, url, err := startLocalServer()
 	if err != nil {
