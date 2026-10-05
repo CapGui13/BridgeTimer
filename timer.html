@@ -80,7 +80,7 @@ body.fs #undoToast{bottom:78px}
 <body>
 <section id="settings">
 <div class="wrap">
-  <div class="head"><div><h1>Bridge Timer</h1><div class="sub">Timer indépendant et personnalisable — WebView2 1.7.7</div></div><div class="sub">Hors ligne • sauvegarde automatique</div></div>
+  <div class="head"><div><h1>Bridge Timer</h1><div class="sub">Timer indépendant et personnalisable — WebView2 1.7.8</div></div><div class="sub">Hors ligne • sauvegarde automatique</div></div>
 
   <div class="card"><h2>Tournoi</h2><div class="grid">
     <label>Durée par position</label><div class="row3"><input id="hours" type="number" min="0" value="0" title="heures"><input id="minutes" type="number" min="0" max="59" value="7" title="minutes"><input id="seconds" type="number" min="0" max="59" value="0" title="secondes"></div>
@@ -195,6 +195,34 @@ body.fs #undoToast{bottom:78px}
 
 <script>
 const $=id=>document.getElementById(id), KEY="bridgeTimerV2.settings", LKEY="bridgeTimerV2.logo", STATEKEY="bridgeTimerV3.state", PROFILEKEY="bridgeTimerWebView2.profiles";
+const backupKey=k=>k+".bak";
+function validPlainObject(x){return !!x&&typeof x==="object"&&!Array.isArray(x)}
+function safeJSONRead(key,validator){
+ const raw=localStorage.getItem(key);
+ if(raw){try{const x=JSON.parse(raw);if(!validator||validator(x))return x}catch(e){}}
+ const bak=localStorage.getItem(backupKey(key));
+ if(bak){try{const x=JSON.parse(bak);if(!validator||validator(x)){try{localStorage.setItem(key,bak)}catch(e){}return x}}catch(e){}}
+ return null
+}
+function safeJSONWrite(key,value){
+ const next=JSON.stringify(value);
+ try{
+   const current=localStorage.getItem(key);
+   if(current){try{JSON.parse(current);localStorage.setItem(backupKey(key),current)}catch(e){}}
+   localStorage.setItem(key,next);
+   return true
+ }catch(e){return false}
+}
+function safeJSONRemove(key){try{localStorage.removeItem(key);localStorage.removeItem(backupKey(key))}catch(e){}}
+function validSettings(x){return validPlainObject(x)}
+function validState(x){return validPlainObject(x)&&Number.isFinite(Number(x.pos))&&typeof x.phase==="string"}
+function validProfiles(x){return Array.isArray(x)}
+function normalizeImportedSettings(x){
+ if(!validPlainObject(x))return null;
+ const out={...def};
+ for(const k of Object.keys(def))if(Object.prototype.hasOwnProperty.call(x,k))out[k]=x[k];
+ return out
+}
 const def={hours:0,minutes:7,seconds:0,positions:6,startPosition:1,between:15,mode:"4",mainMessage:"Bonne partie !",endMessage:"Fin du tournoi — merci à tous !",jumpRound:0,jumpMessage:"ATTENTION : à cette position, les EO sautent une table",sound:true,warnMinutes:5,warnSeconds:0,dangerMinutes:2,dangerSeconds:0,dangerMessage:"Merci de terminer la donne en cours",finishSec:30,finishMessage:"Terminez la donne en cours",quickMessage:"Merci de saisir les scores",quickMessageSecs:15,projectionMonitor:1,clubName:"Bridge Club du Roy René",eventName:"",accent:"#0ea5e9",background:"#0f172a",menu:"#111827",text:"#f8fafc"};
 let s={...def},logoData="",profiles=[],st={pos:1,phase:"round",remaining:420,running:false,endAt:null,interval:null,started:false};let wakeLock=null,resumeAfterSettings=false,undoState=null,undoTimer=null,controlsTimer=null,tempMessageUntil=0,tempMessageTimer=null,previewMode=false,previewSavedState=null,previewTimer=null,autosaveTimer=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), val=id=>Number($(id).value||0);
@@ -212,10 +240,10 @@ function stateSnapshot(){
 }
 function persistState(){
  if(previewMode)return;
- if(!st.started){localStorage.removeItem(STATEKEY);return}
- try{localStorage.setItem(STATEKEY,JSON.stringify(stateSnapshot()))}catch(e){}
+ if(!st.started){safeJSONRemove(STATEKEY);return}
+ safeJSONWrite(STATEKEY,stateSnapshot())
 }
-function clearPersistedState(){localStorage.removeItem(STATEKEY)}
+function clearPersistedState(){safeJSONRemove(STATEKEY)}
 function advanceRecoveredState(x){
  let elapsed=x.running?Math.max(0,(Date.now()-(x.savedAt||Date.now()))/1000):0;
  let rem=Math.max(0,Number(x.remaining)||0)-elapsed;
@@ -237,7 +265,7 @@ function advanceRecoveredState(x){
  return {pos,phase,remaining:Math.max(0,rem),running:!!x.running&&phase!=="ended",started:!!x.started};
 }
 function tryRecoverState(){
- let x=null;try{x=JSON.parse(localStorage.getItem(STATEKEY)||"null")}catch(e){}
+ let x=safeJSONRead(STATEKEY,validState)
  if(!x||!x.started)return false;
  const recovered=advanceRecoveredState(x);
  const txt=recovered.phase==="ended"?"un tournoi terminé":`le TOUR ${recovered.pos} à ${fmt(recovered.remaining)}`;
@@ -284,8 +312,8 @@ function theme(){
  $("club").textContent=s.clubName;$("event").textContent=s.eventName;
  if(logoData){$("logo").src=logoData;$("logo").classList.remove("nol")}else{$("logo").classList.add("nol")}
 }
-function save(){read();localStorage.setItem(KEY,JSON.stringify(s))}
-function load(){try{let x=JSON.parse(localStorage.getItem(KEY)||"null");if(x)s={...def,...x}}catch(e){}logoData=localStorage.getItem(LKEY)||"";fill()}
+function save(){read();safeJSONWrite(KEY,s)}
+function load(){const x=safeJSONRead(KEY,validSettings);if(x)s={...def,...x};logoData=localStorage.getItem(LKEY)||"";fill()}
 
 function scheduleAutosave(){
  clearTimeout(autosaveTimer);
@@ -298,13 +326,11 @@ function resetOriginalColors(){
 function emptyProfiles(){return [0,1,2].map(i=>({name:"Profil "+(i+1),data:null}))}
 function loadProfiles(){
  profiles=emptyProfiles();
- try{
-   const x=JSON.parse(localStorage.getItem(PROFILEKEY)||"null");
-   if(Array.isArray(x))for(let i=0;i<3;i++)if(x[i])profiles[i]={name:String(x[i].name||("Profil "+(i+1))),data:x[i].data||null}
- }catch(e){}
+ const x=safeJSONRead(PROFILEKEY,validProfiles);
+ if(Array.isArray(x))for(let i=0;i<3;i++)if(x[i])profiles[i]={name:String(x[i].name||("Profil "+(i+1))),data:x[i].data||null}
  renderProfiles()
 }
-function persistProfiles(){try{localStorage.setItem(PROFILEKEY,JSON.stringify(profiles))}catch(e){}}
+function persistProfiles(){safeJSONWrite(PROFILEKEY,profiles)}
 function renderProfiles(){
  if(!profiles.length)profiles=emptyProfiles();
  for(let i=0;i<3;i++){
@@ -333,7 +359,7 @@ function loadProfile(i){
  s={...def,...p.data.settings};
  logoData=p.data.logoData||"";
  if(logoData)localStorage.setItem(LKEY,logoData);else localStorage.removeItem(LKEY);
- localStorage.setItem(KEY,JSON.stringify(s));
+ safeJSONWrite(KEY,s);
  fill();syncNativeMonitor();renderProfiles();
  $("profileState").textContent="« "+p.name+" » chargé"
 }
@@ -361,12 +387,16 @@ async function importConfiguration(){
    const raw=await window.nativeImportConfig();
    if(!raw)return;
    let x;try{x=JSON.parse(raw)}catch(e){return alert("Ce fichier n’est pas un fichier Bridge Timer valide.")}
+   if(x&&Object.prototype.hasOwnProperty.call(x,"format")&&x.format!=="bridge-timer")return alert("Ce fichier n’est pas un fichier Bridge Timer valide.");
+   if(x&&Object.prototype.hasOwnProperty.call(x,"version")&&Number(x.version)!==1)return alert("Version de configuration non prise en charge.");
    const incoming=x&&x.settings?x.settings:x;
-   if(!incoming||typeof incoming!=="object")return alert("Configuration invalide.");
-   s={...def,...incoming};
-   if(x&&typeof x.logoData==="string")logoData=x.logoData;
+   const normalized=normalizeImportedSettings(incoming);
+   if(!normalized)return alert("Configuration invalide.");
+   s=normalized;
+   if(x&&typeof x.logoData==="string"&&x.logoData.length<=3000000)logoData=x.logoData;
+   fill();read();
    if(logoData)localStorage.setItem(LKEY,logoData);else localStorage.removeItem(LKEY);
-   localStorage.setItem(KEY,JSON.stringify(s));
+   safeJSONWrite(KEY,s);
    fill();syncNativeMonitor();
    $("profileState").textContent="Configuration importée"
  }catch(e){alert("Impossible d’importer la configuration.")}
@@ -517,7 +547,7 @@ async function syncNativeMonitor(){
    const x=await window.nativeSetMonitor(Math.max(1,Number(s.projectionMonitor)||1));
    s.projectionMonitor=x.selected||1;
    $("screenBtn").textContent=`Écran ${x.selected||1}/${x.count||1}`;
-   localStorage.setItem(KEY,JSON.stringify(s))
+   safeJSONWrite(KEY,s)
  }catch(e){$("screenBtn").textContent="Écran 1/1"}
 }
 async function cycleNativeMonitor(){
@@ -526,7 +556,7 @@ async function cycleNativeMonitor(){
    const x=await window.nativeCycleMonitor();
    s.projectionMonitor=x.selected||1;
    $("screenBtn").textContent=`Écran ${x.selected||1}/${x.count||1}`;
-   localStorage.setItem(KEY,JSON.stringify(s))
+   safeJSONWrite(KEY,s)
  }catch(e){}
 }
 async function fs(){try{
@@ -604,7 +634,7 @@ async function buildDiagnosticReport(){
  try{if(window.nativeDiagnostics)native=await window.nativeDiagnostics()}catch(e){}
  const lines=[
    "Bridge Timer diagnostic",
-   "Version : "+(native.version||"1.7.7"),
+   "Version : "+(native.version||"1.7.8"),
    "Date : "+new Date().toLocaleString(),
    "",
    "[Tournoi]",
@@ -626,9 +656,9 @@ async function buildDiagnosticReport(){
    "viewport="+window.innerWidth+"x"+window.innerHeight,
    "",
    "[Stockage]",
-   "settings="+(localStorage.getItem(KEY)?"OK":"absent"),
-   "state="+(localStorage.getItem(STATEKEY)?"OK":"absent"),
-   "profiles="+(localStorage.getItem(PROFILEKEY)?"OK":"absent"),
+   "settings="+(localStorage.getItem(KEY)?"OK":"absent")+" / backup="+(localStorage.getItem(backupKey(KEY))?"OK":"absent"),
+   "state="+(localStorage.getItem(STATEKEY)?"OK":"absent")+" / backup="+(localStorage.getItem(backupKey(STATEKEY))?"OK":"absent"),
+   "profiles="+(localStorage.getItem(PROFILEKEY)?"OK":"absent")+" / backup="+(localStorage.getItem(backupKey(PROFILEKEY))?"OK":"absent"),
    "appData="+(native.appData||""),
    "windowState="+(native.windowStatePath||""),
    "log="+(native.logPath||""),

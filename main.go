@@ -27,7 +27,7 @@ var timerHTML []byte
 
 const (
 	appTitle = "Bridge Timer"
-	appVersion = "1.7.7"
+	appVersion = "1.7.8"
 	host = "127.0.0.1"
 	port = 43831
 

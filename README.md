@@ -8,7 +8,7 @@ The application uses an embedded Microsoft Edge WebView2 view so the timer keeps
 
 ## Current version
 
-**1.7.7**
+**1.7.8**
 
 Run `BridgeTimer.exe`. No installer is required.
 
@@ -29,6 +29,8 @@ Run `BridgeTimer.exe`. No installer is required.
 - native Windows anti-sleep protection while the timer is running;
 - hidden diagnostics with `Ctrl+Shift+D`;
 - rotating local diagnostic log and backup recovery for window state;
+- backup recovery for settings, active tournament state and profiles;
+- stricter validation of imported `.bridge-timer` files;
 - WebView2 grayscale text antialiasing experiment (`--disable-lcd-text`) for cleaner large timer digits;
 - single-instance Windows application.
 

@@ -55,3 +55,24 @@ if errors:
     sys.exit(1)
 
 print(f"BridgeTimer regression check OK — version {version}")
+
+
+# FROZEN RENDERING CONTRACT — approved after V3.2 side-by-side comparison.
+frozen_render_tokens = [
+    '--disable-lcd-text',
+    '#clock{font-variant-numeric:tabular-nums;font-weight:1000;font-size:clamp(110px,24vw,350px);line-height:.84;letter-spacing:-.07em;white-space:nowrap}',
+    '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
+    '#submsg{font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--muted);min-height:1em;max-width:1300px}',
+]
+for token in frozen_render_tokens:
+    haystack = main if token == '--disable-lcd-text' else html
+    if token not in haystack:
+        print("Frozen rendering contract FAILED:", token)
+        sys.exit(1)
+
+for token in ['safeJSONRead(', 'safeJSONWrite(', 'backupKey(', 'normalizeImportedSettings(']:
+    if token not in html:
+        print("Storage safety regression FAILED:", token)
+        sys.exit(1)
+
+print("Frozen rendering contract OK")
