@@ -68,12 +68,19 @@ body.fs #undoToast{bottom:78px}
 @media(max-width:760px){.colorGrid{grid-template-columns:repeat(2,minmax(120px,1fr))}}
 @media(max-width:480px){.colorGrid{grid-template-columns:1fr}.colorGrid input[type=color]{width:82px}}
 @media(max-width:980px){.bottom{padding-left:120px;padding-right:120px}#localTime,#round{font-size:20px}}@media(max-width:760px){.wrap{padding:13px}.grid{grid-template-columns:1fr}.custom{grid-template-columns:1fr 1fr}.shortcuts{grid-template-columns:1fr}.top{grid-template-columns:1fr auto}.row3{grid-template-columns:repeat(3,1fr)}.bottom{padding:10px 12px 62px}.controls .btn{min-width:100px}#localTime{left:14px;bottom:16px;font-size:18px}#round{right:14px;bottom:16px;font-size:18px}}
+
+#diagOverlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:24px}
+#diagOverlay.on{display:flex}
+.diagBox{width:min(900px,94vw);max-height:88vh;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 24px 80px #0008}
+.diagBox h2{margin:0 0 12px;color:var(--accent)}
+#diagText{width:100%;height:min(58vh,520px);resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.35;background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;box-sizing:border-box}
+.diagActions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
 </style>
 </head>
 <body>
 <section id="settings">
 <div class="wrap">
-  <div class="head"><div><h1>Bridge Timer</h1><div class="sub">Timer indépendant et personnalisable — WebView2 1.7.4</div></div><div class="sub">Hors ligne • sauvegarde automatique</div></div>
+  <div class="head"><div><h1>Bridge Timer</h1><div class="sub">Timer indépendant et personnalisable — WebView2 1.7.5</div></div><div class="sub">Hors ligne • sauvegarde automatique</div></div>
 
   <div class="card"><h2>Tournoi</h2><div class="grid">
     <label>Durée par position</label><div class="row3"><input id="hours" type="number" min="0" value="0" title="heures"><input id="minutes" type="number" min="0" max="59" value="7" title="minutes"><input id="seconds" type="number" min="0" max="59" value="0" title="secondes"></div>
@@ -174,6 +181,17 @@ body.fs #undoToast{bottom:78px}
   </div>
 </section>
 <div id="undoToast"><span id="undoText">Tour suivant lancé</span><button id="undoBtn" class="btn">Annuler</button></div>
+<div id="diagOverlay" aria-hidden="true">
+  <div class="diagBox">
+    <h2>Diagnostic Bridge Timer</h2>
+    <textarea id="diagText" readonly></textarea>
+    <div class="diagActions">
+      <button id="diagCopy" class="btn" type="button">Copier</button>
+      <button id="diagExport" class="btn" type="button">Exporter .txt</button>
+      <button id="diagClose" class="btn primary" type="button">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const $=id=>document.getElementById(id), KEY="bridgeTimerV2.settings", LKEY="bridgeTimerV2.logo", STATEKEY="bridgeTimerV3.state", PROFILEKEY="bridgeTimerWebView2.profiles";
@@ -356,6 +374,7 @@ async function importConfiguration(){
 
 function beep(freq=880,d=.35){if(!s.sound)return;try{let c=new(AudioContext||webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.07,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d)}catch(e){}}
 async function acquireWakeLock(){
+ try{if(window.nativeSetAwake)await window.nativeSetAwake(true)}catch(e){}
  try{
    if("wakeLock" in navigator && !wakeLock){
      wakeLock=await navigator.wakeLock.request("screen");
@@ -364,7 +383,8 @@ async function acquireWakeLock(){
  }catch(e){wakeLock=null}
 }
 async function releaseWakeLock(){
- try{if(wakeLock)await wakeLock.release()}catch(e){}wakeLock=null
+ try{if(wakeLock)await wakeLock.release()}catch(e){}wakeLock=null;
+ try{if(window.nativeSetAwake)await window.nativeSetAwake(false)}catch(e){}
 }
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&st.running)acquireWakeLock()});
 
@@ -552,11 +572,17 @@ document.querySelectorAll("#settings input:not([type=file]),#settings select").f
 $("resetColors").onclick=resetOriginalColors;
 $("exportConfig").onclick=exportConfiguration;
 $("importConfig").onclick=importConfiguration;
+$("diagClose").onclick=closeDiagnostics;
+$("diagCopy").onclick=copyDiagnostics;
+$("diagExport").onclick=exportDiagnostics;
+$("diagOverlay").onclick=e=>{if(e.target===$("diagOverlay"))closeDiagnostics()};
 $("messageBtn").onclick=showTempMessage;$("screenBtn").onclick=cycleNativeMonitor;$("settingsBtn").onclick=()=>previewMode?endPreview():showSettings(false);$("fsBtn").onclick=fs;$("pause").onclick=toggle;$("minus").onclick=()=>adjust(-60);$("plus").onclick=()=>adjust(60);$("next").onclick=next;$("resetRound").onclick=resetRound;$("undoBtn").onclick=undoNext;
 $("logoInput").onchange=e=>{let f=e.target.files?.[0];if(!f)return;if(f.size>2000000)return alert("Choisis une image de moins de 2 Mo.");let r=new FileReader();r.onload=()=>{logoData=r.result;try{localStorage.setItem(LKEY,logoData)}catch(e){alert("Logo trop volumineux pour être mémorisé.")}theme()};r.readAsDataURL(f)}
 $("removeLogo").onclick=()=>{logoData="";localStorage.removeItem(LKEY);$("logoInput").value="";theme()}
 ["clubName","eventName","accent","background","menu","text"].forEach(id=>$(id).oninput=()=>{read();render()})
 document.addEventListener("keydown",e=>{
+ if(e.ctrlKey&&e.shiftKey&&(e.key==="d"||e.key==="D")){e.preventDefault();openDiagnostics();return}
+ if(e.key==="Escape"&&$("diagOverlay").classList.contains("on")){e.preventDefault();closeDiagnostics();return}
  if(previewMode&&e.key==="Escape"){e.preventDefault();endPreview();return}
  if(previewMode&&e.key!=="f"&&e.key!=="F"&&e.key!=="F11"){return}
  let tag=(document.activeElement?.tagName||"").toLowerCase(),edit=["input","select","textarea"].includes(tag);
@@ -565,7 +591,7 @@ document.addEventListener("keydown",e=>{
  if(e.key==="F7"){e.preventDefault();adjust(-60)}
  else if(e.key==="F8"){e.preventDefault();adjust(60)}
  else if(e.key==="F9"){e.preventDefault();showSettings(false)}
- else if(e.key==="F10"){e.preventDefault();showSettings(true)}
+ else if(e.key==="F10"){e.preventDefault();if(st.started&&!confirm("Réinitialiser le tournoi en cours et revenir aux paramètres ?"))return;showSettings(true)}
  else if(tv&&e.key===" "){e.preventDefault();toggle()}
  else if(tv&&(e.key==="f"||e.key==="F")){e.preventDefault();fs()}
  else if(tv&&e.key==="ArrowRight"){e.preventDefault();next()}
@@ -573,6 +599,64 @@ document.addEventListener("keydown",e=>{
  else if(tv&&(e.key==="m"||e.key==="M")){e.preventDefault();showTempMessage()}
  else if(tv&&(e.key==="u"||e.key==="U")&&undoState){e.preventDefault();undoNext()}
 })
+async function buildDiagnosticReport(){
+ let native={};
+ try{if(window.nativeDiagnostics)native=await window.nativeDiagnostics()}catch(e){}
+ const lines=[
+   "Bridge Timer diagnostic",
+   "Version : "+(native.version||"1.7.5"),
+   "Date : "+new Date().toLocaleString(),
+   "",
+   "[Tournoi]",
+   "started="+st.started,
+   "running="+st.running,
+   "phase="+st.phase,
+   "tour="+st.pos+"/"+s.positions,
+   "remaining="+fmt(st.remaining),
+   "preview="+previewMode,
+   "temporaryMessage="+tempMessageActive(),
+   "",
+   "[Affichage]",
+   "fullscreen="+!!native.fullscreen,
+   "monitor="+(native.monitorSelected||s.projectionMonitor)+"/"+(native.monitorCount||"?"),
+   "window="+[native.windowLeft,native.windowTop,native.windowRight,native.windowBottom].join(","),
+   "nativeAntiSleep="+!!native.nativeAwake,
+   "webWakeLock="+!!wakeLock,
+   "devicePixelRatio="+window.devicePixelRatio,
+   "viewport="+window.innerWidth+"x"+window.innerHeight,
+   "",
+   "[Stockage]",
+   "settings="+(localStorage.getItem(KEY)?"OK":"absent"),
+   "state="+(localStorage.getItem(STATEKEY)?"OK":"absent"),
+   "profiles="+(localStorage.getItem(PROFILEKEY)?"OK":"absent"),
+   "appData="+(native.appData||""),
+   "windowState="+(native.windowStatePath||""),
+   "",
+   "[Navigateur]",
+   navigator.userAgent
+ ];
+ return lines.join("\n")
+}
+async function openDiagnostics(){
+ const report=await buildDiagnosticReport();
+ $("diagText").value=report;
+ $("diagOverlay").classList.add("on");
+ $("diagOverlay").setAttribute("aria-hidden","false")
+}
+function closeDiagnostics(){
+ $("diagOverlay").classList.remove("on");
+ $("diagOverlay").setAttribute("aria-hidden","true")
+}
+async function copyDiagnostics(){
+ const txt=$("diagText").value;
+ try{await navigator.clipboard.writeText(txt)}
+ catch(e){$("diagText").focus();$("diagText").select();document.execCommand("copy")}
+}
+async function exportDiagnostics(){
+ try{
+   if(window.nativeExportDiagnostics)await window.nativeExportDiagnostics($("diagText").value)
+ }catch(e){}
+}
 function updateLocalTime(){const d=new Date();$("localTime").textContent=`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;}
 updateLocalTime();setInterval(updateLocalTime,1000);
 window.addEventListener("focus",syncNativeMonitor);

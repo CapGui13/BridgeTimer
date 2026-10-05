@@ -116,8 +116,10 @@ var (
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 	setProcessDPIAware = user32.NewProc("SetProcessDPIAware")
 	monitorFromRect = user32.NewProc("MonitorFromRect")
+	getWindowRect = user32.NewProc("GetWindowRect")
 	createMutexW = kernel32.NewProc("CreateMutexW")
 	closeHandle = kernel32.NewProc("CloseHandle")
+	setThreadExecutionState = kernel32.NewProc("SetThreadExecutionState")
 	dwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
 	getSaveFileNameW = comdlg32.NewProc("GetSaveFileNameW")
 	getOpenFileNameW = comdlg32.NewProc("GetOpenFileNameW")
@@ -134,6 +136,9 @@ var (
 	monitorScratch []uintptr
 	selectedMonitor int
 	instanceMutex uintptr
+
+	awakeMu sync.Mutex
+	nativeAwake bool
 )
 
 func enableNativeDPIAwareness() {
@@ -150,6 +155,32 @@ func enableNativeDPIAwareness() {
 	if err := setProcessDPIAware.Find(); err == nil {
 		setProcessDPIAware.Call()
 	}
+}
+
+func setNativeAwake(on bool) bool {
+	const (
+		esSystemRequired  = uintptr(0x00000001)
+		esDisplayRequired = uintptr(0x00000002)
+		esContinuous      = uintptr(0x80000000)
+	)
+	flags := esContinuous
+	if on {
+		flags |= esSystemRequired | esDisplayRequired
+	}
+	r, _, _ := setThreadExecutionState.Call(flags)
+	if r == 0 {
+		return false
+	}
+	awakeMu.Lock()
+	nativeAwake = on
+	awakeMu.Unlock()
+	return true
+}
+
+func isNativeAwake() bool {
+	awakeMu.Lock()
+	defer awakeMu.Unlock()
+	return nativeAwake
 }
 
 func appDataPath() string {
@@ -298,6 +329,20 @@ type savedWindowState struct {
 	Right   int32 `json:"right"`
 	Bottom  int32 `json:"bottom"`
 	ShowCmd uint32 `json:"show_cmd"`
+}
+
+type nativeDiagInfo struct {
+	Version         string `json:"version"`
+	AppData         string `json:"appData"`
+	WindowStatePath string `json:"windowStatePath"`
+	WindowLeft      int32  `json:"windowLeft"`
+	WindowTop       int32  `json:"windowTop"`
+	WindowRight     int32  `json:"windowRight"`
+	WindowBottom    int32  `json:"windowBottom"`
+	Fullscreen      bool   `json:"fullscreen"`
+	MonitorSelected int    `json:"monitorSelected"`
+	MonitorCount    int    `json:"monitorCount"`
+	NativeAwake     bool   `json:"nativeAwake"`
 }
 
 type nativeMonitorStatus struct {
@@ -469,6 +514,68 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 }
 
 
+func getNativeDiagnostics(hwnd uintptr) nativeDiagInfo {
+	var r rect
+	getWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&r)))
+
+	fullscreenMu.Lock()
+	fs := fullscreen
+	ms := monitorStatusLocked()
+	fullscreenMu.Unlock()
+
+	return nativeDiagInfo{
+		Version:         "1.7.5",
+		AppData:         appDataPath(),
+		WindowStatePath: windowStatePath(),
+		WindowLeft:      r.Left,
+		WindowTop:       r.Top,
+		WindowRight:     r.Right,
+		WindowBottom:    r.Bottom,
+		Fullscreen:      fs,
+		MonitorSelected: ms.Selected,
+		MonitorCount:    ms.Count,
+		NativeAwake:     isNativeAwake(),
+	}
+}
+
+func diagnosticsDialogFilter() []uint16 {
+	return utf16Multi("Fichier texte (*.txt)\x00*.txt\x00Tous les fichiers (*.*)\x00*.*\x00")
+}
+
+func exportDiagnosticsFile(hwnd uintptr, payload string) bool {
+	buf := make([]uint16, 1024)
+	defaultName, _ := syscall.UTF16FromString("BridgeTimer-diagnostic.txt")
+	copy(buf, defaultName)
+	filter := diagnosticsDialogFilter()
+	title, _ := syscall.UTF16FromString("Exporter le diagnostic Bridge Timer")
+	defExt, _ := syscall.UTF16FromString("txt")
+
+	ofn := openFileNameW{
+		LStructSize:  uint32(unsafe.Sizeof(openFileNameW{})),
+		HwndOwner:    hwnd,
+		LpstrFilter:  &filter[0],
+		NFilterIndex: 1,
+		LpstrFile:    &buf[0],
+		NMaxFile:     uint32(len(buf)),
+		LpstrTitle:   &title[0],
+		LpstrDefExt:  &defExt[0],
+		Flags:        0x00000002 | 0x00000008 | 0x00000800 | 0x00080000,
+	}
+	ok, _, _ := getSaveFileNameW.Call(uintptr(unsafe.Pointer(&ofn)))
+	if ok == 0 {
+		return false
+	}
+	path := syscall.UTF16ToString(buf)
+	if filepath.Ext(path) == "" {
+		path += ".txt"
+	}
+	if err := os.WriteFile(path, []byte(payload), 0600); err != nil {
+		log.Printf("export diagnostic: %v", err)
+		return false
+	}
+	return true
+}
+
 func utf16Multi(s string) []uint16 {
 	out := utf16.Encode([]rune(s))
 	return append(out, 0)
@@ -579,6 +686,7 @@ func main() {
 		return
 	}
 	defer releaseSingleInstance()
+	defer setNativeAwake(false)
 
 	srv, url, err := startLocalServer()
 	if err != nil {
@@ -635,6 +743,21 @@ func main() {
 		return importBridgeTimerFile(hwnd)
 	}); err != nil {
 		log.Printf("import config bind: %v", err)
+	}
+	if err := w.Bind("nativeSetAwake", func(on bool) bool {
+		return setNativeAwake(on)
+	}); err != nil {
+		log.Printf("awake bind: %v", err)
+	}
+	if err := w.Bind("nativeDiagnostics", func() nativeDiagInfo {
+		return getNativeDiagnostics(hwnd)
+	}); err != nil {
+		log.Printf("diagnostics bind: %v", err)
+	}
+	if err := w.Bind("nativeExportDiagnostics", func(payload string) bool {
+		return exportDiagnosticsFile(hwnd, payload)
+	}); err != nil {
+		log.Printf("diagnostic export bind: %v", err)
 	}
 
 	w.Navigate(url)

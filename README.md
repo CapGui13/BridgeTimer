@@ -8,7 +8,7 @@ The application uses an embedded Microsoft Edge WebView2 view so the timer keeps
 
 ## Current version
 
-**1.7.4**
+**1.7.5**
 
 Run `BridgeTimer.exe`. No installer is required.
 
@@ -26,6 +26,8 @@ Run `BridgeTimer.exe`. No installer is required.
 - automatic local persistence and session recovery;
 - import/export of `.bridge-timer` settings;
 - Per-Monitor DPI Awareness V2;
+- native Windows anti-sleep protection while the timer is running;
+- hidden diagnostics with `Ctrl+Shift+D`;
 - single-instance Windows application.
 
 ## Build
