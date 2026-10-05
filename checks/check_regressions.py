@@ -6,9 +6,12 @@ import sys
 root = Path(__file__).resolve().parents[1]
 html = (root / "timer.html").read_text(encoding="utf-8")
 main = (root / "main.go").read_text(encoding="utf-8")
+manifest = (root / "BridgeTimer.manifest").read_text(encoding="utf-8")
+release_workflow = (root / ".github" / "workflows" / "release-unsigned.yml").read_text(encoding="utf-8")
 vi = json.loads((root / "versioninfo.json").read_text(encoding="utf-8"))
 
 version = vi["StringFileInfo"]["ProductVersion"]
+file_version = vi["StringFileInfo"]["FileVersion"]
 
 required_html = [
     f"WebView2 {version}",
@@ -48,6 +51,16 @@ for token in required_main:
 if len(re.findall(r'type="color"', html)) < 4:
     errors.append("expected at least four HTML color inputs")
 
+# Keep all Windows/release version metadata aligned.
+if f'version="{file_version}"' not in manifest:
+    errors.append(f"BridgeTimer.manifest version must be {file_version}")
+if f"default: '{version}'" not in release_workflow:
+    errors.append(f"release workflow default version must be {version}")
+if "--generate-notes" not in release_workflow:
+    errors.append("release workflow must not depend on a version-specific notes file")
+if "Verify release version" not in release_workflow:
+    errors.append("release workflow must verify requested version against versioninfo.json")
+
 if errors:
     print("BridgeTimer regression check FAILED:")
     for e in errors:
@@ -55,7 +68,6 @@ if errors:
     sys.exit(1)
 
 print(f"BridgeTimer regression check OK — version {version}")
-
 
 # FROZEN RENDERING CONTRACT — approved after V3.2 side-by-side comparison.
 frozen_render_tokens = [
