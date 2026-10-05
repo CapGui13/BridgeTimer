@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version, for example 1.7.4
+        description: Version, for example 1.7.8
         required: true
-        default: '1.7.4'
+        default: '1.7.8'
 
 permissions:
   contents: write
@@ -22,12 +22,24 @@ jobs:
           cache: true
       - run: go mod download
       - run: python patch_webview_dark.py
+      - name: Regression guard
+        run: python checks/check_regressions.py
+      - name: Verify release version
+        shell: pwsh
+        run: |
+          $meta = Get-Content versioninfo.json -Raw | ConvertFrom-Json
+          $expected = [string]$meta.StringFileInfo.ProductVersion
+          if ("${{ inputs.version }}" -ne $expected) {
+            throw "Release version ${{ inputs.version }} does not match source version $expected"
+          }
       - name: Generate Windows resources
         shell: pwsh
         run: |
           go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
           goversioninfo -o resource_windows_amd64.syso versioninfo.json
-      - name: Build
+      - name: Vet
+        run: go vet ./...
+      - name: Build portable EXE
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
@@ -38,4 +50,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "v${{ inputs.version }}"
-          gh release create $tag dist/BridgeTimer.exe --title "Bridge Timer ${{ inputs.version }}" --notes-file RELEASE_NOTES_1.7.4.md
+          gh release create $tag dist/BridgeTimer.exe --title "Bridge Timer ${{ inputs.version }}" --generate-notes
