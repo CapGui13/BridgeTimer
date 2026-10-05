@@ -1,0 +1,41 @@
+name: Build Bridge Timer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: true
+      - name: Download Go dependencies
+        run: go mod download
+      - name: Patch WebView2 dark title before first ShowWindow
+        run: python patch_webview_dark.py
+      - name: Generate Windows resources
+        shell: pwsh
+        run: |
+          go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+          goversioninfo -o resource_windows_amd64.syso versioninfo.json
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          go build -trimpath -ldflags "-H=windowsgui -s -w" -o dist/BridgeTimer.exe .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BridgeTimer-Windows-unsigned
+          path: dist/BridgeTimer.exe
+          if-no-files-found: error
