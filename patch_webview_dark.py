@@ -33,6 +33,9 @@ helper = r'''func applyBridgeTimerDarkBeforeShow(hwnd uintptr) {
 
 if 'func applyBridgeTimerDarkBeforeShow' not in src:
     src = src.replace(create_marker, helper + create_marker, 1)
-src = src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)\n\t' + show_marker, 1)
+# Keep the native window hidden until BridgeTimer's HTML has rendered. main.go
+# applies the saved position/size and shows the window from nativeReady, so the
+# user never sees the default white WebView surface or a visible reposition.
+src = src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)', 1)
 p.write_text(src, encoding='utf-8')
 print('Patched:', p)
