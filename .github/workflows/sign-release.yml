@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version, for example 1.7.4
+        description: Version, for example 1.7.8
         required: true
-        default: '1.7.4'
+        default: '1.7.8'
 
 permissions:
   contents: read
@@ -23,10 +23,14 @@ jobs:
           cache: true
       - run: go mod download
       - run: python patch_webview_dark.py
+      - name: Regression guard
+        run: python checks/check_regressions.py
+      - name: JavaScript syntax
+        run: python checks/check_js_syntax.py
       - name: Generate Windows resources
         shell: pwsh
         run: |
-          go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+          go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.7.0
           goversioninfo -o resource_windows_amd64.syso versioninfo.json
       - name: Build
         shell: pwsh
