@@ -45,6 +45,8 @@ required_main = [
     'port = 43831',
     'w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)',
     'return x.Left, x.Top, defaultWindowWidth, defaultWindowHeight, true',
+    'if(el.id!=="pairCount")el.addEventListener("input",scheduleAutosave)',
+    'raw!==""&&Number.isInteger(n)&&n>=6&&n<=36',
 ]
 
 errors = []
