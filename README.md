@@ -32,7 +32,7 @@ Run `BridgeTimer.exe`. No installer is required.
 - backup recovery for settings and profiles;
 - stricter validation of imported `.bridge-timer` files;
 - WebView2 grayscale text antialiasing (`--disable-lcd-text`) for cleaner large timer digits;
-- single-instance Windows application;\n- monotonic countdown timing with delayed-tick catch-up;\n- dynamic loopback port to avoid local port collisions.
+- single-instance Windows application;\n- monotonic countdown timing with delayed-tick catch-up;\n- stable local WebView origin so saved settings persist between launches;\n- hidden startup window until the first rendered frame, avoiding white startup flashes and visible repositioning.
 
 ## Build
 
