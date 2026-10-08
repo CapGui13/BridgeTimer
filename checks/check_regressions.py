@@ -40,6 +40,9 @@ required_html = [
     'input:disabled,select:disabled{background:color-mix(in srgb,var(--field) 42%,#000 58%)',
     '.compactSelect{width:135px!important}',
     '.movementSelect{width:112px!important}',
+    'id="finishSec" type="number" min="0" max="300" value="0"',
+    'finishSec:0,finishMessage:',
+    'FINISHDELAYMIGRATIONKEY="bridgeTimerWebView2.finishDelayDefaultZero"',
 ]
 
 required_main = [
