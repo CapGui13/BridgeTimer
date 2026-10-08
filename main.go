@@ -29,7 +29,9 @@ const (
 	appTitle = "Bridge Timer"
 	appVersion = "1.7.8"
 	host = "127.0.0.1"
-	port = 43831
+	defaultWindowWidth = 920
+	defaultWindowHeight = 700
+	windowLayoutVersion = 2
 
 	wsCaption = 0x00C00000
 	wsThickFrame = 0x00040000
@@ -115,6 +117,7 @@ var (
 	findWindowW = user32.NewProc("FindWindowW")
 	showWindow = user32.NewProc("ShowWindow")
 	setForegroundWindow = user32.NewProc("SetForegroundWindow")
+	messageBoxW = user32.NewProc("MessageBoxW")
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 	setProcessDPIAware = user32.NewProc("SetProcessDPIAware")
 	monitorFromRect = user32.NewProc("MonitorFromRect")
@@ -144,6 +147,17 @@ var (
 	nativeAwake bool
 	logFile *os.File
 )
+
+func showStartupError(message string) {
+	title, _ := syscall.UTF16PtrFromString(appTitle)
+	body, _ := syscall.UTF16PtrFromString(message)
+	messageBoxW.Call(
+		0,
+		uintptr(unsafe.Pointer(body)),
+		uintptr(unsafe.Pointer(title)),
+		0x00000010, // MB_ICONERROR
+	)
+}
 
 func configureWebView2Rendering() {
 	const flag = "--disable-lcd-text"
@@ -346,10 +360,17 @@ func restoreWindowState(hwnd uintptr) {
 		showWindow.Call(hwnd, 9) // SW_RESTORE: always start windowed
 		return
 	}
+	width := x.Right - x.Left
+	height := x.Bottom - x.Top
+	if x.LayoutVersion != windowLayoutVersion {
+		width = defaultWindowWidth
+		height = defaultWindowHeight
+		log.Printf("window state: migrated to compact layout %dx%d", width, height)
+	}
 	setWindowPos.Call(
 		hwnd, 0,
 		uintptr(x.Left), uintptr(x.Top),
-		uintptr(x.Right-x.Left), uintptr(x.Bottom-x.Top),
+		uintptr(width), uintptr(height),
 		swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
 	)
 	showWindow.Call(hwnd, 9) // SW_RESTORE: ignore a previously maximized state
@@ -365,6 +386,7 @@ func saveWindowState(hwnd uintptr) {
 		Left: wp.RcNormalPosition.Left, Top: wp.RcNormalPosition.Top,
 		Right: wp.RcNormalPosition.Right, Bottom: wp.RcNormalPosition.Bottom,
 		ShowCmd: wp.ShowCmd,
+		LayoutVersion: windowLayoutVersion,
 	}
 	b, err := json.Marshal(x)
 	if err == nil {
@@ -424,11 +446,12 @@ func installDarkTitleHook(hwnd uintptr) {
 	postMessageW.Call(hwnd, wmAppDarkTitle, 0, 0)
 }
 type savedWindowState struct {
-	Left    int32 `json:"left"`
-	Top     int32 `json:"top"`
-	Right   int32 `json:"right"`
-	Bottom  int32 `json:"bottom"`
-	ShowCmd uint32 `json:"show_cmd"`
+	Left          int32  `json:"left"`
+	Top           int32  `json:"top"`
+	Right         int32  `json:"right"`
+	Bottom        int32  `json:"bottom"`
+	ShowCmd       uint32 `json:"show_cmd"`
+	LayoutVersion int    `json:"layout_version,omitempty"`
 }
 
 type nativeDiagInfo struct {
@@ -762,8 +785,7 @@ func importBridgeTimerFile(hwnd uintptr) string {
 }
 
 func startLocalServer() (*http.Server, string, error) {
-	addr := fmt.Sprintf("%s:%d", host, port)
-	ln, err := net.Listen("tcp", addr)
+	ln, err := net.Listen("tcp", net.JoinHostPort(host, "0"))
 	if err != nil {
 		return nil, "", err
 	}
@@ -783,7 +805,7 @@ func startLocalServer() (*http.Server, string, error) {
 			log.Printf("local server: %v", err)
 		}
 	}()
-	return srv, "http://" + addr + "/", nil
+	return srv, "http://" + ln.Addr().String() + "/", nil
 }
 
 func main() {
@@ -806,6 +828,7 @@ func main() {
 	srv, url, err := startLocalServer()
 	if err != nil {
 		log.Printf("Bridge Timer local server: %v", err)
+		showStartupError("Bridge Timer ne peut pas démarrer son serveur local.\n\n" + err.Error())
 		return
 	}
 	defer srv.Shutdown(context.Background())
@@ -819,13 +842,14 @@ func main() {
 		AutoFocus: true,
 		WindowOptions: webview.WindowOptions{
 			Title: appTitle,
-			Width: 920,
-			Height: 700,
+			Width: defaultWindowWidth,
+			Height: defaultWindowHeight,
 			Center: true,
 		},
 	})
 	if w == nil {
 		log.Printf("WebView2 initialization failed")
+		showStartupError("Bridge Timer ne peut pas initialiser Microsoft Edge WebView2.\n\nVérifie que le runtime WebView2 est installé sur Windows.")
 		return
 	}
 	defer w.Destroy()
