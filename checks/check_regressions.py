@@ -42,7 +42,8 @@ required_main = [
     'window.json',
     'window state: recovered from backup',
     'windowLayoutVersion = 2',
-    'net.JoinHostPort(host, "0")',
+    'port = 43831',
+    'nativeReady',
 ]
 
 errors = []
@@ -68,6 +69,15 @@ if "--generate-notes" not in release_workflow:
     errors.append("release workflow must not depend on a version-specific notes file")
 if "Verify release version" not in release_workflow:
     errors.append("release workflow must verify requested version against versioninfo.json")
+
+# Startup must remain hidden until the first rendered HTML frame.
+patch_source = (root / "patch_webview_dark.py").read_text(encoding="utf-8")
+if "src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)', 1)" not in patch_source:
+    errors.append("WebView startup patch must suppress the library's early ShowWindow")
+if "requestAnimationFrame(()=>requestAnimationFrame" not in html:
+    errors.append("timer.html must signal nativeReady only after rendered frames")
+if 'net.JoinHostPort(host, "0")' in main:
+    errors.append("ephemeral WebView origin would break persistent localStorage")
 
 # Prevent reintroduction of the retired active-session recovery popup/state writes.
 for forbidden in [
