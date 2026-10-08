@@ -29,6 +29,7 @@ const (
 	appTitle = "Bridge Timer"
 	appVersion = "1.7.8"
 	host = "127.0.0.1"
+	port = 43831
 	defaultWindowWidth = 920
 	defaultWindowHeight = 700
 	windowLayoutVersion = 2
@@ -357,7 +358,6 @@ func loadWindowState() (savedWindowState, bool) {
 func restoreWindowState(hwnd uintptr) {
 	x, ok := loadWindowState()
 	if !ok {
-		showWindow.Call(hwnd, 9) // SW_RESTORE: always start windowed
 		return
 	}
 	width := x.Right - x.Left
@@ -373,7 +373,6 @@ func restoreWindowState(hwnd uintptr) {
 		uintptr(width), uintptr(height),
 		swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
 	)
-	showWindow.Call(hwnd, 9) // SW_RESTORE: ignore a previously maximized state
 }
 
 func saveWindowState(hwnd uintptr) {
@@ -785,7 +784,8 @@ func importBridgeTimerFile(hwnd uintptr) string {
 }
 
 func startLocalServer() (*http.Server, string, error) {
-	ln, err := net.Listen("tcp", net.JoinHostPort(host, "0"))
+	addr := fmt.Sprintf("%s:%d", host, port)
+	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, "", err
 	}
@@ -805,7 +805,7 @@ func startLocalServer() (*http.Server, string, error) {
 			log.Printf("local server: %v", err)
 		}
 	}()
-	return srv, "http://" + ln.Addr().String() + "/", nil
+	return srv, "http://" + addr + "/", nil
 }
 
 func main() {
@@ -855,9 +855,20 @@ func main() {
 	defer w.Destroy()
 
 	hwnd := uintptr(w.Window())
-	restoreWindowState(hwnd)
-	applyDarkTitleBar(hwnd)
-	installDarkTitleHook(hwnd)
+	var readyOnce sync.Once
+	if err := w.Bind("nativeReady", func() bool {
+		readyOnce.Do(func() {
+			restoreWindowState(hwnd)
+			applyDarkTitleBar(hwnd)
+			installDarkTitleHook(hwnd)
+			showWindow.Call(hwnd, 9) // SW_RESTORE, first visible paint only after HTML is ready
+			setForegroundWindow.Call(hwnd)
+			log.Printf("startup: first rendered frame shown")
+		})
+		return true
+	}); err != nil {
+		log.Printf("ready bind: %v", err)
+	}
 	if err := w.Bind("nativeFullscreen", func() bool {
 		return toggleNativeFullscreen(hwnd)
 	}); err != nil {
