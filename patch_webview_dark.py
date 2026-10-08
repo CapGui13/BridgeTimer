@@ -11,10 +11,61 @@ p = roots[0] / 'webview.go'
 os.chmod(p, stat.S_IWRITE)
 src = p.read_text(encoding='utf-8')
 
+options_marker = '''type WindowOptions struct {
+	Title  string
+	Width  uint
+	Height uint
+	IconId uint
+	Center bool
+}'''
 create_marker = 'func (w *webview) CreateWithOptions(opts WindowOptions) bool {'
 show_marker = '_, _, _ = w32.User32ShowWindow.Call(w.hwnd, w32.SWShow)'
-if create_marker not in src or show_marker not in src:
+if create_marker not in src or show_marker not in src or options_marker not in src:
     raise SystemExit('go-webview2 markers not found')
+
+src = src.replace(options_marker, '''type WindowOptions struct {
+	Title       string
+	Width       uint
+	Height      uint
+	IconId      uint
+	Center      bool
+	X           int
+	Y           int
+	UsePosition bool
+}''', 1)
+
+old_position = '''	var posX, posY uint
+	if opts.Center {
+		// get screen size
+		screenWidth, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CXSCREEN)
+		screenHeight, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CYSCREEN)
+		// calculate window position
+		posX = (uint(screenWidth) - windowWidth) / 2
+		posY = (uint(screenHeight) - windowHeight) / 2
+	} else {
+		// use default position
+		posX = w32.CW_USEDEFAULT
+		posY = w32.CW_USEDEFAULT
+	}'''
+new_position = '''	var posX, posY uint
+	if opts.UsePosition {
+		posX = uint(opts.X)
+		posY = uint(opts.Y)
+	} else if opts.Center {
+		// get screen size
+		screenWidth, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CXSCREEN)
+		screenHeight, _, _ := w32.User32GetSystemMetrics.Call(w32.SM_CYSCREEN)
+		// calculate window position
+		posX = (uint(screenWidth) - windowWidth) / 2
+		posY = (uint(screenHeight) - windowHeight) / 2
+	} else {
+		// use default position
+		posX = w32.CW_USEDEFAULT
+		posY = w32.CW_USEDEFAULT
+	}'''
+if old_position not in src:
+    raise SystemExit('go-webview2 position marker not found')
+src = src.replace(old_position, new_position, 1)
 
 helper = r'''func applyBridgeTimerDarkBeforeShow(hwnd uintptr) {
     dll := windows.NewLazySystemDLL("dwmapi.dll")
@@ -29,13 +80,26 @@ helper = r'''func applyBridgeTimerDarkBeforeShow(hwnd uintptr) {
     _, _, _ = proc.Call(hwnd, 34, uintptr(unsafe.Pointer(&border)), unsafe.Sizeof(border))
 }
 
+func bridgeTimerDarkBrush() windows.Handle {
+    dll := windows.NewLazySystemDLL("gdi32.dll")
+    proc := dll.NewProc("CreateSolidBrush")
+    brush, _, _ := proc.Call(0x002A170F)
+    return windows.Handle(brush)
+}
+
 '''
 
 if 'func applyBridgeTimerDarkBeforeShow' not in src:
     src = src.replace(create_marker, helper + create_marker, 1)
-# Keep the native window hidden until BridgeTimer's HTML has rendered. main.go
-# applies the saved position/size and shows the window from nativeReady, so the
-# user never sees the default white WebView surface or a visible reposition.
-src = src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)', 1)
+
+wc_marker = '''		HIconSm:       windows.Handle(icon),
+		LpfnWndProc:   windows.NewCallback(wndproc),'''
+if wc_marker not in src:
+    raise SystemExit('go-webview2 background marker not found')
+src = src.replace(wc_marker, '''		HIconSm:       windows.Handle(icon),
+		HbrBackground: bridgeTimerDarkBrush(),
+		LpfnWndProc:   windows.NewCallback(wndproc),''', 1)
+
+src = src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)\n\t' + show_marker, 1)
 p.write_text(src, encoding='utf-8')
 print('Patched:', p)
