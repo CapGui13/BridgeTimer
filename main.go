@@ -872,6 +872,9 @@ func main() {
 		showStartupError("Bridge Timer ne peut pas initialiser Microsoft Edge WebView2.\n\nVérifie que le runtime WebView2 est installé sur Windows.")
 		return
 	}
+	// The native opening size is also the minimum resizable size.
+	// The window may still be enlarged or maximized normally.
+	w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)
 	defer w.Destroy()
 
 	hwnd := uintptr(w.Window())
