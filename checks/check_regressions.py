@@ -43,7 +43,6 @@ required_main = [
     'window state: recovered from backup',
     'windowLayoutVersion = 2',
     'port = 43831',
-    'nativeReady',
 ]
 
 errors = []
@@ -70,12 +69,22 @@ if "--generate-notes" not in release_workflow:
 if "Verify release version" not in release_workflow:
     errors.append("release workflow must verify requested version against versioninfo.json")
 
-# Startup must remain hidden until the first rendered HTML frame.
+# Startup must use a stable origin, a dark WebView2 backing color, and native
+# coordinates before the first ShowWindow. This avoids both white flashes and
+# visible center->saved-position jumps without hiding the HWND.
 patch_source = (root / "patch_webview_dark.py").read_text(encoding="utf-8")
-if "src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)', 1)" not in patch_source:
-    errors.append("WebView startup patch must suppress the library's early ShowWindow")
-if 'setTimeout(()=>{try{if(window.nativeReady)window.nativeReady()}catch(e){}},40)' not in html:
-    errors.append("timer.html must signal nativeReady after startup render without relying on requestAnimationFrame")
+if "HbrBackground: bridgeTimerDarkBrush()" not in patch_source:
+    errors.append("WebView parent window must have a dark background brush")
+if "UsePosition bool" not in patch_source:
+    errors.append("WebView patch must support pre-show saved coordinates")
+if "applyBridgeTimerDarkBeforeShow(w.hwnd)\\n\\t' + show_marker" not in patch_source:
+    errors.append("dark title must be applied immediately before ShowWindow")
+if 'WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "FF0F172A' not in main:
+    errors.append("WebView2 default background must be dark before initialization")
+if 'UsePosition: hasSavedPosition' not in main:
+    errors.append("saved window position must be supplied before WebView creation")
+if "nativeReady" in main or "nativeReady" in html:
+    errors.append("failed hidden-window startup handshake must not return")
 if 'net.JoinHostPort(host, "0")' in main:
     errors.append("ephemeral WebView origin would break persistent localStorage")
 
