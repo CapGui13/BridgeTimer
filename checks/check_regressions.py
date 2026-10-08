@@ -36,6 +36,7 @@ required_html = [
     'raw!==""&&Number.isInteger(n)&&n>=6&&n<=36',
     '.btn:active{filter:brightness(.94);transform:translateY(1px)}',
     'el.addEventListener("focus",selectAll);el.addEventListener("change",normalize)',
+    'window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0',
 ]
 
 required_main = [
