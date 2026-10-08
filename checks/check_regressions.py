@@ -40,9 +40,8 @@ required_html = [
     'input:disabled,select:disabled{background:#030712!important',
     '.compactSelect{width:135px!important}',
     '.movementSelect{width:112px!important}',
-    'id="finishSec" type="number" min="0" max="300" value="0"',
-    'finishSec:0,finishMessage:',
-    'FINISHDELAYMIGRATIONKEY="bridgeTimerWebView2.finishDelayDefaultZero"',
+    '.optionCards{display:grid;grid-template-columns:1.2fr 1fr;',
+    'function transitionAfterRound(){',
 ]
 
 required_main = [
@@ -65,6 +64,11 @@ for token in required_html:
 for token in required_main:
     if token not in main:
         errors.append("main.go missing: " + token[:100])
+
+# The removed end-of-round delay feature must not return.
+for token in ('id="finishSec"', 'id="finishMessage"', 'phase==="finish"', 's.finishSec', 's.finishMessage', 'FINISHDELAYMIGRATIONKEY'):
+    if token in html:
+        errors.append("removed end-of-round delay feature returned: " + token)
 
 # Numeric fields should select all only when focus first enters the field,
 # and do it synchronously to avoid a visible focus-then-selection flicker.
