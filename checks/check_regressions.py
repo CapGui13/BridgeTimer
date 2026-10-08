@@ -44,6 +44,7 @@ required_main = [
     'windowLayoutVersion = 2',
     'port = 43831',
     'w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)',
+    'return x.Left, x.Top, defaultWindowWidth, defaultWindowHeight, true',
 ]
 
 errors = []
