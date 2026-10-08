@@ -47,6 +47,9 @@ required_html = [
     'COLORKEY="bridgeTimerWebView2.savedColors"',
     'function saveCurrentColors()',
     'function loadSavedColors()',
+    '#submsg.tempMessage{color:var(--accent)',
+    '$("submsg").classList.remove("tempMessage")',
+    '$("submsg").textContent=s.quickMessage||"Saisir les scores"',
 ]
 
 required_main = [
@@ -75,6 +78,10 @@ for token in required_main:
 for token in ('id="logoInput"', 'id="removeLogo"', 'id="logo"', '<h2>Profils</h2>', 'id="exportConfig"', 'id="importConfig"', 'profileSave0', 'function emptyProfiles', 'function exportConfiguration', 'function importConfiguration', 'PROFILEKEY', 'LKEY', 'logoData'):
     if token in html:
         errors.append("removed personalization feature returned: " + token)
+
+# Tournament type is configuration-only and must not be shown to players.
+if '$("submsg").textContent=s.mode==="4"?"Match par 4":"Paires"' in html:
+    errors.append("player timer must not display Paires / Match par 4")
 
 # The removed end-of-round delay feature must not return.
 for token in ('id="finishSec"', 'id="finishMessage"', 'phase==="finish"', 's.finishSec', 's.finishMessage', 'FINISHDELAYMIGRATIONKEY'):
