@@ -43,6 +43,7 @@ required_main = [
     'window state: recovered from backup',
     'windowLayoutVersion = 2',
     'port = 43831',
+    'w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)',
 ]
 
 errors = []
