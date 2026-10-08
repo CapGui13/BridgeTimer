@@ -819,8 +819,8 @@ func main() {
 		AutoFocus: true,
 		WindowOptions: webview.WindowOptions{
 			Title: appTitle,
-			Width: 1280,
-			Height: 820,
+			Width: 920,
+			Height: 700,
 			Center: true,
 		},
 	})
