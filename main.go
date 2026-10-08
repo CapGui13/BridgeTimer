@@ -343,6 +343,7 @@ func loadWindowState() (savedWindowState, bool) {
 func restoreWindowState(hwnd uintptr) {
 	x, ok := loadWindowState()
 	if !ok {
+		showWindow.Call(hwnd, 9) // SW_RESTORE: always start windowed
 		return
 	}
 	setWindowPos.Call(
@@ -351,9 +352,7 @@ func restoreWindowState(hwnd uintptr) {
 		uintptr(x.Right-x.Left), uintptr(x.Bottom-x.Top),
 		swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
 	)
-	if x.ShowCmd == 3 {
-		showWindow.Call(hwnd, 3) // SW_MAXIMIZE
-	}
+	showWindow.Call(hwnd, 9) // SW_RESTORE: ignore a previously maximized state
 }
 
 func saveWindowState(hwnd uintptr) {
