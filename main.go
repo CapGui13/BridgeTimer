@@ -361,14 +361,9 @@ func startupWindowGeometry() (int32, int32, uint, uint, bool) {
 	if !ok {
 		return 0, 0, defaultWindowWidth, defaultWindowHeight, false
 	}
-	width := x.Right - x.Left
-	height := x.Bottom - x.Top
-	if x.LayoutVersion != windowLayoutVersion {
-		width = defaultWindowWidth
-		height = defaultWindowHeight
-		log.Printf("window state: migrated to compact layout %dx%d", width, height)
-	}
-	return x.Left, x.Top, uint(width), uint(height), true
+	// Restore only the previous position. The opening size is deliberately fixed
+	// to the native 920x700 reference, which is also the minimum resizable size.
+	return x.Left, x.Top, defaultWindowWidth, defaultWindowHeight, true
 }
 
 func restoreWindowState(hwnd uintptr) {
