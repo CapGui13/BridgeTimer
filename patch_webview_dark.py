@@ -20,10 +20,13 @@ options_marker = '''type WindowOptions struct {
 }'''
 create_marker = 'func (w *webview) CreateWithOptions(opts WindowOptions) bool {'
 show_marker = '_, _, _ = w32.User32ShowWindow.Call(w.hwnd, w32.SWShow)'
-if create_marker not in src or show_marker not in src or options_marker not in src:
+if create_marker not in src or show_marker not in src:
     raise SystemExit('go-webview2 markers not found')
 
-src = src.replace(options_marker, '''type WindowOptions struct {
+if 'UsePosition bool' not in src:
+    if options_marker not in src:
+        raise SystemExit('go-webview2 WindowOptions marker not found')
+    src = src.replace(options_marker, '''type WindowOptions struct {
 	Title       string
 	Width       uint
 	Height      uint
@@ -63,11 +66,12 @@ new_position = '''	var posX, posY uint
 		posX = w32.CW_USEDEFAULT
 		posY = w32.CW_USEDEFAULT
 	}'''
-if old_position not in src:
-    raise SystemExit('go-webview2 position marker not found')
-src = src.replace(old_position, new_position, 1)
+if 'if opts.UsePosition {' not in src:
+    if old_position not in src:
+        raise SystemExit('go-webview2 position marker not found')
+    src = src.replace(old_position, new_position, 1)
 
-helper = r'''func applyBridgeTimerDarkBeforeShow(hwnd uintptr) {
+dark_helper = r'''func applyBridgeTimerDarkBeforeShow(hwnd uintptr) {
     dll := windows.NewLazySystemDLL("dwmapi.dll")
     proc := dll.NewProc("DwmSetWindowAttribute")
     enabled := int32(1)
@@ -80,7 +84,9 @@ helper = r'''func applyBridgeTimerDarkBeforeShow(hwnd uintptr) {
     _, _, _ = proc.Call(hwnd, 34, uintptr(unsafe.Pointer(&border)), unsafe.Sizeof(border))
 }
 
-func bridgeTimerDarkBrush() windows.Handle {
+'''
+
+brush_helper = r'''func bridgeTimerDarkBrush() windows.Handle {
     dll := windows.NewLazySystemDLL("gdi32.dll")
     proc := dll.NewProc("CreateSolidBrush")
     brush, _, _ := proc.Call(0x002A170F)
@@ -90,16 +96,21 @@ func bridgeTimerDarkBrush() windows.Handle {
 '''
 
 if 'func applyBridgeTimerDarkBeforeShow' not in src:
-    src = src.replace(create_marker, helper + create_marker, 1)
+    src = src.replace(create_marker, dark_helper + create_marker, 1)
+if 'func bridgeTimerDarkBrush' not in src:
+    src = src.replace(create_marker, brush_helper + create_marker, 1)
 
 wc_marker = '''		HIconSm:       windows.Handle(icon),
 		LpfnWndProc:   windows.NewCallback(wndproc),'''
-if wc_marker not in src:
-    raise SystemExit('go-webview2 background marker not found')
-src = src.replace(wc_marker, '''		HIconSm:       windows.Handle(icon),
+if 'HbrBackground: bridgeTimerDarkBrush()' not in src:
+    if wc_marker not in src:
+        raise SystemExit('go-webview2 background marker not found')
+    src = src.replace(wc_marker, '''		HIconSm:       windows.Handle(icon),
 		HbrBackground: bridgeTimerDarkBrush(),
 		LpfnWndProc:   windows.NewCallback(wndproc),''', 1)
 
-src = src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)\n\t' + show_marker, 1)
+show_with_dark = 'applyBridgeTimerDarkBeforeShow(w.hwnd)\n\t' + show_marker
+if show_with_dark not in src:
+    src = src.replace(show_marker, show_with_dark, 1)
 p.write_text(src, encoding='utf-8')
 print('Patched:', p)
