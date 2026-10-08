@@ -42,6 +42,11 @@ required_html = [
     '.movementSelect{width:112px!important}',
     '.optionCards{display:grid;grid-template-columns:1.2fr 1fr;',
     'function transitionAfterRound(){',
+    'id="saveColorsBtn"',
+    'id="savedColorsBtn"',
+    'COLORKEY="bridgeTimerWebView2.savedColors"',
+    'function saveCurrentColors()',
+    'function loadSavedColors()',
 ]
 
 required_main = [
@@ -64,6 +69,12 @@ for token in required_html:
 for token in required_main:
     if token not in main:
         errors.append("main.go missing: " + token[:100])
+
+# Logo, tournament profiles and configuration import/export were deliberately removed
+# from the user interface. Keep the custom saved-color preset instead.
+for token in ('id="logoInput"', 'id="removeLogo"', 'id="logo"', '<h2>Profils</h2>', 'id="exportConfig"', 'id="importConfig"', 'profileSave0', 'function emptyProfiles', 'function exportConfiguration', 'function importConfiguration', 'PROFILEKEY', 'LKEY', 'logoData'):
+    if token in html:
+        errors.append("removed personalization feature returned: " + token)
 
 # The removed end-of-round delay feature must not return.
 for token in ('id="finishSec"', 'id="finishMessage"', 'phase==="finish"', 's.finishSec', 's.finishMessage', 'FINISHDELAYMIGRATIONKEY'):
