@@ -74,8 +74,8 @@ if "Verify release version" not in release_workflow:
 patch_source = (root / "patch_webview_dark.py").read_text(encoding="utf-8")
 if "src.replace(show_marker, 'applyBridgeTimerDarkBeforeShow(w.hwnd)', 1)" not in patch_source:
     errors.append("WebView startup patch must suppress the library's early ShowWindow")
-if "requestAnimationFrame(()=>requestAnimationFrame" not in html:
-    errors.append("timer.html must signal nativeReady only after rendered frames")
+if 'setTimeout(()=>{try{if(window.nativeReady)window.nativeReady()}catch(e){}},40)' not in html:
+    errors.append("timer.html must signal nativeReady after startup render without relying on requestAnimationFrame")
 if 'net.JoinHostPort(host, "0")' in main:
     errors.append("ephemeral WebView origin would break persistent localStorage")
 
