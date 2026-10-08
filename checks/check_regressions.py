@@ -165,7 +165,7 @@ for token in frozen_render_tokens:
         print("Frozen rendering contract FAILED:", token)
         sys.exit(1)
 
-for token in ['safeJSONRead(', 'safeJSONWrite(', 'backupKey(', 'normalizeImportedSettings(']:
+for token in ['safeJSONRead(', 'safeJSONWrite(', 'backupKey(', 'validColorPreset(', 'COLORKEY="bridgeTimerWebView2.savedColors"']:
     if token not in html:
         print("Storage safety regression FAILED:", token)
         sys.exit(1)
