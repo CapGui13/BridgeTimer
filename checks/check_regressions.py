@@ -14,8 +14,7 @@ version = vi["StringFileInfo"]["ProductVersion"]
 file_version = vi["StringFileInfo"]["FileVersion"]
 
 required_html = [
-    f"WebView2 {version}",
-    '#clock{font-variant-numeric:tabular-nums;font-weight:1000;font-size:clamp(110px,24vw,350px);line-height:.84;letter-spacing:-.07em;white-space:nowrap}',
+    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:650;font-size:clamp(110px,24vw,350px);line-height:.84;letter-spacing:.035em;white-space:nowrap}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
     'id="accent" type="color"',
     'id="background" type="color"',
@@ -72,7 +71,7 @@ print(f"BridgeTimer regression check OK — version {version}")
 # FROZEN RENDERING CONTRACT — approved after V3.2 side-by-side comparison.
 frozen_render_tokens = [
     '--disable-lcd-text',
-    '#clock{font-variant-numeric:tabular-nums;font-weight:1000;font-size:clamp(110px,24vw,350px);line-height:.84;letter-spacing:-.07em;white-space:nowrap}',
+    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:650;font-size:clamp(110px,24vw,350px);line-height:.84;letter-spacing:.035em;white-space:nowrap}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
     '#submsg{font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--muted);min-height:1em;max-width:1300px}',
 ]
