@@ -162,6 +162,7 @@ func showStartupError(message string) {
 
 func configureWebView2Rendering() {
 	const flag = "--disable-lcd-text"
+	_ = os.Setenv("WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "FF0F172A")
 	current := strings.TrimSpace(os.Getenv("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"))
 	if current == "" {
 		_ = os.Setenv("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", flag)
@@ -353,6 +354,21 @@ func loadWindowState() (savedWindowState, bool) {
 		return x, true
 	}
 	return savedWindowState{}, false
+}
+
+func startupWindowGeometry() (int32, int32, uint, uint, bool) {
+	x, ok := loadWindowState()
+	if !ok {
+		return 0, 0, defaultWindowWidth, defaultWindowHeight, false
+	}
+	width := x.Right - x.Left
+	height := x.Bottom - x.Top
+	if x.LayoutVersion != windowLayoutVersion {
+		width = defaultWindowWidth
+		height = defaultWindowHeight
+		log.Printf("window state: migrated to compact layout %dx%d", width, height)
+	}
+	return x.Left, x.Top, uint(width), uint(height), true
 }
 
 func restoreWindowState(hwnd uintptr) {
@@ -836,15 +852,19 @@ func main() {
 	dataPath := filepath.Join(appDataPath(), "WebView2Data")
 	_ = os.MkdirAll(dataPath, 0700)
 
+	startX, startY, startWidth, startHeight, hasSavedPosition := startupWindowGeometry()
 	w := webview.NewWithOptions(webview.WebViewOptions{
 		Debug: false,
 		DataPath: dataPath,
 		AutoFocus: true,
 		WindowOptions: webview.WindowOptions{
 			Title: appTitle,
-			Width: defaultWindowWidth,
-			Height: defaultWindowHeight,
-			Center: true,
+			Width: startWidth,
+			Height: startHeight,
+			Center: !hasSavedPosition,
+			X: int(startX),
+			Y: int(startY),
+			UsePosition: hasSavedPosition,
 		},
 	})
 	if w == nil {
@@ -855,20 +875,8 @@ func main() {
 	defer w.Destroy()
 
 	hwnd := uintptr(w.Window())
-	var readyOnce sync.Once
-	if err := w.Bind("nativeReady", func() bool {
-		readyOnce.Do(func() {
-			restoreWindowState(hwnd)
-			applyDarkTitleBar(hwnd)
-			installDarkTitleHook(hwnd)
-			showWindow.Call(hwnd, 9) // SW_RESTORE, first visible paint only after HTML is ready
-			setForegroundWindow.Call(hwnd)
-			log.Printf("startup: first rendered frame shown")
-		})
-		return true
-	}); err != nil {
-		log.Printf("ready bind: %v", err)
-	}
+	applyDarkTitleBar(hwnd)
+	installDarkTitleHook(hwnd)
 	if err := w.Bind("nativeFullscreen", func() bool {
 		return toggleNativeFullscreen(hwnd)
 	}); err != nil {
