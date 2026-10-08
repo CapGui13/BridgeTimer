@@ -1,6 +1,6 @@
 # SignPath Foundation setup
 
-Bridge Timer is prepared for an application to SignPath Foundation's free open-source code-signing program.
+Bridge Timer is prepared for a future re-application to SignPath Foundation's free open-source code-signing program. The October 2026 application was not approved because the project had not yet reached the program's public visibility/adoption threshold.
 
 Before applying:
 
