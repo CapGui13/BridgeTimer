@@ -37,6 +37,9 @@ required_html = [
     '.btn:active{filter:brightness(.94);transform:translateY(1px)}',
     'el.focus({preventScroll:true});try{el.select()}catch(err){}',
     'window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0',
+    'input:disabled,select:disabled{background:color-mix(in srgb,var(--field) 42%,#000 58%)',
+    '.compactSelect{width:135px!important}',
+    '.movementSelect{width:112px!important}',
 ]
 
 required_main = [
