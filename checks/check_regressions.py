@@ -35,7 +35,7 @@ required_html = [
     'if(el.id!=="pairCount")el.addEventListener("input",scheduleAutosave)',
     'raw!==""&&Number.isInteger(n)&&n>=6&&n<=36',
     '.btn:active{filter:brightness(.94);transform:translateY(1px)}',
-    'el.addEventListener("mousedown",e=>{if(document.activeElement!==el)',
+    'el.focus({preventScroll:true});try{el.select()}catch(err){}',
     'window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0',
 ]
 
@@ -60,9 +60,12 @@ for token in required_main:
     if token not in main:
         errors.append("main.go missing: " + token[:100])
 
-# Numeric fields should select all only when focus first enters the field.
+# Numeric fields should select all only when focus first enters the field,
+# and do it synchronously to avoid a visible focus-then-selection flicker.
 if 'el.addEventListener("focus",selectAll)' in html or 'el.addEventListener("click",selectAll)' in html:
     errors.append("numeric fields must not re-select all text on focus or every click")
+if 'setTimeout(()=>{try{el.select()' in html:
+    errors.append("numeric selection must not be delayed after focus")
 
 # Prevent accidental loss of the four color controls.
 if len(re.findall(r'type="color"', html)) < 4:
