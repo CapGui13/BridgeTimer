@@ -118,5 +118,5 @@ catch(e){$("diagText").focus();$("diagText").select();document.execCommand("copy
 }async function exportDiagnostics(){try{if(window.nativeExportDiagnostics)await window.nativeExportDiagnostics($("diagText").value)
 }catch(e){}
 }function updateLocalTime(){const d=new Date();$("localTime").textContent=`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;}
-updateLocalTime();setInterval(updateLocalTime,1000);window.addEventListener("focus",syncNativeMonitor);load();loadProfiles();updatePairModeUI();syncNativeMonitor();st.pos=s.startPosition;st.remaining=duration();render();</script>
+updateLocalTime();setInterval(updateLocalTime,1000);window.addEventListener("focus",syncNativeMonitor);load();loadProfiles();updatePairModeUI();syncNativeMonitor();st.pos=s.startPosition;st.remaining=duration();render();requestAnimationFrame(()=>requestAnimationFrame(()=>{try{if(window.nativeReady)window.nativeReady()}catch(e){}}));</script>
 </body></html>
