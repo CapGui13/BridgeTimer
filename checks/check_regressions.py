@@ -34,6 +34,8 @@ required_html = [
     'CHANGEMENT DE TOUR',
     'if(el.id!=="pairCount")el.addEventListener("input",scheduleAutosave)',
     'raw!==""&&Number.isInteger(n)&&n>=6&&n<=36',
+    '.btn:active{filter:brightness(.94);transform:translateY(1px)}',
+    'el.addEventListener("focus",selectAll);el.addEventListener("change",normalize)',
 ]
 
 required_main = [
@@ -56,6 +58,10 @@ for token in required_html:
 for token in required_main:
     if token not in main:
         errors.append("main.go missing: " + token[:100])
+
+# Numeric fields should select all only when focus first enters the field.
+if 'el.addEventListener("click",selectAll)' in html:
+    errors.append("numeric fields must not re-select all text on every click")
 
 # Prevent accidental loss of the four color controls.
 if len(re.findall(r'type="color"', html)) < 4:
