@@ -130,7 +130,12 @@ chromium_patch = '''	chromium := edge.NewChromium()
 		if key != 0x70 { // VK_F1
 			return false
 		}
-		chromium.Eval(`(function(){var t=document.getElementById("timer"),h=document.getElementById("hint");if(t&&h&&!t.classList.contains("hidden"))h.classList.toggle("hintVisible");})()`)
+		// AcceleratorKeyPressed is raised from WebView2's controller callback.
+		// Queue the DOM update through the webview dispatcher instead of evaluating
+		// JavaScript re-entrantly from inside that COM callback.
+		w.Dispatch(func() {
+			w.Eval(`(function(){var t=document.getElementById("timer"),h=document.getElementById("hint");if(t&&h&&!t.classList.contains("hidden"))h.classList.toggle("hintVisible");})()`)
+		})
 		return true
 	}
 '''
