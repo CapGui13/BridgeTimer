@@ -129,7 +129,6 @@ var (
 	setThreadExecutionState = kernel32.NewProc("SetThreadExecutionState")
 	dwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
 	getSaveFileNameW = comdlg32.NewProc("GetSaveFileNameW")
-	getOpenFileNameW = comdlg32.NewProc("GetOpenFileNameW")
 
 	fullscreenMu sync.Mutex
 	fullscreen bool
@@ -362,26 +361,6 @@ func startupWindowGeometry() (int32, int32, uint, uint, bool) {
 	return 0, 0, defaultWindowWidth, defaultWindowHeight, false
 }
 
-func restoreWindowState(hwnd uintptr) {
-	x, ok := loadWindowState()
-	if !ok {
-		return
-	}
-	width := x.Right - x.Left
-	height := x.Bottom - x.Top
-	if x.LayoutVersion != windowLayoutVersion {
-		width = defaultWindowWidth
-		height = defaultWindowHeight
-		log.Printf("window state: migrated to compact layout %dx%d", width, height)
-	}
-	setWindowPos.Call(
-		hwnd, 0,
-		uintptr(x.Left), uintptr(x.Top),
-		uintptr(width), uintptr(height),
-		swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
-	)
-}
-
 func saveWindowState(hwnd uintptr) {
 	wp := windowPlacement{Length: uint32(unsafe.Sizeof(windowPlacement{}))}
 	ok, _, _ := getWindowPlacement.Call(hwnd, uintptr(unsafe.Pointer(&wp)))
@@ -575,23 +554,6 @@ func setProjectionMonitor(hwnd uintptr, requested int) nativeMonitorStatus {
 	return nativeMonitorStatus{Selected: selectedMonitor + 1, Count: len(mons)}
 }
 
-func cycleProjectionMonitor(hwnd uintptr) nativeMonitorStatus {
-	fullscreenMu.Lock()
-	defer fullscreenMu.Unlock()
-
-	mons := enumerateMonitors()
-	if len(mons) == 0 {
-		selectedMonitor = 0
-		return nativeMonitorStatus{Selected: 1, Count: 1}
-	}
-	selectedMonitor = (selectedMonitor + 1) % len(mons)
-	log.Printf("projection monitor cycled: %d/%d", selectedMonitor+1, len(mons))
-	if fullscreen {
-		moveFullscreenToSelectedLocked(hwnd)
-	}
-	return nativeMonitorStatus{Selected: selectedMonitor + 1, Count: len(mons)}
-}
-
 func toggleNativeFullscreen(hwnd uintptr) bool {
 	fullscreenMu.Lock()
 	defer fullscreenMu.Unlock()
@@ -718,78 +680,6 @@ func utf16Multi(s string) []uint16 {
 	return append(out, 0)
 }
 
-func bridgeTimerDialogFilter() []uint16 {
-	return utf16Multi("Fichier Bridge Timer (*.bridge-timer)\x00*.bridge-timer\x00Tous les fichiers (*.*)\x00*.*\x00")
-}
-
-func exportBridgeTimerFile(hwnd uintptr, payload string) bool {
-	buf := make([]uint16, 1024)
-	defaultName, _ := syscall.UTF16FromString("BridgeTimer.bridge-timer")
-	copy(buf, defaultName)
-	filter := bridgeTimerDialogFilter()
-	title, _ := syscall.UTF16FromString("Exporter la configuration Bridge Timer")
-	defExt, _ := syscall.UTF16FromString("bridge-timer")
-
-	ofn := openFileNameW{
-		LStructSize:  uint32(unsafe.Sizeof(openFileNameW{})),
-		HwndOwner:    hwnd,
-		LpstrFilter:  &filter[0],
-		NFilterIndex: 1,
-		LpstrFile:    &buf[0],
-		NMaxFile:     uint32(len(buf)),
-		LpstrTitle:   &title[0],
-		LpstrDefExt:  &defExt[0],
-		Flags:        0x00000002 | 0x00000008 | 0x00000800 | 0x00080000, // overwrite/nochangedir/pathmustexist/explorer
-	}
-	ok, _, _ := getSaveFileNameW.Call(uintptr(unsafe.Pointer(&ofn)))
-	if ok == 0 {
-		return false
-	}
-	path := syscall.UTF16ToString(buf)
-	if filepath.Ext(path) == "" {
-		path += ".bridge-timer"
-	}
-	if err := os.WriteFile(path, []byte(payload), 0600); err != nil {
-		log.Printf("export config: %v", err)
-		return false
-	}
-	log.Printf("export config: %s", path)
-	return true
-}
-
-func importBridgeTimerFile(hwnd uintptr) string {
-	buf := make([]uint16, 1024)
-	filter := bridgeTimerDialogFilter()
-	title, _ := syscall.UTF16FromString("Importer une configuration Bridge Timer")
-
-	ofn := openFileNameW{
-		LStructSize:  uint32(unsafe.Sizeof(openFileNameW{})),
-		HwndOwner:    hwnd,
-		LpstrFilter:  &filter[0],
-		NFilterIndex: 1,
-		LpstrFile:    &buf[0],
-		NMaxFile:     uint32(len(buf)),
-		LpstrTitle:   &title[0],
-		Flags:        0x00000008 | 0x00000800 | 0x00001000 | 0x00080000, // nochangedir/pathmustexist/filemustexist/explorer
-	}
-	ok, _, _ := getOpenFileNameW.Call(uintptr(unsafe.Pointer(&ofn)))
-	if ok == 0 {
-		return ""
-	}
-	path := syscall.UTF16ToString(buf)
-	fi, err := os.Stat(path)
-	if err != nil || fi.Size() > 8*1024*1024 {
-		return ""
-	}
-	b, err := os.ReadFile(path)
-	if err != nil {
-		log.Printf("import config: %v", err)
-		return ""
-	}
-	log.Printf("import config: %s", path)
-	return string(b)
-}
-
 func startLocalServer() (*http.Server, string, error) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 	ln, err := net.Listen("tcp", addr)
@@ -880,21 +770,6 @@ func main() {
 		return setProjectionMonitor(hwnd, index)
 	}); err != nil {
 		log.Printf("monitor select bind: %v", err)
-	}
-	if err := w.Bind("nativeCycleMonitor", func() nativeMonitorStatus {
-		return cycleProjectionMonitor(hwnd)
-	}); err != nil {
-		log.Printf("monitor cycle bind: %v", err)
-	}
-	if err := w.Bind("nativeExportConfig", func(payload string) bool {
-		return exportBridgeTimerFile(hwnd, payload)
-	}); err != nil {
-		log.Printf("export config bind: %v", err)
-	}
-	if err := w.Bind("nativeImportConfig", func() string {
-		return importBridgeTimerFile(hwnd)
-	}); err != nil {
-		log.Printf("import config bind: %v", err)
 	}
 	if err := w.Bind("nativeSetAwake", func(on bool) bool {
 		return setNativeAwake(on)
