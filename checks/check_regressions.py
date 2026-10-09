@@ -60,13 +60,10 @@ required_main = [
     f'appVersion = "{version}"',
     '--disable-lcd-text',
     'SetThreadExecutionState',
-    'MoveFileExW',
-    'window.json',
-    'window state: recovered from backup',
-    'windowLayoutVersion = 2',
     'port = 43831',
     'w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)',
     'return 0, 0, defaultWindowWidth, defaultWindowHeight, false',
+    'monitorFromWindow.Call(hwnd, monitorDefaultToNearest)',
 ]
 
 errors = []
@@ -83,10 +80,24 @@ for token in ('id="logoInput"', 'id="removeLogo"', 'id="logo"', '<h2>Profils</h2
     if token in html:
         errors.append("removed personalization feature returned: " + token)
 
-# Retired native configuration/screen-cycle plumbing must not return.
-for token in ('nativeCycleMonitor', 'nativeExportConfig', 'nativeImportConfig', 'cycleProjectionMonitor(', 'exportBridgeTimerFile(', 'importBridgeTimerFile(', 'restoreWindowState('):
+# Retired native configuration/screen-cycle/window-state plumbing must not return.
+for token in (
+    'nativeCycleMonitor', 'nativeSetMonitor', 'nativeExportConfig', 'nativeImportConfig',
+    'cycleProjectionMonitor(', 'setProjectionMonitor(', 'exportBridgeTimerFile(',
+    'importBridgeTimerFile(', 'restoreWindowState(', 'loadWindowState(',
+    'readWindowStateFile(', 'saveWindowState(', 'windowStatePath(', 'atomicWriteFile(',
+    'selectedMonitor', 'projectionMonitor'
+):
     if token in main or token in html:
         errors.append("retired native feature returned: " + token)
+
+# Retired 10-second preview and empty active-session persistence stubs must stay gone.
+for token in (
+    'startPreview(', 'endPreview(', 'previewMode', 'previewSavedState', 'previewTimer',
+    'persistState(', 'clearPersistedState(', 'endMessage'
+):
+    if token in html:
+        errors.append("retired timer feature returned: " + token)
 
 # Screen selector button and side-drawer settings mode were deliberately removed.
 for token in ('id="screenBtn"', 'cycleNativeMonitor', 'drawerOpen()', 'closeSettingsDrawer()', 'openFullSettings()', 'Paramètres complets'):
@@ -168,9 +179,9 @@ if "--generate-notes" not in release_workflow:
 if "Verify release version" not in release_workflow:
     errors.append("release workflow must verify requested version against versioninfo.json")
 
-# Startup must use a stable origin, a dark WebView2 backing color, and native
-# coordinates before the first ShowWindow. This avoids both white flashes and
-# visible center->saved-position jumps without hiding the HWND.
+# Startup must use a stable origin and dark WebView2/native backing colors.
+# The app now always opens centered; the pre-show coordinate patch remains
+# available to the wrapper but no saved window position is restored.
 patch_source = (root / "patch_webview_dark.py").read_text(encoding="utf-8")
 if "HbrBackground: bridgeTimerDarkBrush()" not in patch_source:
     errors.append("WebView parent window must have a dark background brush")
@@ -181,7 +192,7 @@ if "applyBridgeTimerDarkBeforeShow(w.hwnd)\\n\\t' + show_marker" not in patch_so
 if 'WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "FF0F172A' not in main:
     errors.append("WebView2 default background must be dark before initialization")
 if 'UsePosition: hasSavedPosition' not in main:
-    errors.append("saved window position must be supplied before WebView creation")
+    errors.append("WebView wrapper position option must remain wired consistently")
 if "nativeReady" in main or "nativeReady" in html:
     errors.append("failed hidden-window startup handshake must not return")
 
@@ -189,6 +200,8 @@ if 'w.Dispatch(func() {' not in patch_source or 'VK_F1' not in patch_source:
     errors.append("native F1 handling must dispatch the toggle onto the WebView UI loop")
 if 'wp != 1 && w.autofocus' not in patch_source or 'w.browser.Focus()' not in patch_source:
     errors.append("WebView focus must be restored after Windows maximize/restore")
+if 'monitorFromWindow.Call(hwnd, monitorDefaultToNearest)' not in main:
+    errors.append("fullscreen must use the monitor containing the current BridgeTimer window")
 if 'net.JoinHostPort(host, "0")' in main:
     errors.append("ephemeral WebView origin would break persistent localStorage")
 
