@@ -119,6 +119,27 @@ if 'PutAreBrowserAcceleratorKeysEnabled(false)' not in src:
     src = src.replace(accelerator_marker, accelerator_patch, 1)
 
 
+# Handle F1 at the WebView2 controller level. This is more reliable than a
+# DOM keydown listener when the native window is maximized by Windows.
+chromium_marker = '''	chromium := edge.NewChromium()
+	chromium.MessageCallback = w.msgcb
+'''
+chromium_patch = '''	chromium := edge.NewChromium()
+	chromium.MessageCallback = w.msgcb
+	chromium.AcceleratorKeyCallback = func(key uint) bool {
+		if key != 0x70 { // VK_F1
+			return false
+		}
+		chromium.Eval(`(function(){var t=document.getElementById("timer"),h=document.getElementById("hint");if(t&&h&&!t.classList.contains("hidden"))h.classList.toggle("hintVisible");})()`)
+		return true
+	}
+'''
+if 'chromium.AcceleratorKeyCallback = func(key uint) bool' not in src:
+    if chromium_marker not in src:
+        raise SystemExit('go-webview2 Chromium creation marker not found')
+    src = src.replace(chromium_marker, chromium_patch, 1)
+
+
 wc_marker = '''		HIconSm:       windows.Handle(icon),
 		LpfnWndProc:   windows.NewCallback(wndproc),'''
 if 'HbrBackground: bridgeTimerDarkBrush()' not in src:
