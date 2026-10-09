@@ -83,6 +83,11 @@ for token in ('id="logoInput"', 'id="removeLogo"', 'id="logo"', '<h2>Profils</h2
     if token in html:
         errors.append("removed personalization feature returned: " + token)
 
+# Retired native configuration/screen-cycle plumbing must not return.
+for token in ('nativeCycleMonitor', 'nativeExportConfig', 'nativeImportConfig', 'cycleProjectionMonitor(', 'exportBridgeTimerFile(', 'importBridgeTimerFile(', 'restoreWindowState('):
+    if token in main or token in html:
+        errors.append("retired native feature returned: " + token)
+
 # Screen selector button and side-drawer settings mode were deliberately removed.
 for token in ('id="screenBtn"', 'cycleNativeMonitor', 'drawerOpen()', 'closeSettingsDrawer()', 'openFullSettings()', 'Paramètres complets'):
     if token in html:
@@ -127,6 +132,9 @@ if html.count('id="boards"') != 1:
 if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="boards"' not in html:
     errors.append("Donnes par tour must stay on the Nb de tours row")
 
+if 'if(x)s={...def,...x,mode:"4"};else s={...def}' not in html:
+    errors.append("Match par 4 must be restored as the startup format even after saved settings")
+
 # F1 must remain a real toggle and its on-screen help should document all active shortcuts.
 for token in [
     '$("hint").classList.toggle("hintVisible")',
@@ -166,6 +174,9 @@ if 'UsePosition: hasSavedPosition' not in main:
     errors.append("saved window position must be supplied before WebView creation")
 if "nativeReady" in main or "nativeReady" in html:
     errors.append("failed hidden-window startup handshake must not return")
+
+if 'w.Dispatch(func() {' not in patch_source or 'VK_F1' not in patch_source:
+    errors.append("native F1 handling must dispatch the toggle onto the WebView UI loop")
 if 'net.JoinHostPort(host, "0")' in main:
     errors.append("ephemeral WebView origin would break persistent localStorage")
 
