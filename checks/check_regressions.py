@@ -50,6 +50,10 @@ required_html = [
     '#submsg.tempMessage{color:var(--accent)',
     '$("submsg").classList.remove("tempMessage")',
     '$("submsg").textContent=s.quickMessage||"Saisir les scores"',
+    'id="miniTimer"',
+    'body.settingsLive #miniTimer',
+    'document.body.classList.toggle("settingsLive",live)',
+    '$("drawerClose").onclick=showTimer',
 ]
 
 required_main = [
@@ -78,6 +82,11 @@ for token in required_main:
 for token in ('id="logoInput"', 'id="removeLogo"', 'id="logo"', '<h2>Profils</h2>', 'id="exportConfig"', 'id="importConfig"', 'profileSave0', 'function emptyProfiles', 'function exportConfiguration', 'function importConfiguration', 'PROFILEKEY', 'LKEY', 'logoData'):
     if token in html:
         errors.append("removed personalization feature returned: " + token)
+
+# Screen selector button and side-drawer settings mode were deliberately removed.
+for token in ('id="screenBtn"', 'cycleNativeMonitor', 'drawerOpen()', 'closeSettingsDrawer()', 'openFullSettings()', 'Paramètres complets'):
+    if token in html:
+        errors.append("removed screen/drawer UI returned: " + token)
 
 # Tournament type is configuration-only and must not be shown to players.
 if '$("submsg").textContent=s.mode==="4"?"Match par 4":"Paires"' in html:
