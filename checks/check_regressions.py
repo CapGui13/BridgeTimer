@@ -48,7 +48,7 @@ required_html = [
     'function saveCurrentColors()',
     'function loadSavedColors()',
     '#submsg.tempMessage{color:var(--accent)',
-    '$("submsg").classList.remove("tempMessage")',
+    '$("submsg").classList.remove("tempMessage","jumpUpcoming")',
     '$("submsg").textContent=s.quickMessage||"Saisir les scores"',
     'id="miniTimer"',
     'body.settingsLive #miniTimer',
