@@ -145,6 +145,24 @@ if 'chromium.AcceleratorKeyCallback = func(key uint) bool' not in src:
     src = src.replace(chromium_marker, chromium_patch, 1)
 
 
+# Keep keyboard focus inside WebView2 after Windows maximizes/restores the
+# native window. WM_SIZE is delivered while the top-level window remains active,
+# so WM_ACTIVATE alone is not enough to restore browser focus.
+resize_marker = '''		case w32.WMSize:
+			w.browser.Resize()
+'''
+resize_patch = '''		case w32.WMSize:
+			w.browser.Resize()
+			if wp != 1 && w.autofocus { // SIZE_MINIMIZED = 1
+				w.browser.Focus()
+			}
+'''
+if 'wp != 1 && w.autofocus' not in src:
+    if resize_marker not in src:
+        raise SystemExit('go-webview2 WM_SIZE marker not found')
+    src = src.replace(resize_marker, resize_patch, 1)
+
+
 wc_marker = '''		HIconSm:       windows.Handle(icon),
 		LpfnWndProc:   windows.NewCallback(wndproc),'''
 if 'HbrBackground: bridgeTimerDarkBrush()' not in src:
