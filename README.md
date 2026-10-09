@@ -20,7 +20,7 @@ Run `BridgeTimer.exe`. No installer is required.
 - configurable end-of-round delay and message;
 - temporary message button and `M` shortcut;
 - Accent / Background / Menu / Text color settings;
-- projection monitor selection and fullscreen;
+- fullscreen projection mode and Windows-maximized display;
 - automatic local persistence of settings;
 - Per-Monitor DPI Awareness V2;
 - native Windows anti-sleep protection while the timer is running;
@@ -28,7 +28,10 @@ Run `BridgeTimer.exe`. No installer is required.
 - rotating local diagnostic log and backup recovery for window state;
 - backup recovery for settings and saved colors;
 - WebView2 grayscale text antialiasing (`--disable-lcd-text`) for cleaner large timer digits;
-- single-instance Windows application;\n- monotonic countdown timing with delayed-tick catch-up;\n- stable local WebView origin so saved settings persist between launches;\n- hidden startup window until the first rendered frame, avoiding white startup flashes and visible repositioning.
+- single-instance Windows application;
+- monotonic countdown timing with delayed-tick catch-up;
+- stable local WebView origin so saved settings persist between launches;
+- centered startup window with dark native/WebView2 rendering to avoid white flashes.
 
 ## Build
 
