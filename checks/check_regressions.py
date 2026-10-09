@@ -134,6 +134,12 @@ if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="
 
 if 'if(x)s={...def,...x,mode:"4"};else s={...def}' not in html:
     errors.append("Match par 4 must be restored as the startup format even after saved settings")
+if 'between:0,pairCount:12' not in html or 'id="between" type="number" min="0" max="240" value="0"' not in html:
+    errors.append("Temps entre tours must default to zero")
+if '<div class="messageInline"><label for="mainMessage">Message en direct</label>' not in html:
+    errors.append("Message en direct must stay inline with its input")
+if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
+    errors.append("Message du saut must stay inline with its input")
 
 # F1 must remain a real toggle and its on-screen help should document all active shortcuts.
 for token in [
