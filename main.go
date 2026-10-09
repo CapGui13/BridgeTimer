@@ -357,13 +357,9 @@ func loadWindowState() (savedWindowState, bool) {
 }
 
 func startupWindowGeometry() (int32, int32, uint, uint, bool) {
-	x, ok := loadWindowState()
-	if !ok {
-		return 0, 0, defaultWindowWidth, defaultWindowHeight, false
-	}
-	// Restore only the previous position. The opening size is deliberately fixed
-	// to the native 920x700 reference, which is also the minimum resizable size.
-	return x.Left, x.Top, defaultWindowWidth, defaultWindowHeight, true
+	// Always open Bridge Timer centered, regardless of where the previous
+	// session's window was moved. Window size remains the native 920x700.
+	return 0, 0, defaultWindowWidth, defaultWindowHeight, false
 }
 
 func restoreWindowState(hwnd uintptr) {
