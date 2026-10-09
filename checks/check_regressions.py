@@ -108,6 +108,36 @@ if 'setTimeout(()=>{try{el.select()' in html:
 if len(re.findall(r'type="color"', html)) < 4:
     errors.append("expected at least four HTML color inputs")
 
+
+# Every HTML id must be unique. Duplicate ids silently make document.getElementById
+# target the wrong control and previously caused the Donnes par tour preset bug.
+html_ids = re.findall(r'id="([^"]+)"', html)
+duplicate_ids = sorted({x for x in html_ids if html_ids.count(x) > 1})
+if duplicate_ids:
+    errors.append("duplicate HTML ids: " + ", ".join(duplicate_ids))
+
+# Tournament-format UI contract.
+match_option = '<option value="4" selected>Match par 4</option><option value="2">Paires</option>'
+if match_option not in html:
+    errors.append("Format must list Match par 4 first and select it by default")
+if 'id="betweenLabel">Temps entre tours' not in html or '$("between").disabled=!pairs' not in html:
+    errors.append("Temps entre tours must be disabled outside Paires mode")
+if html.count('id="boards"') != 1:
+    errors.append("Donnes par tour must exist exactly once")
+if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="boards"' not in html:
+    errors.append("Donnes par tour must stay on the Nb de tours row")
+
+# F1 must remain a real toggle and its on-screen help should document all active shortcuts.
+for token in [
+    '$("hint").classList.toggle("hintVisible")',
+    'R : recommencer',
+    'U : annuler',
+    'F9 : paramètres',
+    'F10 : reset',
+]:
+    if token not in html:
+        errors.append("F1 help regression: " + token)
+
 # Keep all Windows/release version metadata aligned.
 if f'version="{file_version}"' not in manifest:
     errors.append(f"BridgeTimer.manifest version must be {file_version}")
