@@ -187,6 +187,8 @@ if "nativeReady" in main or "nativeReady" in html:
 
 if 'w.Dispatch(func() {' not in patch_source or 'VK_F1' not in patch_source:
     errors.append("native F1 handling must dispatch the toggle onto the WebView UI loop")
+if 'wp != 1 && w.autofocus' not in patch_source or 'w.browser.Focus()' not in patch_source:
+    errors.append("WebView focus must be restored after Windows maximize/restore")
 if 'net.JoinHostPort(host, "0")' in main:
     errors.append("ephemeral WebView origin would break persistent localStorage")
 
