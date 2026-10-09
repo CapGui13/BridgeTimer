@@ -100,6 +100,25 @@ if 'func applyBridgeTimerDarkBeforeShow' not in src:
 if 'func bridgeTimerDarkBrush' not in src:
     src = src.replace(create_marker, brush_helper + create_marker, 1)
 
+# Disable WebView2's own browser accelerator handling so application
+# shortcuts such as F1 are consistently delivered to the page even when
+# the window is not in native fullscreen.
+accelerator_marker = '''	err = settings.PutAreDevToolsEnabled(options.Debug)
+	if err != nil {
+		log.Fatal(err)
+	}
+'''
+accelerator_patch = accelerator_marker + '''	err = settings.PutAreBrowserAcceleratorKeysEnabled(false)
+	if err != nil {
+		log.Printf("disable browser accelerators: %v", err)
+	}
+'''
+if 'PutAreBrowserAcceleratorKeysEnabled(false)' not in src:
+    if accelerator_marker not in src:
+        raise SystemExit('go-webview2 accelerator settings marker not found')
+    src = src.replace(accelerator_marker, accelerator_patch, 1)
+
+
 wc_marker = '''		HIconSm:       windows.Handle(icon),
 		LpfnWndProc:   windows.NewCallback(wndproc),'''
 if 'HbrBackground: bridgeTimerDarkBrush()' not in src:
