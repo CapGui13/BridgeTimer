@@ -2,7 +2,7 @@
 
 Bridge Timer is a portable Windows timer for bridge tournaments.
 
-It provides a large projection-friendly countdown, round management, configurable breaks, temporary messages, color customization with a reusable saved color preset, multi-screen selection, fullscreen display, and local settings persistence.
+It provides a large projection-friendly countdown, round management, configurable breaks, temporary messages, color customization with a reusable saved color preset, fullscreen display, and local settings persistence.
 
 The application uses an embedded Microsoft Edge WebView2 view so the timer keeps the HTML/CSS rendering of the original Bridge Timer interface while remaining a standalone Windows application.
 
@@ -17,7 +17,6 @@ Run `BridgeTimer.exe`. No installer is required.
 - configurable time per round, number of rounds and starting round;
 - Paires / Match par 4 tournament modes;
 - orange/red warning thresholds;
-- configurable end-of-round delay and message;
 - temporary message button and `M` shortcut;
 - Accent / Background / Menu / Text color settings;
 - fullscreen projection mode and Windows-maximized display;
@@ -25,7 +24,7 @@ Run `BridgeTimer.exe`. No installer is required.
 - Per-Monitor DPI Awareness V2;
 - native Windows anti-sleep protection while the timer is running;
 - hidden diagnostics with `Ctrl+Shift+D`;
-- rotating local diagnostic log and backup recovery for window state;
+- rotating local diagnostic log;
 - backup recovery for settings and saved colors;
 - WebView2 grayscale text antialiasing (`--disable-lcd-text`) for cleaner large timer digits;
 - single-instance Windows application;
