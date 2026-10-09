@@ -171,7 +171,7 @@ print(f"BridgeTimer regression check OK — version {version}")
 # FROZEN RENDERING CONTRACT — approved after V3.2 side-by-side comparison.
 frozen_render_tokens = [
     '--disable-lcd-text',
-    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(110px,24vw,350px);line-height:.84;letter-spacing:0;white-space:nowrap}',
+    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(140px,28vw,420px);line-height:.82;letter-spacing:0;white-space:nowrap}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
     '#submsg{font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--muted);min-height:1em;max-width:1300px}',
 ]
