@@ -132,10 +132,14 @@ if html.count('id="boards"') != 1:
 if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="boards"' not in html:
     errors.append("Donnes par tour must stay on the Nb de tours row")
 
-if 'if(x)s={...def,...x,mode:"4"};else s={...def}' not in html:
-    errors.append("Match par 4 must be restored as the startup format even after saved settings")
-if 'between:0,pairCount:12' not in html or 'id="between" type="number" min="0" max="240" value="0"' not in html:
+if 'if(x)s={...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"};else s={...def}' not in html:
+    errors.append("startup tournament presets must be restored on every launch")
+if 'boards:8,boardMinutes:7,boardSeconds:30,positions:6,startPosition:1,between:0,pairCount:26,mode:"4",movement:"mitchell"' not in html:
+    errors.append("default Match par 4 preset must be 6 rounds, start 1, 8 boards, 0 seconds between rounds")
+if 'id="between" type="number" min="0" max="240" value="0"' not in html:
     errors.append("Temps entre tours must default to zero")
+if '$("pairCount").value=26' not in html or '$("positionsSelect").value="13"' not in html:
+    errors.append("switching to Paires must preset 26 pairs and 13 rounds")
 if '<div class="messageInline"><label for="mainMessage">Message en direct</label>' not in html:
     errors.append("Message en direct must stay inline with its input")
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
