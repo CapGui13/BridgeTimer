@@ -156,6 +156,30 @@ if '<div class="messageInline"><label for="mainMessage">Message en direct</label
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
 
+# Live tournament settings: structure is locked, while timing changes are queued
+# naturally for the next round through the active-round timing snapshot.
+for token in [
+    'const structuralSettingIds=["mode","pairCount","movement","positions","positionsSelect","startPosition","boards"]',
+    'function setLiveStructureLock(live)',
+    'function snapshotRoundSettings()',
+    'function currentRoundDuration()',
+    'function currentRoundBetween()',
+    'function currentRoundBoardTimingMatches()',
+]:
+    if token not in html:
+        errors.append("live settings contract missing: " + token)
+if 'fill();setLiveStructureLock(live);render()' not in html:
+    errors.append("settings structure must be locked while a tournament is live")
+if 'st.remaining=currentRoundDuration()' not in html:
+    errors.append("new rounds must use the snapshotted round duration")
+
+# With no between-round delay, a Mitchell jump still needs a visible reminder
+# during the first 15 seconds of the new round.
+if 'st.jumpReminderRound===st.pos&&elapsed<15&&s.jumpMessage' not in html:
+    errors.append("zero-second jump reminder is missing")
+if 'const between=currentRoundBetween()' not in html:
+    errors.append("between-round duration must be snapshotted for the active round")
+
 # F1 must remain a real toggle and its on-screen help should document all active shortcuts.
 for token in [
     '$("hint").classList.toggle("hintVisible")',
