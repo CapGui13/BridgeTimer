@@ -142,6 +142,12 @@ if html.count('id="boards"') != 1:
     errors.append("Donnes par tour must exist exactly once")
 if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="boards"' not in html:
     errors.append("Donnes par tour must stay on the Nb de tours row")
+if '<select id="positionsSelect" class="compactNumber roundCountSelect hidden"></select>' not in html:
+    errors.append("Paires round-count control must keep the Match/4 row geometry")
+if 'boards.readOnly=true' not in html or 'boards.disabled=true' in html:
+    errors.append("Paires boards preset must stay visually identical instead of using disabled styling")
+if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
+    errors.append("long event names must stay on one line without moving the timer")
 
 if 'if(x)s={...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"};else s={...def}' not in html:
     errors.append("startup tournament presets must be restored on every launch")
@@ -151,6 +157,8 @@ if 'id="between" type="number" min="0" max="240" value="0"' not in html:
     errors.append("Temps entre tours must default to zero")
 if '$("pairCount").value=26' not in html or '$("positionsSelect").value="13"' not in html:
     errors.append("switching to Paires must preset 26 pairs and 13 rounds")
+if 'calcBoardDuration();read();render();scheduleAutosave()' not in html:
+    errors.append("format/movement preset changes must keep round time coherent with boards x time per board")
 if '<div class="messageInline"><label for="mainMessage">Message en direct</label>' not in html:
     errors.append("Message en direct must stay inline with its input")
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
