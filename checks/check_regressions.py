@@ -144,6 +144,8 @@ if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="
     errors.append("Donnes par tour must stay on the Nb de tours row")
 if '<select id="positionsSelect" class="compactNumber roundCountSelect hidden"></select>' not in html:
     errors.append("Paires round-count control must keep the Match/4 row geometry")
+if '.roundCountSelect{width:58px!important;appearance:none;-webkit-appearance:none;padding:7px 9px;background:var(--field);background-image:none}' not in html:
+    errors.append("Paires round-count select must render exactly like the Match/4 numeric field")
 if 'boards.readOnly=true' not in html or 'boards.disabled=true' in html:
     errors.append("Paires boards preset must stay visually identical instead of using disabled styling")
 if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
