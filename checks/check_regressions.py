@@ -157,8 +157,8 @@ if 'boards:8,boardMinutes:7,boardSeconds:30,positions:6,startPosition:1,between:
     errors.append("default Match par 4 preset must be 6 rounds, start 1, 8 boards, 0 seconds between rounds")
 if 'id="between" type="number" min="0" max="240" value="0"' not in html:
     errors.append("Temps entre tours must default to zero")
-if '$("pairCount").value=26' not in html or '$("positionsSelect").value="13"' not in html:
-    errors.append("switching to Paires must preset 26 pairs and 13 rounds")
+if 'return {positions:13,startPosition:1,boards:boards,hours:Math.floor(total/3600),minutes:Math.floor(total%3600/60),seconds:total%60,between:0,pairCount:26,movement:"mitchell"}' not in html:
+    errors.append("first switch to Paires must preset 26 pairs and 13 rounds")
 if 'activeFormat="4",formatSession={"4":null,"2":null}' not in html:
     errors.append("format settings must use session-only memory")
 for token in [
