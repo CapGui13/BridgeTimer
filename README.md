@@ -16,6 +16,8 @@ Run `BridgeTimer.exe`. No installer is required.
 
 - configurable time per round, number of rounds and starting round;
 - Paires / Match par 4 tournament modes;
+- tournament structure locked once a session is running; timing changes apply from the next round;
+- Mitchell jump reminder preserved even when the between-round delay is 0 seconds;
 - orange/red warning thresholds;
 - temporary message button and `M` shortcut;
 - Accent / Background / Menu / Text color settings;
