@@ -159,6 +159,18 @@ if 'id="between" type="number" min="0" max="240" value="0"' not in html:
     errors.append("Temps entre tours must default to zero")
 if '$("pairCount").value=26' not in html or '$("positionsSelect").value="13"' not in html:
     errors.append("switching to Paires must preset 26 pairs and 13 rounds")
+if 'activeFormat="4",formatSession={"4":null,"2":null}' not in html:
+    errors.append("format settings must use session-only memory")
+for token in [
+    'function captureFormatState(mode)',
+    'function defaultFormatState(mode)',
+    'function applyFormatState(mode,state)',
+    'formatSession[activeFormat]=captureFormatState(activeFormat)',
+    'const state=formatSession[target]||defaultFormatState(target)',
+    'formatSession={"4":captureFormatState("4"),"2":null}',
+]:
+    if token not in html:
+        errors.append("format session memory contract missing: " + token)
 if 'calcBoardDuration();read();render();scheduleAutosave()' not in html:
     errors.append("format/movement preset changes must keep round time coherent with boards x time per board")
 if '<div class="messageInline"><label for="mainMessage">Message en direct</label>' not in html:
