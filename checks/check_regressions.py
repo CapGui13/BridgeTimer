@@ -189,12 +189,14 @@ if '<div class="messageInline"><label for="mainMessage">Message en direct</label
     errors.append("Message en direct must stay inline with its input")
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
-if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="jumpAdvanceOption pairOnly jumpOnly"><label>Message avant saut</label><input id="jumpAdvanceNotice" type="checkbox"></div></div>' not in html:
-    errors.append("board tracking and pre-jump message must share the same row")
-if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:0;min-width:0}.jumpAdvanceOption{margin-left:110px}' not in html:
-    errors.append("board options row layout must remain stable")
+if '<div class="boardOptionsRow"><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="jumpAdvanceOption pairOnly jumpOnly"><label>Message avant saut</label><input id="jumpAdvanceNotice" type="checkbox"></div></div>' not in html:
+    errors.append("sound, board tracking and pre-jump message must share the same row")
+if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:56px;min-width:0}' not in html or '.soundOption,.boardProgressOption,.jumpAdvanceOption{display:flex;align-items:center;gap:10px;min-width:0}' not in html:
+    errors.append("compact tournament options row layout must remain stable")
 if 'Afficher dès la zone orange du tour précédent' in html or 'Prévenir avant le saut' in html:
     errors.append("pre-jump explanatory wording must stay removed")
+if '>Activé</div>' in html:
+    errors.append("sound option must use only its checkbox, without an Activé caption")
 if 'boardProgressLabel' in html:
     errors.append("board tracking explanatory text must stay removed")
 if 'cb.disabled=!ok;if(!ok){cb.checked=false;s.boardProgressNotice=false}' not in html:
