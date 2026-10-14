@@ -15,7 +15,7 @@ version = vi["StringFileInfo"]["ProductVersion"]
 file_version = vi["StringFileInfo"]["FileVersion"]
 
 required_html = [
-    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(210px,37vw,620px);line-height:.78;letter-spacing:0;white-space:nowrap;transform:translateY(10px)}',
+    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(210px,37vw,620px);line-height:.78;letter-spacing:0;white-space:nowrap;transform:translateY(10px);max-width:calc(100% - 20px)}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
     'id="accent" type="color"',
     'id="background" type="color"',
@@ -158,6 +158,10 @@ if 'sel.disabled=opts.length<=1' not in html:
     errors.append("single-choice round count must be disabled and grey")
 if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
     errors.append("long event names must stay on one line without moving the timer")
+if '#clock.clockHours{font-size:clamp(108px,18vw,350px)}' not in html or 'body.fs #clock.clockHours{font-size:clamp(180px,19vw,380px)}' not in html:
+    errors.append("hour-format clock must shrink to fit window and fullscreen widths")
+if 'clockEl.classList.toggle("clockHours",(clockText.match(/:/g)||[]).length===2)' not in html:
+    errors.append("clock must switch to the hour-format fit rule when displaying hh:mm:ss")
 
 if 'if(x)s={...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"};else s={...def}' not in html:
     errors.append("startup tournament presets must be restored on every launch")
@@ -320,7 +324,7 @@ print(f"BridgeTimer regression check OK — version {version}")
 # FROZEN RENDERING CONTRACT — approved after V3.2 side-by-side comparison.
 frozen_render_tokens = [
     '--disable-lcd-text',
-    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(210px,37vw,620px);line-height:.78;letter-spacing:0;white-space:nowrap;transform:translateY(10px)}',
+    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(210px,37vw,620px);line-height:.78;letter-spacing:0;white-space:nowrap;transform:translateY(10px);max-width:calc(100% - 20px)}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
     '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--muted);line-height:1.08;max-width:1300px;width:calc(100% - 32px);min-height:42px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}',
 ]
