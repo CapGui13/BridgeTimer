@@ -204,6 +204,17 @@ if '#undoToast{position:fixed;z-index:40;right:18px;top:76px;' not in html:
 if '#alert{width:100%;min-height:52px;' not in html or '<div class="progress"><div id="bar"></div></div><div id="alert"></div><div id="msg">' not in html:
     errors.append("danger/end-of-round alert must have a dedicated non-overlapping lane")
 
+# Timer seconds must stay phase-aligned with the displayed wall clock.
+for token in [
+    'function alignedWallDelayMs(wallNow,remaining)',
+    'function syncEndAtToWallSecond()',
+    'setInterval(()=>{updateLocalTime();tick()},50)',
+    'if(delta<=0)',
+    'setInterval(()=>{if(!st.running)updateLocalTime()},200)',
+]:
+    if token not in html:
+        errors.append("wall-clock synchronization regression: " + token)
+
 # Live tournament settings: structure is locked, while timing changes are queued
 # naturally for the next round through the active-round timing snapshot.
 for token in [
