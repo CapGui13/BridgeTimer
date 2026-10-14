@@ -177,6 +177,20 @@ if '<div class="messageInline"><label for="mainMessage">Message en direct</label
     errors.append("Message en direct must stay inline with its input")
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
+if '<label>Affichage n° donne en cours</label><div class="check"><input id="boardProgressNotice" type="checkbox" checked></div>' not in html:
+    errors.append("board tracking label/control must stay concise")
+if 'boardProgressLabel' in html:
+    errors.append("board tracking explanatory text must stay removed")
+if 'cb.disabled=!ok;if(!ok){cb.checked=false;s.boardProgressNotice=false}' not in html:
+    errors.append("disabled board tracking must be unchecked and visibly disabled")
+if '<button id="defaults" class="btn danger">Reset param.</button>' not in html:
+    errors.append("reset button label must be Reset param.")
+if 'id="jumpRoundSetting"' not in html or '$("jumpRoundSetting").classList.toggle("hidden",!jumpAfter)' not in html:
+    errors.append("Saut après tour must disappear when the movement has no jump")
+if '#undoToast{position:fixed;z-index:40;right:18px;top:76px;' not in html:
+    errors.append("undo toast must stay clear of the timer footer")
+if '#alert{width:100%;min-height:52px;' not in html or '<div class="progress"><div id="bar"></div></div><div id="alert"></div><div id="msg">' not in html:
+    errors.append("danger/end-of-round alert must have a dedicated non-overlapping lane")
 
 # Live tournament settings: structure is locked, while timing changes are queued
 # naturally for the next round through the active-round timing snapshot.
