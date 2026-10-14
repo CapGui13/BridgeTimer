@@ -48,6 +48,7 @@ const functionNames = [
   "currentRoundBoardTimingMatches",
   "beginRound",
   "transitionAfterRound",
+  "alignedWallDelayMs",
 ];
 
 let s = {};
@@ -115,5 +116,13 @@ beginRound(4, false);
 assert(currentRoundDuration() === 2400, "Next round did not receive new duration");
 assert(currentRoundBetween() === 20, "Next round did not receive new between-round time");
 assert(currentRoundBoardTimingMatches() === true, "Next round board timing snapshot is inconsistent");
+
+// Wall-clock alignment rounds the target end time to the nearest real second,
+// so the total correction is never more than half a second.
+assert(alignedWallDelayMs(100250, 60) === 59750, "Quarter-second start should align backward to the nearest second");
+assert(alignedWallDelayMs(100750, 60) === 60250, "Three-quarter-second start should align forward to the nearest second");
+assert(Math.abs(alignedWallDelayMs(100499, 60) - 60000) <= 500, "Wall-clock correction exceeded half a second");
+assert(Math.abs(alignedWallDelayMs(100501, 60) - 60000) <= 500, "Wall-clock correction exceeded half a second");
+
 
 console.log("BridgeTimer state-machine behavior OK");
