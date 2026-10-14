@@ -38,8 +38,8 @@ required_html = [
     'el.focus({preventScroll:true});try{el.select()}catch(err){}',
     'window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0',
     'input:disabled,select:disabled{background:#030712!important',
-    '.compactSelect{width:120px!important}',
-    '.movementSelect{width:102px!important}',
+    '.compactSelect{width:128px!important}',
+    '.movementSelect{width:108px!important}',
     '.optionCards{display:grid;grid-template-columns:1.2fr 1fr;',
     'function transitionAfterRound(){',
     'id="saveColorsBtn"',
@@ -144,13 +144,13 @@ if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="
     errors.append("Donnes par tour must stay on the Nb de tours row")
 if html.find('class="inlineSetting boardsInline"><label>Donnes par tour</label>') > html.find('class="inlineSetting startInline"><label>Tour de départ</label>'):
     errors.append("Donnes par tour must appear before Tour de départ")
-if '.roundConfigRow .boardsInline{margin-left:38px;min-width:0}.roundConfigRow .startInline{margin-left:14px}' not in html:
+if '.roundConfigRow .boardsInline{margin-left:40px;min-width:0}.roundConfigRow .startInline{margin-left:14px}' not in html:
     errors.append("round row spacing/alignment must stay compact")
-if '.unitField input[type=number]{width:52px}' not in html or '.compactNumber{width:54px!important}' not in html:
+if '.unitField input[type=number]{width:56px}' not in html or '.compactNumber{width:58px!important}' not in html:
     errors.append("fixed-size tournament controls must stay compact")
 if '<select id="positionsSelect" class="compactNumber roundCountSelect hidden"></select>' not in html:
     errors.append("Paires round-count control must keep the Match/4 row geometry")
-if '.roundCountSelect{width:54px!important;appearance:none;-webkit-appearance:none;padding:7px 9px;background:var(--field);background-image:none}' not in html:
+if '.roundCountSelect{width:58px!important;appearance:none;-webkit-appearance:none;padding:7px 9px;background:var(--field);background-image:none}' not in html:
     errors.append("Paires round-count select must render exactly like the Match/4 numeric field")
 if 'boards.disabled=true' not in html:
     errors.append("Paires boards preset must be disabled and grey when it cannot be edited")
@@ -187,7 +187,7 @@ if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" fo
     errors.append("Message du saut must stay inline with its input")
 if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="jumpAdvanceOption pairOnly jumpOnly"><label>Message avant saut</label><input id="jumpAdvanceNotice" type="checkbox"></div></div>' not in html:
     errors.append("board tracking and pre-jump message must share the same row")
-if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:0;min-width:0}.jumpAdvanceOption{margin-left:155px}' not in html:
+if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:0;min-width:0}.jumpAdvanceOption{margin-left:110px}' not in html:
     errors.append("board options row layout must remain stable")
 if 'Afficher dès la zone orange du tour précédent' in html or 'Prévenir avant le saut' in html:
     errors.append("pre-jump explanatory wording must stay removed")
