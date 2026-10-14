@@ -142,12 +142,16 @@ if html.count('id="boards"') != 1:
     errors.append("Donnes par tour must exist exactly once")
 if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="boards"' not in html:
     errors.append("Donnes par tour must stay on the Nb de tours row")
+if html.find('class="inlineSetting boardsInline"><label>Donnes par tour</label>') > html.find('class="inlineSetting startInline"><label>Tour de départ</label>'):
+    errors.append("Donnes par tour must appear before Tour de départ")
 if '<select id="positionsSelect" class="compactNumber roundCountSelect hidden"></select>' not in html:
     errors.append("Paires round-count control must keep the Match/4 row geometry")
 if '.roundCountSelect{width:58px!important;appearance:none;-webkit-appearance:none;padding:7px 9px;background:var(--field);background-image:none}' not in html:
     errors.append("Paires round-count select must render exactly like the Match/4 numeric field")
-if 'boards.readOnly=true' not in html or 'boards.disabled=true' in html:
-    errors.append("Paires boards preset must stay visually identical instead of using disabled styling")
+if 'boards.disabled=true' not in html:
+    errors.append("Paires boards preset must be disabled and grey when it cannot be edited")
+if 'sel.disabled=opts.length<=1' not in html:
+    errors.append("single-choice round count must be disabled and grey")
 if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
     errors.append("long event names must stay on one line without moving the timer")
 
@@ -177,10 +181,12 @@ if '<div class="messageInline"><label for="mainMessage">Message en direct</label
     errors.append("Message en direct must stay inline with its input")
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
-if '<div class="boardProgressInline"><label>Affichage n° donne en cours</label><div class="check"><input id="boardProgressNotice" type="checkbox" checked></div></div>' not in html:
-    errors.append("board tracking must stay on its own full-width row")
-if '.boardProgressInline{grid-column:1/-1;display:flex;align-items:center;gap:10px;min-width:0}' not in html:
-    errors.append("board tracking row must not widen the tournament label column")
+if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="jumpAdvanceOption pairOnly jumpOnly"><label>Message avant saut</label><input id="jumpAdvanceNotice" type="checkbox"></div></div>' not in html:
+    errors.append("board tracking and pre-jump message must share the same row")
+if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:24px;min-width:0}' not in html:
+    errors.append("board options row layout must remain stable")
+if 'Afficher dès la zone orange du tour précédent' in html or 'Prévenir avant le saut' in html:
+    errors.append("pre-jump explanatory wording must stay removed")
 if 'boardProgressLabel' in html:
     errors.append("board tracking explanatory text must stay removed")
 if 'cb.disabled=!ok;if(!ok){cb.checked=false;s.boardProgressNotice=false}' not in html:
