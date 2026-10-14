@@ -177,8 +177,10 @@ if '<div class="messageInline"><label for="mainMessage">Message en direct</label
     errors.append("Message en direct must stay inline with its input")
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
-if '<label>Affichage n° donne en cours</label><div class="check"><input id="boardProgressNotice" type="checkbox" checked></div>' not in html:
-    errors.append("board tracking label/control must stay concise")
+if '<div class="boardProgressInline"><label>Affichage n° donne en cours</label><div class="check"><input id="boardProgressNotice" type="checkbox" checked></div></div>' not in html:
+    errors.append("board tracking must stay on its own full-width row")
+if '.boardProgressInline{grid-column:1/-1;display:flex;align-items:center;gap:10px;min-width:0}' not in html:
+    errors.append("board tracking row must not widen the tournament label column")
 if 'boardProgressLabel' in html:
     errors.append("board tracking explanatory text must stay removed")
 if 'cb.disabled=!ok;if(!ok){cb.checked=false;s.boardProgressNotice=false}' not in html:
