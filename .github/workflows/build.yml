@@ -1,4 +1,5 @@
 name: Build Bridge Timer
+# debug validation
 
 on:
   push:
