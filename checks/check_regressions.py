@@ -162,7 +162,7 @@ if 'function fc(){let c=$("clock"),z=c.style,k=innerWidth+"x"+innerHeight' not i
     errors.append("timer clock must use one stable size based on the longest normal display")
 if 'z.transform="translateY(10px)"' not in html:
     errors.append("timer clock must keep the approved vertical transform")
-if 'scaleX(' in html[c.index('function fc()'):c.index('function render()')]:
+if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')]:
     errors.append("timer clock must never be horizontally distorted")
 if 'k=innerWidth+"x"+innerHeight+"x"+c.textContent.length' in html:
     errors.append("clock font size must not be recalculated when crossing the one-hour display boundary")
