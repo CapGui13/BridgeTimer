@@ -158,10 +158,12 @@ if 'sel.disabled=opts.length<=1' not in html:
     errors.append("single-choice round count must be disabled and grey")
 if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
     errors.append("long event names must stay on one line without moving the timer")
-if 'function fc(){let c=$("clock"),z=c.style,k=innerWidth+"x"+innerHeight+"x"+c.textContent.length' not in html or 'Math.min(620,(c.parentNode.offsetWidth-32)*100/c.scrollWidth,(innerHeight-435)/.78)' not in html:
-    errors.append("timer clock must stay dynamically fitted in windowed and fullscreen modes")
-if 'k=innerWidth+"x"+innerHeight+"x"+c.textContent.length' not in html:
-    errors.append("long rounds must recalculate clock sizing only when the displayed format length changes")
+if 'function fc(){let c=$("clock"),z=c.style,k=innerWidth+"x"+innerHeight' not in html or 'p.textContent="59:59"' not in html or 'F=Math.min(620,maxW*100/w,(innerHeight-435)/.78)' not in html:
+    errors.append("timer clock must keep one stable vertical geometry in windowed and fullscreen modes")
+if 'const sx=Math.min(1,maxW/Math.max(1,c.scrollWidth));z.transform="translateY(10px) scaleX("+sx+")"' not in html:
+    errors.append("hour-format clock must fit by horizontal scaling without changing vertical geometry")
+if 'k=innerWidth+"x"+innerHeight+"x"+c.textContent.length' in html:
+    errors.append("clock font size must not be recalculated when crossing the one-hour display boundary")
 
 if 's=x?{...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"}:{...def}' not in html:
     errors.append("startup tournament presets must be restored on every launch")
