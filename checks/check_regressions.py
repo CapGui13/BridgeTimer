@@ -228,6 +228,8 @@ for token in [
         errors.append("alert-zone options regression: " + token)
 if 'const msgOn=$("warnMessageEnabled").checked||$("dangerMessageEnabled").checked;$("dangerMessage").disabled=!msgOn' not in html:
     errors.append("shared alert message must be disabled when neither zone has Msg enabled")
+if '.optionCards .alertGrid{grid-template-columns:72px minmax(0,1fr);column-gap:6px;row-gap:8px}' not in html or '.alertRule{display:flex;align-items:center;gap:5px;min-width:0}' not in html:
+    errors.append("alert controls must stay compact and close to their left labels")
 
 # Timer seconds must stay phase-aligned with the displayed wall clock.
 for token in [
