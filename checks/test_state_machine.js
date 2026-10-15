@@ -47,6 +47,7 @@ const functionNames = [
   "currentRoundBetween",
   "currentRoundBoardTimingMatches",
   "beginRound",
+  "applyDebugSettingsToCurrentTimer",
   "transitionAfterRound",
   "alignedWallDelayMs",
   "restoreUndoState",
@@ -57,6 +58,8 @@ let s = {};
 let st = {};
 const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
 function releaseWakeLock() {}
+function debugActive() { return true; }
+function syncEndAtToWallSecond() { st.endAt = 999; }
 const source = functionNames.map(extractFunction).join("\n");
 eval(source);
 
@@ -119,6 +122,28 @@ beginRound(4, false);
 assert(currentRoundDuration() === 2400, "Next round did not receive new duration");
 assert(currentRoundBetween() === 20, "Next round did not receive new between-round time");
 assert(currentRoundBoardTimingMatches() === true, "Next round board timing snapshot is inconsistent");
+
+// Debug may deliberately rewrite the active round snapshot.
+reset({mode:"2",positions:13,minutes:30,between:0,boards:4,boardMinutes:7,boardSeconds:30},{pos:3,running:false,remaining:1200});
+snapshotRoundSettings();
+s.minutes = 10;
+s.between = 25;
+s.boards = 9;
+s.boardMinutes = 3;
+s.boardSeconds = 0;
+applyDebugSettingsToCurrentTimer();
+assert(st.roundDuration === 600 && st.remaining === 600, "Debug duration change did not apply to the current round");
+assert(st.roundBetween === 25, "Debug between-round change did not apply to the current snapshot");
+assert(st.roundBoards === 9 && st.roundBoardDuration === 180, "Debug board settings did not apply to the current snapshot");
+
+// A Debug edit that does not alter the round duration must not reset the remaining time.
+reset({mode:"2",positions:13,minutes:30,between:0,boards:4,boardMinutes:7,boardSeconds:30},{pos:3,running:false,remaining:777});
+snapshotRoundSettings();
+st.remaining = 777;
+s.between = 12;
+applyDebugSettingsToCurrentTimer();
+assert(st.remaining === 777, "Debug non-duration edit must not reset the countdown");
+assert(st.roundBetween === 12, "Debug non-duration edit must still update the active snapshot");
 
 // Undo must restore the complete timing snapshot of the previous round.
 reset({mode:"2",positions:13,minutes:40,between:20,boards:8,boardMinutes:5,boardSeconds:0},{pos:4});
