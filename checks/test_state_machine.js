@@ -55,6 +55,7 @@ const functionNames = [
 
 let s = {};
 let st = {};
+const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
 function releaseWakeLock() {}
 const source = functionNames.map(extractFunction).join("\n");
 eval(source);
