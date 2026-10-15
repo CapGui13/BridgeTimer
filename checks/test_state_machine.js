@@ -50,6 +50,7 @@ const functionNames = [
   "transitionAfterRound",
   "alignedWallDelayMs",
   "restoreUndoState",
+  "zoneThreshold",
 ];
 
 let s = {};
@@ -137,6 +138,13 @@ assert(alignedWallDelayMs(100250, 60) === 59750, "Quarter-second start should al
 assert(alignedWallDelayMs(100750, 60) === 60250, "Three-quarter-second start should align forward to the nearest second");
 assert(Math.abs(alignedWallDelayMs(100499, 60) - 60000) <= 500, "Wall-clock correction exceeded half a second");
 assert(Math.abs(alignedWallDelayMs(100501, 60) - 60000) <= 500, "Wall-clock correction exceeded half a second");
+
+// Alert thresholds can be expressed either as fixed remaining time or as
+// remaining percentage of the round's initial duration.
+assert(zoneThreshold(false, 5, 0, 20, 3600) === 300, "Fixed warning threshold is wrong");
+assert(zoneThreshold(true, 5, 0, 20, 3600) === 720, "20% warning threshold should be 12 minutes of a 60-minute round");
+assert(zoneThreshold(true, 2, 0, 10, 4800) === 480, "10% danger threshold should be 8 minutes of an 80-minute round");
+
 
 
 console.log("BridgeTimer state-machine behavior OK");

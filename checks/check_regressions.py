@@ -211,6 +211,23 @@ if '#undoToast{position:fixed;z-index:40;right:18px;top:76px;' not in html:
     errors.append("undo toast must stay clear of the timer footer")
 if '#alert{width:100%;min-height:52px;' not in html or '<div class="progress"><div id="bar"></div></div><div id="alert"></div><div id="msg">' not in html:
     errors.append("danger/end-of-round alert must have a dedicated non-overlapping lane")
+for token in [
+    '<div class="grid alertGrid"><label>Orange à</label>',
+    '<label class="alertPercentToggle"><input id="warnPercentMode" type="checkbox">En %</label>',
+    '<label class="alertMsgToggle">Msg<input id="warnMessageEnabled" type="checkbox"></label>',
+    '<label class="alertPercentToggle"><input id="dangerPercentMode" type="checkbox">En %</label>',
+    '<label class="alertMsgToggle">Msg<input id="dangerMessageEnabled" type="checkbox" checked></label>',
+    '<label>Message</label><input id="dangerMessage" class="compactText alertMessageInput"',
+    'function updateAlertRulesUI()',
+    'function zoneThreshold(percentMode,minutes,seconds,percent,total)',
+    's.warnMessageEnabled&&s.dangerMessage',
+    's.dangerMessageEnabled&&s.dangerMessage',
+    '#alert.on.warningAlert{background:var(--warn);color:#111827}',
+]:
+    if token not in html:
+        errors.append("alert-zone options regression: " + token)
+if 'const msgOn=$("warnMessageEnabled").checked||$("dangerMessageEnabled").checked;$("dangerMessage").disabled=!msgOn' not in html:
+    errors.append("shared alert message must be disabled when neither zone has Msg enabled")
 
 # Timer seconds must stay phase-aligned with the displayed wall clock.
 for token in [
