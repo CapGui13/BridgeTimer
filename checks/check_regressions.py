@@ -158,10 +158,10 @@ if 'sel.disabled=opts.length<=1' not in html:
     errors.append("single-choice round count must be disabled and grey")
 if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
     errors.append("long event names must stay on one line without moving the timer")
-if '#clock.clockHours{font-size:clamp(108px,18vw,350px)}' not in html or 'body.fs #clock.clockHours{font-size:clamp(180px,19vw,380px)}' not in html:
-    errors.append("hour-format clock must shrink to fit window and fullscreen widths")
-if 'clockEl.classList.toggle("clockHours",(clockText.match(/:/g)||[]).length===2)' not in html:
-    errors.append("clock must switch to the hour-format fit rule when displaying hh:mm:ss")
+if '#clock.clockHours{font-size:clamp(180px,22vw,460px);transform:translateY(10px) scaleX(.82);transform-origin:center}' not in html or 'body.fs #clock.clockHours{font-size:clamp(260px,24vw,540px)}' not in html:
+    errors.append("hour-format clock must stay large while fitting window and fullscreen widths")
+if 'clockEl.classList.toggle("clockHours",(clockText.match(/:/g)||[]).length===2||(st.phase==="round"&&currentRoundDuration()>=3600))' not in html:
+    errors.append("long rounds must keep stable clock sizing across the one-hour boundary")
 
 if 'if(x)s={...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"};else s={...def}' not in html:
     errors.append("startup tournament presets must be restored on every launch")
@@ -189,10 +189,10 @@ if '<div class="messageInline"><label for="mainMessage">Message en direct</label
     errors.append("Message en direct must stay inline with its input")
 if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
-if '<div class="boardOptionsRow"><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="jumpAdvanceOption pairOnly jumpOnly"><label>Message avant saut</label><input id="jumpAdvanceNotice" type="checkbox"></div></div>' not in html:
-    errors.append("sound, board tracking and pre-jump message must share the same row")
-if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:56px;min-width:0}' not in html or '.soundOption,.boardProgressOption,.jumpAdvanceOption{display:flex;align-items:center;gap:10px;min-width:0}' not in html:
-    errors.append("compact tournament options row layout must remain stable")
+if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="jumpAdvanceOption pairOnly jumpOnly"><label>Message avant saut</label><input id="jumpAdvanceNotice" type="checkbox"></div><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div></div>' not in html:
+    errors.append("board tracking, pre-jump message and sound must share the same row")
+if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:48px;min-width:0}' not in html or '.soundOption{margin-left:auto}' not in html:
+    errors.append("sound must stay at the far right of the compact options row")
 if 'Afficher dès la zone orange du tour précédent' in html or 'Prévenir avant le saut' in html:
     errors.append("pre-jump explanatory wording must stay removed")
 if '>Activé</div>' in html:
@@ -205,6 +205,8 @@ if '<button id="defaults" class="btn danger">Reset param.</button>' not in html:
     errors.append("reset button label must be Reset param.")
 if 'id="jumpRoundSetting"' not in html or '$("jumpRoundSetting").classList.toggle("hidden",!jumpAfter)' not in html:
     errors.append("Saut après tour must disappear when the movement has no jump")
+if 'document.querySelectorAll(".jumpOnly").forEach(el=>{el.classList.toggle("hidden",!jumpAfter)})' not in html or 'document.querySelectorAll(".jumpOnly").forEach(el=>{el.classList.add("hidden")})' not in html:
+    errors.append("jump-only controls must not reserve layout space when unavailable")
 if '#undoToast{position:fixed;z-index:40;right:18px;top:76px;' not in html:
     errors.append("undo toast must stay clear of the timer footer")
 if '#alert{width:100%;min-height:52px;' not in html or '<div class="progress"><div id="bar"></div></div><div id="alert"></div><div id="msg">' not in html:
@@ -237,6 +239,8 @@ if 'fill();setLiveStructureLock(live);render()' not in html:
     errors.append("settings structure must be locked while a tournament is live")
 if 'st.remaining=currentRoundDuration()' not in html:
     errors.append("new rounds must use the snapshotted round duration")
+if 'function restoreUndoState(x)' not in html or 'roundDuration:x.roundDuration' not in html or 'roundBetween:x.roundBetween' not in html or 'roundBoardDuration:x.roundBoardDuration' not in html or 'roundBoards:x.roundBoards' not in html:
+    errors.append("Undo must restore the complete active-round timing snapshot")
 
 # With no between-round delay, a Mitchell jump still needs a visible reminder
 # during the first 15 seconds of the new round.
@@ -293,6 +297,13 @@ if 'monitorFromWindow.Call(hwnd, monitorDefaultToNearest)' not in main:
     errors.append("fullscreen must use the monitor containing the current BridgeTimer window")
 if 'net.JoinHostPort(host, "0")' in main:
     errors.append("ephemeral WebView origin would break persistent localStorage")
+
+# Retired UI paths should stay removed.
+for forbidden in [".dockMode", ".dc #settings", "@keyframes drawerIn", "@keyframes drawerOut", ".profileRow"]:
+    if forbidden in html:
+        errors.append("retired UI CSS returned: " + forbidden)
+if "var(--border)" in html:
+    errors.append("undefined CSS variable --border returned")
 
 # Prevent reintroduction of the retired active-session recovery popup/state writes.
 for forbidden in [

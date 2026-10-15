@@ -29,11 +29,21 @@ jobs:
         run: python checks/check_js_syntax.py
       - name: State machine behavior
         run: node checks/test_state_machine.js
+      - name: Verify release version
+        shell: pwsh
+        run: |
+          $meta = Get-Content versioninfo.json -Raw | ConvertFrom-Json
+          $expected = [string]$meta.StringFileInfo.ProductVersion
+          if ("${{ inputs.version }}" -ne $expected) {
+            throw "Release version ${{ inputs.version }} does not match source version $expected"
+          }
       - name: Generate Windows resources
         shell: pwsh
         run: |
           go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.7.0
           goversioninfo -o resource_windows_amd64.syso versioninfo.json
+      - name: Vet
+        run: go vet ./...
       - name: Build
         shell: pwsh
         run: |

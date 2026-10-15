@@ -49,6 +49,7 @@ const functionNames = [
   "beginRound",
   "transitionAfterRound",
   "alignedWallDelayMs",
+  "restoreUndoState",
 ];
 
 let s = {};
@@ -116,6 +117,19 @@ beginRound(4, false);
 assert(currentRoundDuration() === 2400, "Next round did not receive new duration");
 assert(currentRoundBetween() === 20, "Next round did not receive new between-round time");
 assert(currentRoundBoardTimingMatches() === true, "Next round board timing snapshot is inconsistent");
+
+// Undo must restore the complete timing snapshot of the previous round.
+reset({mode:"2",positions:13,minutes:40,between:20,boards:8,boardMinutes:5,boardSeconds:0},{pos:4});
+restoreUndoState({
+  pos:3, phase:"round", remaining:1234, running:false, started:true,
+  roundDuration:1800, roundBetween:0, roundBoardDuration:450,
+  roundBoards:4, breakDuration:0, jumpReminderRound:0,
+});
+assert(st.pos === 3 && st.remaining === 1234, "Undo did not restore the previous tour/time");
+assert(currentRoundDuration() === 1800, "Undo did not restore previous round duration");
+assert(currentRoundBetween() === 0, "Undo did not restore previous between-round duration");
+assert(currentRoundBoardTimingMatches() === true, "Undo did not restore previous board timing");
+
 
 // Wall-clock alignment rounds the target end time to the nearest real second,
 // so the total correction is never more than half a second.
