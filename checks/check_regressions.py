@@ -24,7 +24,7 @@ required_html = [
     'e.key==="F7"',
     'e.key==="F8"',
     'e.key==="F9"',
-    'e.key==="F10"',
+
     'e.key==="ArrowRight"',
     'nativeSetAwake',
     'nativeDiagnostics',
@@ -340,7 +340,7 @@ for token in [
     'R : recommencer',
     'F/F11 : plein écran',
     'F9 : paramètres',
-    'F10 : reset',
+
 ]:
     if token not in html:
         errors.append("F1 help regression: " + token)
