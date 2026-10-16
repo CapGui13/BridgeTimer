@@ -99,13 +99,14 @@ snapshotRoundSettings();
 assert(transitionAfterRound() === true, "Pairs break transition should continue");
 assert(st.phase === "break" && st.pos === 5 && st.remaining === 15, "Pairs break state is wrong");
 
-// Zero-second Mitchell jump starts next round immediately and preserves a reminder.
-reset({mode:"2",positions:13,between:0,jumpRound:6,minutes:15,boards:2},{pos:6});
+// Jump announcement is a separate countdown before the next round begins.
+reset({mode:"2",positions:13,between:0,jumpRound:6,jumpDisplaySecs:15,minutes:15,boards:2},{pos:6});
 snapshotRoundSettings();
-assert(transitionAfterRound() === true, "Zero-second jump should continue immediately");
-assert(st.phase === "round" && st.pos === 7, "Zero-second jump must enter round 7");
-assert(st.jumpReminderRound === 7, "Zero-second jump reminder must target the new round");
-assert(st.remaining === 900, "New round must start with its full snapshotted duration");
+assert(transitionAfterRound() === true, "Jump announcement must start");
+assert(st.phase === "jump" && st.pos === 6, "Jump must hold the previous round number");
+assert(st.remaining === 15, "Jump countdown must use configured duration");
+beginRound(7,false);
+assert(st.phase === "round" && st.pos === 7 && st.remaining === 900, "Next round must start with its full duration");
 
 // Timing edits during a live round do not rewrite the active round; they apply next round.
 reset({mode:"2",positions:13,minutes:30,between:0,boards:4,boardMinutes:7,boardSeconds:30},{pos:3});
