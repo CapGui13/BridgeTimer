@@ -15,7 +15,7 @@ version = vi["StringFileInfo"]["ProductVersion"]
 file_version = vi["StringFileInfo"]["FileVersion"]
 
 required_html = [
-    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(210px,37vw,620px);line-height:.78;letter-spacing:0;white-space:nowrap;transform:translateY(10px);max-width:calc(100% - 20px)}',
+    '#clock{font:700 100px/.78 Bahnschrift,Consolas,monospace;letter-spacing:0;white-space:nowrap;transform:translateY(10px);font-variant-numeric:tabular-nums;visibility:hidden}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
     'id="accent" type="color"',
     'id="background" type="color"',
@@ -144,9 +144,9 @@ if 'class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="
     errors.append("Donnes par tour must stay on the Nb de tours row")
 if html.find('class="inlineSetting boardsInline"><label>Donnes par tour</label>') > html.find('class="inlineSetting startInline"><label>Tour de départ</label>'):
     errors.append("Donnes par tour must appear before Tour de départ")
-if '.roundConfigRow .boardsInline{margin-left:40px;min-width:0}.roundConfigRow .startInline{margin-left:14px}' not in html:
+if '.roundConfigRow .boardsInline{margin-left:34px;min-width:0}.roundConfigRow .startInline{margin-left:14px}' not in html:
     errors.append("round row spacing/alignment must stay compact")
-if '.unitField input[type=number]{width:56px}' not in html or '.compactNumber{width:58px!important}' not in html:
+if '.unitField input[type=number],.unitField input[type=tel]{width:56px}' not in html or '.compactNumber{width:58px!important}' not in html:
     errors.append("fixed-size tournament controls must stay compact")
 if '<select id="positionsSelect" class="compactNumber roundCountSelect hidden"></select>' not in html:
     errors.append("Paires round-count control must keep the Match/4 row geometry")
@@ -156,18 +156,24 @@ if 'boards.disabled=true' not in html:
     errors.append("Paires boards preset must be disabled and grey when it cannot be edited")
 if 'sel.disabled=opts.length<=1' not in html:
     errors.append("single-choice round count must be disabled and grey")
-if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
-    errors.append("long event names must stay on one line without moving the timer")
-if '#clock.clockHours{font-size:clamp(180px,22vw,460px);transform:translateY(10px) scaleX(.82);transform-origin:center}' not in html or 'body.fs #clock.clockHours{font-size:clamp(260px,24vw,540px)}' not in html:
-    errors.append("hour-format clock must stay large while fitting window and fullscreen widths")
-if 'clockEl.classList.toggle("clockHours",(clockText.match(/:/g)||[]).length===2||(st.phase==="round"&&currentRoundDuration()>=3600))' not in html:
-    errors.append("long rounds must keep stable clock sizing across the one-hour boundary")
+if '#status{font-weight:950;letter-spacing:.04em;color:var(--text);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
+    errors.append("top timer message must follow Text color and stay on one line without moving the timer")
+if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--text);' not in html:
+    errors.append("board-progress message must follow Text color")
+if 'function fc(){let c=$("clock"),z=c.style,fs=document.body.classList.contains("fs"),k=innerWidth+"x"+innerHeight+"x"+fs' not in html or 'const maxW=c.parentNode.offsetWidth-(fs?96:32)' not in html or 'p.textContent="01:00:00"' not in html or 'p.style.fontVariantNumeric="tabular-nums"' not in html or 'F=Math.min(620,maxW*100/w,(innerHeight-435)/.78)' not in html:
+    errors.append("timer clock measurement must match rendered tabular numeral metrics in both windowed and fullscreen modes")
+if 'z.transform="translateY(10px)"' not in html:
+    errors.append("timer clock must keep the approved vertical transform")
+if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')]:
+    errors.append("timer clock must never be horizontally distorted")
+if 'k=innerWidth+"x"+innerHeight+"x"+c.textContent.length' in html:
+    errors.append("clock font size must not be recalculated when crossing the one-hour display boundary")
 
-if 'if(x)s={...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"};else s={...def}' not in html:
+if 's=x?{...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"}:{...def}' not in html:
     errors.append("startup tournament presets must be restored on every launch")
 if 'boards:8,boardMinutes:7,boardSeconds:30,positions:6,startPosition:1,between:0,pairCount:26,mode:"4",movement:"mitchell"' not in html:
     errors.append("default Match par 4 preset must be 6 rounds, start 1, 8 boards, 0 seconds between rounds")
-if 'id="between" type="number" min="0" max="240" value="0"' not in html:
+if 'id="between" type="tel" min="0" max="240" value="00"' not in html:
     errors.append("Temps entre tours must default to zero")
 if 'return {positions:13,startPosition:1,boards:boards,hours:Math.floor(total/3600),minutes:Math.floor(total%3600/60),seconds:total%60,between:0,pairCount:26,movement:"mitchell"}' not in html:
     errors.append("first switch to Paires must preset 26 pairs and 13 rounds")
@@ -187,12 +193,14 @@ if 'calcBoardDuration();read();render();scheduleAutosave()' not in html:
     errors.append("format/movement preset changes must keep round time coherent with boards x time per board")
 if '<div class="messageInline"><label for="mainMessage">Message en direct</label>' not in html:
     errors.append("Message en direct must stay inline with its input")
-if '<div class="messageInline pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
+if '$("status").textContent=s.mainMessage;$("msg").textContent=(s.eventName||"").trim();' not in html:
+    errors.append("timer must show Message en direct in the top status slot and Evenement in the former live-message slot")
+if '<div class="messageInline jumpMessageRow pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
-if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="jumpAdvanceOption pairOnly jumpOnly"><label>Message avant saut</label><input id="jumpAdvanceNotice" type="checkbox"></div><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div></div>' not in html:
-    errors.append("board tracking, pre-jump message and sound must share the same row")
-if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;gap:48px;min-width:0}' not in html or '.soundOption{margin-left:auto}' not in html:
-    errors.append("sound must stay at the far right of the compact options row")
+if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div></div>' not in html or '<div class="jumpAdvanceOption"><label>Alerte tour préc</label><input id="jumpAdvanceNotice" type="checkbox" checked></div>' not in html:
+    errors.append("board tracking/sound row and inline pre-jump alert layout regressed")
+if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;gap:8px 48px}' not in html or '.soundOption{margin-left:0}' not in html:
+    errors.append("sound must stay in its approved compact position")
 if 'Afficher dès la zone orange du tour précédent' in html or 'Prévenir avant le saut' in html:
     errors.append("pre-jump explanatory wording must stay removed")
 if '>Activé</div>' in html:
@@ -207,8 +215,8 @@ if 'id="jumpRoundSetting"' not in html or '$("jumpRoundSetting").classList.toggl
     errors.append("Saut après tour must disappear when the movement has no jump")
 if 'document.querySelectorAll(".jumpOnly").forEach(el=>{el.classList.toggle("hidden",!jumpAfter)})' not in html or 'document.querySelectorAll(".jumpOnly").forEach(el=>{el.classList.add("hidden")})' not in html:
     errors.append("jump-only controls must not reserve layout space when unavailable")
-if '#undoToast{position:fixed;z-index:40;right:18px;top:76px;' not in html:
-    errors.append("undo toast must stay clear of the timer footer")
+if '#undoToast{position:fixed;z-index:40;right:18px;bottom:121px;zoom:.78;' not in html or '.fs #undoToast{bottom:94px;zoom:1}' not in html:
+    errors.append("undo toast must preserve its approved windowed/fullscreen alignment")
 if '#alert{width:100%;min-height:52px;' not in html or '<div class="progress"><div id="bar"></div></div><div id="alert"></div><div id="msg">' not in html:
     errors.append("danger/end-of-round alert must have a dedicated non-overlapping lane")
 for token in [
@@ -228,8 +236,66 @@ for token in [
         errors.append("alert-zone options regression: " + token)
 if 'const msgOn=$("warnMessageEnabled").checked||$("dangerMessageEnabled").checked;$("dangerMessage").disabled=!msgOn' not in html:
     errors.append("shared alert message must be disabled when neither zone has Msg enabled")
-if '.optionCards .alertGrid{grid-template-columns:72px minmax(0,1fr);column-gap:6px;row-gap:8px}' not in html or '.alertRule{display:flex;align-items:center;gap:5px;min-width:0}' not in html:
-    errors.append("alert controls must stay compact and close to their left labels")
+if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:grid;grid-template-columns:repeat(4,55px) 47px;gap:4px}' not in html:
+    errors.append("alert controls must stay compact and keep the approved grid geometry")
+
+# Default club identity.
+for token in [
+    'clubName:"FFB - Comité de Provence"',
+    '<input id="clubName" type="text" value="FFB - Comité de Provence">',
+    'clubName:$("clubName").value.trim()||"FFB - Comité de Provence"',
+    '<div id="club">FFB - Comité de Provence</div>',
+]:
+    if token not in html:
+        errors.append("default club name regression: " + token)
+if 'eventName:""' not in html or '<input id="eventName" type="text" value="">' not in html:
+    errors.append("default event must stay empty")
+if 'if(s.eventName==="TTTT")s.eventName=""' in html:
+    errors.append("saved event values must never be erased by a special-case migration")
+
+# Debug mode is an emergency UI override. Normal structural defaults must still
+# be calculated after format/pair-count changes, while the resulting fields remain editable.
+for token in [
+    'id="debugBtn" class="btn">Debug</button>',
+    'const debugActive=()=>document.body.classList.contains("debugMode")',
+    'function applyDebugUnlock()',
+    'function withNormalRulesInDebug(fn)',
+    'withNormalRulesInDebug(()=>updatePairModeUI(true))',
+    'withNormalRulesInDebug(()=>{const target=$("mode").value',
+    'fill();read();updateSavedColorsUI();setLiveStructureLock(st.started&&document.body.classList.contains("settingsLive"))',
+    'opts=["mitchell","gueridon","howell"]',
+    'if(debugActive()){read();safeJSONWrite(KEY,s);if(!st.started){st.remaining=duration();render()}return}',
+    'function applyDebugSettingsToCurrentTimer()',
+    'else applyDebugSettingsToCurrentTimer();showTimer();render()',
+    'save();applyDebugSettingsToCurrentTimer()}',
+    'if(debugActive())applyDebugUnlock();fc()',
+    'if(!st.started&&!$("settings").classList.contains("hidden"))return',
+]:
+    if token not in html:
+        errors.append("Debug-mode contract missing: " + token)
+if 'body.debugMode .drawerClose{display:inline-flex!important}' in html:
+    errors.append("Debug must not expose Retour au timer before a timer exists")
+if 'body.debugMode #stopTimer.hidden{visibility:visible!important}' in html:
+    errors.append("Debug must not show Arrêter before the timer is started")
+if 'sel.value=chosen;sel.disabled=true;const jumpAfter=computePairJumpAfter(p,chosen);$("jumpRound").value=jumpAfter||"—";$("jumpRound").disabled=true;' not in html:
+    errors.append("leaving Debug must restore normal locks on Mouvement and Saut après tour")
+if 'if(debugActive()){read();applyDebugUnlock();render();scheduleAutosave();return}' in html:
+    errors.append("Debug format changes must not bypass normal format defaults")
+if '$("pairCount").onchange=()=>{updatePairModeUI(true);' in html:
+    errors.append("Debug pair-count changes must not bypass normal pair defaults")
+
+# Fullscreen transition and numpad time hotkeys.
+for token in [
+    'body.fsTransition #timer{opacity:.12;transform:scale(.985);transform-origin:center;transition:opacity .18s ease,transform .18s ease}',
+    'body.fsTransition.fsReveal #timer{opacity:1;transform:scale(1);transition:opacity .30s cubic-bezier(.22,.61,.36,1),transform .30s cubic-bezier(.22,.61,.36,1)}',
+    'document.body.classList.remove("fsReveal");document.body.classList.add("fsTransition");await new Promise(r=>setTimeout(r,190))',
+    'function finishFsTransition(){C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{fc();requestAnimationFrame(()=>{document.body.classList.add("fsReveal");setTimeout(()=>document.body.classList.remove("fsTransition","fsReveal"),330)})},70)))}',
+    'e.key==="F7"||e.code==="NumpadSubtract"',
+    'e.key==="F8"||e.code==="NumpadAdd"',
+    '["NumpadSubtract","NumpadAdd"].includes(e.code)',
+]:
+    if token not in html:
+        errors.append("fullscreen/numpad contract missing: " + token)
 
 # Timer seconds must stay phase-aligned with the displayed wall clock.
 for token in [
@@ -356,9 +422,9 @@ print(f"BridgeTimer regression check OK — version {version}")
 # FROZEN RENDERING CONTRACT — approved after V3.2 side-by-side comparison.
 frozen_render_tokens = [
     '--disable-lcd-text',
-    '#clock{font-family:Bahnschrift,Consolas,monospace;font-weight:700;font-size:clamp(210px,37vw,620px);line-height:.78;letter-spacing:0;white-space:nowrap;transform:translateY(10px);max-width:calc(100% - 20px)}',
+    '#clock{font:700 100px/.78 Bahnschrift,Consolas,monospace;letter-spacing:0;white-space:nowrap;transform:translateY(10px);font-variant-numeric:tabular-nums;visibility:hidden}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
-    '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--muted);line-height:1.08;max-width:1300px;width:calc(100% - 32px);min-height:42px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}',
+    '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--text);line-height:1.08;max-width:1300px;width:calc(100% - 32px);min-height:42px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}',
 ]
 for token in frozen_render_tokens:
     haystack = main if token == '--disable-lcd-text' else html
