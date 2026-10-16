@@ -258,9 +258,9 @@ if 'body.debugMode #stopTimer.hidden{visibility:visible!important}' in html:
 
 # Fullscreen transition and numpad time hotkeys.
 for token in [
-    'body.fsTransition #timer{opacity:.88;transform:scale(.992);transform-origin:center;transition:opacity .14s ease,transform .14s ease}',
-    'document.body.classList.add("fsTransition");await new Promise(r=>setTimeout(r,110))',
-    'C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>{fc();document.body.classList.remove("fsTransition")}))',
+    'body.fsTransition #timer{opacity:.12;transform:scale(.985);transform-origin:center;transition:opacity .18s ease,transform .18s ease}',
+    'document.body.classList.add("fsTransition");await new Promise(r=>setTimeout(r,190))',
+    'C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{fc();document.body.classList.remove("fsTransition")},70)))',
     'e.key==="F7"||e.code==="NumpadSubtract"',
     'e.key==="F8"||e.code==="NumpadAdd"',
     '["NumpadSubtract","NumpadAdd"].includes(e.code)',
