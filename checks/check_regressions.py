@@ -156,8 +156,10 @@ if 'boards.disabled=true' not in html:
     errors.append("Paires boards preset must be disabled and grey when it cannot be edited")
 if 'sel.disabled=opts.length<=1' not in html:
     errors.append("single-choice round count must be disabled and grey")
-if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
-    errors.append("long event names must stay on one line without moving the timer")
+if '#status{font-weight:950;letter-spacing:.04em;color:var(--text);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
+    errors.append("top timer message must follow Text color and stay on one line without moving the timer")
+if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--text);' not in html:
+    errors.append("board-progress message must follow Text color")
 if 'function fc(){let c=$("clock"),z=c.style,fs=document.body.classList.contains("fs"),k=innerWidth+"x"+innerHeight+"x"+fs' not in html or 'const maxW=c.parentNode.offsetWidth-(fs?96:32)' not in html or 'p.textContent="01:00:00"' not in html or 'p.style.fontVariantNumeric="tabular-nums"' not in html or 'F=Math.min(620,maxW*100/w,(innerHeight-435)/.78)' not in html:
     errors.append("timer clock measurement must match rendered tabular numeral metrics in both windowed and fullscreen modes")
 if 'z.transform="translateY(10px)"' not in html:
