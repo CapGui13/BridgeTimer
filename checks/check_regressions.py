@@ -246,6 +246,10 @@ for token in [
 ]:
     if token not in html:
         errors.append("default club name regression: " + token)
+if 'eventName:""' not in html or '<input id="eventName" type="text" value="">' not in html:
+    errors.append("default event must stay empty")
+if 'if(s.eventName==="TTTT")s.eventName=""' not in html:
+    errors.append("legacy TTTT event value must migrate to empty")
 
 # Debug mode is an emergency UI override. Normal structural defaults must still
 # be calculated after format/pair-count changes, while the resulting fields remain editable.
