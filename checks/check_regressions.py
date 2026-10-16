@@ -424,7 +424,7 @@ frozen_render_tokens = [
     '--disable-lcd-text',
     '#clock{font:700 100px/.78 Bahnschrift,Consolas,monospace;letter-spacing:0;white-space:nowrap;transform:translateY(10px);font-variant-numeric:tabular-nums;visibility:hidden}',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
-    '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--muted);line-height:1.08;max-width:1300px;width:calc(100% - 32px);min-height:42px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}',
+    '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--text);line-height:1.08;max-width:1300px;width:calc(100% - 32px);min-height:42px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}',
 ]
 for token in frozen_render_tokens:
     haystack = main if token == '--disable-lcd-text' else html
