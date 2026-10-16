@@ -337,8 +337,7 @@ if 'const between=currentRoundBetween()' not in html:
 # F1 must remain a real toggle and its on-screen help should document all active shortcuts.
 for token in [
     '$("hint").classList.toggle("hintVisible")',
-    'R : recommencer',
-    'F/F11 : plein écran',
+    'F11 : plein écran',
     'F9 : paramètres',
 
 ]:
