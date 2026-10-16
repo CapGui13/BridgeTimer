@@ -228,7 +228,7 @@ for token in [
     'id="dangerMinutes" type="tel" min="0" max="60" value="01"',
     'function warnThreshold(){return Math.max(0,(Number(s.warnMinutes)||0)*60+(Number(s.warnSeconds)||0))}',
     'function dangerThreshold(){return Math.max(0,(Number(s.dangerMinutes)||0)*60+(Number(s.dangerSeconds)||0))}',
-    'const jumpNoticeAt=warnThreshold(total)||ds',
+    'const jumpNoticeAt=ds',
     's.jumpAdvanceNotice&&s.jumpRound',
     '$("submsg").classList.add("jumpUpcoming")',
 ]:
@@ -244,6 +244,9 @@ for token in [
         errors.append("retired end-of-round percentage or message returned: " + token)
 if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:flex;align-items:center;gap:12px}' not in html or '.alertRule .alertOption{display:inline-flex;' not in html:
     errors.append("compact fixed-time alert controls layout regression")
+
+if 'const jumpNoticeAt=warnThreshold(total)||ds' in html or 'const jumpNoticeAt=ws||ds' in html:
+    errors.append("pre-jump notice must start at the red threshold, not orange")
 
 # Default club identity.
 for token in [
