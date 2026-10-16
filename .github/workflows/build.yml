@@ -45,3 +45,14 @@ jobs:
           name: BridgeTimer-Windows-unsigned
           path: dist/BridgeTimer.exe
           if-no-files-found: error
+      - name: Prepare comparison edition with separate port, mutex and profile
+        run: python checks/create_comparison_variant.py
+      - name: Build independent comparison edition
+        shell: pwsh
+        run: |
+          go build -trimpath -ldflags "-H=windowsgui -s -w" -o dist/BridgeTimer_Comparaison.exe ./comparison_build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BridgeTimer-Comparaison-Windows
+          path: dist/BridgeTimer_Comparaison.exe
+          if-no-files-found: error
