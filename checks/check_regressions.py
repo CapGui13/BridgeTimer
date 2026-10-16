@@ -256,6 +256,18 @@ if 'body.debugMode .drawerClose{display:inline-flex!important}' in html:
 if 'body.debugMode #stopTimer.hidden{visibility:visible!important}' in html:
     errors.append("Debug must not show Arrêter before the timer is started")
 
+# Fullscreen transition and numpad time hotkeys.
+for token in [
+    'body.fsTransition #timer{opacity:.88;transform:scale(.992);transform-origin:center;transition:opacity .14s ease,transform .14s ease}',
+    'document.body.classList.add("fsTransition");await new Promise(r=>setTimeout(r,110))',
+    'C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>{fc();document.body.classList.remove("fsTransition")}))',
+    'e.key==="F7"||e.code==="NumpadSubtract"',
+    'e.key==="F8"||e.code==="NumpadAdd"',
+    '["NumpadSubtract","NumpadAdd"].includes(e.code)',
+]:
+    if token not in html:
+        errors.append("fullscreen/numpad contract missing: " + token)
+
 # Timer seconds must stay phase-aligned with the displayed wall clock.
 for token in [
     'function alignedWallDelayMs(wallNow,remaining)',
