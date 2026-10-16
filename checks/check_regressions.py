@@ -344,6 +344,10 @@ for token in [
     if token not in html:
         errors.append("F1 help regression: " + token)
 
+# Guard the tournament card boundary; a missing closing div breaks the whole settings grid.
+if 'id="jumpCountdownLabel" type="text" value="secondes pour le changement"></label></div></div><div class="optionCards">' not in html:
+    errors.append("tournament personalization card must close before alert options")
+
 # Keep all Windows/release version metadata aligned.
 if f'version="{file_version}"' not in manifest:
     errors.append(f"BridgeTimer.manifest version must be {file_version}")
