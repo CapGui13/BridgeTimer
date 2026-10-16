@@ -345,7 +345,7 @@ for token in [
         errors.append("F1 help regression: " + token)
 
 # Guard the tournament card boundary; a missing closing div breaks the whole settings grid.
-if 'id="jumpCountdownLabel" type="text" value="secondes pour le changement"></label></div></div><div class="optionCards">' not in html:
+if 'id="jumpSplashBodySetting" rows="3">À cette position,&#10;les EO sautent une table</textarea></label></div></div><div class="optionCards">' not in html:
     errors.append("tournament personalization card must close before alert options")
 
 # Keep all Windows/release version metadata aligned.
