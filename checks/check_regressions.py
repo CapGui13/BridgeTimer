@@ -165,14 +165,15 @@ if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-
 for token in [
     '#timer .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,14fr) minmax(0,57fr) minmax(14px,3fr) minmax(0,14fr) minmax(0,12fr);',
     '#timer #status{transform:none;min-height:0;max-width:100%;align-self:center}',
-    '#timer #clock{transform:none;align-self:center;justify-self:center}',
+    '#timer #clock{transform:none;align-self:center;justify-self:center;letter-spacing:-.055em;font-stretch:condensed}',
     '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}',
     '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
     '#timer #alert{position:absolute;bottom:17%;',
     'p.textContent="01:00:00"',
     'const k=width+"x"+height+"x"+fs',
-    'const maxWidth=Math.max(100,Math.min(width-(fs?96:32),innerWidth*.82)),clockSlotHeight=height*.57',
-    'p.style.fontVariantNumeric="tabular-nums"',
+    'const maxWidth=Math.max(100,Math.min(width-24,innerWidth*.96)),clockSlotHeight=height*.57',
+    'p.style.fontStretch="condensed";p.style.fontVariantNumeric="tabular-nums"',
+    'letter-spacing:-.055em;white-space:nowrap;transform:none',
     'z.transform="none";z.visibility="visible"',
 ]:
     if token not in html:
