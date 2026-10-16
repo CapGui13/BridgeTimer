@@ -338,7 +338,7 @@ if 'const between=currentRoundBetween()' not in html:
 for token in [
     '$("hint").classList.toggle("hintVisible")',
     'R : recommencer',
-    'U : annuler',
+    'F/F11 : plein écran',
     'F9 : paramètres',
     'F10 : reset',
 ]:
