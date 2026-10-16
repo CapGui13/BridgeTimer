@@ -259,6 +259,8 @@ if 'body.debugMode .drawerClose{display:inline-flex!important}' in html:
     errors.append("Debug must not expose Retour au timer before a timer exists")
 if 'body.debugMode #stopTimer.hidden{visibility:visible!important}' in html:
     errors.append("Debug must not show Arrêter before the timer is started")
+if 'sel.value=chosen;sel.disabled=true;const jumpAfter=computePairJumpAfter(p,chosen);$("jumpRound").value=jumpAfter||"—";$("jumpRound").disabled=true;' not in html:
+    errors.append("leaving Debug must restore normal locks on Mouvement and Saut après tour")
 if 'if(debugActive()){read();applyDebugUnlock();render();scheduleAutosave();return}' in html:
     errors.append("Debug format changes must not bypass normal format defaults")
 if '$("pairCount").onchange=()=>{updatePairModeUI(true);' in html:
