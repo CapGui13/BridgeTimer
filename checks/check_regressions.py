@@ -292,7 +292,7 @@ for token in [
     'function finishFsTransition(){C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{fc();requestAnimationFrame(()=>{document.body.classList.add("fsReveal");setTimeout(()=>document.body.classList.remove("fsTransition","fsReveal"),330)})},70)))}',
     'e.key==="F7"||e.code==="NumpadSubtract"',
     'e.key==="F8"||e.code==="NumpadAdd"',
-    '["NumpadSubtract","NumpadAdd"].includes(e.code)',
+    'if(tv&&(e.key==="F7"||e.code==="NumpadSubtract"||e.key==="-"))',
 ]:
     if token not in html:
         errors.append("fullscreen/numpad contract missing: " + token)
