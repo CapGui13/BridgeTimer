@@ -195,8 +195,14 @@ if '<div class="messageInline"><label for="mainMessage">Message en direct</label
     errors.append("Message en direct must stay inline with its input")
 if '$("status").textContent=s.mainMessage;$("msg").textContent=(s.eventName||"").trim();' not in html:
     errors.append("timer must show Message en direct in the top status slot and Evenement in the former live-message slot")
-if '<div class="messageInline jumpMessageRow pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
-    errors.append("Message du saut must stay inline with its input")
+if '<button id="jumpMsgBtn" class="btn jumpMsgBtn hidden" type="button"' not in html or '<div id="jumpMsgOverlay" class="jumpMsgOverlay hidden"' not in html:
+    errors.append("MSG button and its dialog must exist")
+if 'function openJumpMsg()' not in html or 'function closeJumpMsg()' not in html or '$("jumpMsgOverlay").onclick=e=>' not in html:
+    errors.append("MSG submenu must open and close, including backdrop click")
+if 'if(e.key==="Escape"&&!$("jumpMsgOverlay").classList.contains("hidden"))' not in html:
+    errors.append("MSG submenu must close with Escape before timer shortcuts")
+if 'document.querySelectorAll("#settings input,#settings select,#settings textarea")' not in html:
+    errors.append("MSG textarea edits must be included in autosave")
 if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div></div>' not in html or '<label class="jumpAdvanceOption alertOption pairOnly jumpOnly"><span>Pré-alerte saut</span><input id="jumpAdvanceNotice" type="checkbox" checked></label>' not in html:
     errors.append("board tracking/sound row or pre-jump alert beside red threshold regressed")
 if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;gap:8px 48px}' not in html or '.soundOption{margin-left:0}' not in html:
@@ -353,9 +359,64 @@ for token in [
     if token not in html:
         errors.append("F1 help regression: " + token)
 
-# Guard the tournament card boundary; a missing closing div breaks the whole settings grid.
-if 'id="jumpSplashBodySetting" rows="3">À cette position,&#10;les EO sautent une table</textarea></label></div></div><div class="optionCards">' not in html:
-    errors.append("tournament personalization card must close before alert options")
+# Guard the tournament/card/dialog hierarchy using a real HTML structure parser.
+# Previously a missing </div> silently broke the whole settings grid.
+from html.parser import HTMLParser
+
+class LayoutGuard(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.stack = []
+        self.loc = {}
+        self.structure_errors = []
+        self.void = {"area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"}
+
+    def handle_starttag(self, tag, attrs):
+        data = dict(attrs)
+        ident = data.get("id")
+        if ident:
+            if ident in self.loc:
+                self.structure_errors.append("duplicate id: " + ident)
+            self.loc[ident] = (tag, list(self.stack))
+        if tag not in self.void:
+            self.stack.append((tag, ident, data.get("class", "")))
+
+    def handle_endtag(self, tag):
+        if not self.stack or self.stack[-1][0] != tag:
+            self.structure_errors.append("mismatched closing tag: " + tag)
+            return
+        self.stack.pop()
+
+guard = LayoutGuard()
+guard.feed(html)
+if guard.stack:
+    errors.append("unclosed HTML tags: " + str(guard.stack[-4:]))
+errors.extend(guard.structure_errors[:6])
+
+def parent_chain(ident):
+    return guard.loc.get(ident, (None, []))[1]
+
+def within(ident, ancestor):
+    return any(node[1] == ancestor for node in parent_chain(ident))
+
+if not within("jumpMsgBtn", "jumpRoundSetting"):
+    errors.append("MSG button must appear directly beside the jump round input")
+for field in ("jumpSplashTitleSetting","jumpSplashBodySetting","jumpDisplaySecs","jumpCountdownLabel","jumpMessage"):
+    if not within(field, "jumpMsgOverlay") or within(field, "tournamentCard"):
+        errors.append("jump setting must belong to MSG dialog only: " + field)
+if not any("optionCards" in n[2].split() for n in parent_chain("warnMinutes")):
+    errors.append("alert cards must stay outside tournament grid")
+for field in ("warnMinutes","dangerMinutes","boardMinutes","boards","between"):
+    if field not in guard.loc:
+        errors.append("main tournament field went missing: " + field)
+if not within("jumpMsgOverlay", "settings"):
+    errors.append("MSG floating dialog must be within settings section")
+if 'Message du saut</label>' in html or 'Affichage saut</label>' in html or 'class="jumpCustomization"' in html:
+    errors.append("old inline jump controls must be gone")
+ordered_fields = ['for="jumpSplashTitleSetting">Titre','for="jumpSplashBodySetting">Message au moment du saut','for="jumpDisplaySecs">Nb secondes pour le saut','for="jumpCountdownLabel">Texte du décompte','for="jumpMessage">Message avant le saut']
+indexes = [html.find(fragment) for fragment in ordered_fields]
+if -1 in indexes or indexes != sorted(indexes):
+    errors.append("MSG five controls must remain in the requested order")
 
 # Keep all Windows/release version metadata aligned.
 if f'version="{file_version}"' not in manifest:
