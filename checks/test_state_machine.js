@@ -51,7 +51,8 @@ const functionNames = [
   "transitionAfterRound",
   "alignedWallDelayMs",
   "restoreUndoState",
-  "zoneThreshold",
+  "warnThreshold",
+  "dangerThreshold",
 ];
 
 let s = {};
@@ -166,12 +167,14 @@ assert(alignedWallDelayMs(100750, 60) === 60250, "Three-quarter-second start sho
 assert(Math.abs(alignedWallDelayMs(100499, 60) - 60000) <= 500, "Wall-clock correction exceeded half a second");
 assert(Math.abs(alignedWallDelayMs(100501, 60) - 60000) <= 500, "Wall-clock correction exceeded half a second");
 
-// Alert thresholds can be expressed either as fixed remaining time or as
-// remaining percentage of the round's initial duration.
-assert(zoneThreshold(false, 5, 0, 20, 3600) === 300, "Fixed warning threshold is wrong");
-assert(zoneThreshold(true, 5, 0, 20, 3600) === 720, "20% warning threshold should be 12 minutes of a 60-minute round");
-assert(zoneThreshold(true, 2, 0, 10, 4800) === 480, "10% danger threshold should be 8 minutes of an 80-minute round");
-
-
+// Warnings use fixed remaining-time thresholds. The pre-jump message uses
+// the same warning trigger independently of any end-of-round message.
+reset({warnMinutes:2,warnSeconds:0,dangerMinutes:1,dangerSeconds:0});
+assert(warnThreshold() === 120, "Orange must start with 2 minutes left");
+assert(dangerThreshold() === 60, "Red must start with 1 minute left");
+s.warnMinutes=0; s.warnSeconds=45;
+assert(warnThreshold() === 45, "Fixed warning must support seconds");
+s.dangerMinutes=0; s.dangerSeconds=20;
+assert(dangerThreshold() === 20, "Fixed red warning must support seconds");
 
 console.log("BridgeTimer state-machine behavior OK");
