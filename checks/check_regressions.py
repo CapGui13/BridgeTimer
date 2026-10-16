@@ -237,6 +237,16 @@ if 'const msgOn=$("warnMessageEnabled").checked||$("dangerMessageEnabled").check
 if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:grid;grid-template-columns:repeat(4,55px) 47px;gap:4px}' not in html:
     errors.append("alert controls must stay compact and keep the approved grid geometry")
 
+# Default club identity.
+for token in [
+    'clubName:"FFB - Comité de Provence"',
+    '<input id="clubName" type="text" value="FFB - Comité de Provence">',
+    'clubName:$("clubName").value.trim()||"FFB - Comité de Provence"',
+    '<div id="club">FFB - Comité de Provence</div>',
+]:
+    if token not in html:
+        errors.append("default club name regression: " + token)
+
 # Debug mode is an emergency UI override. Normal structural defaults must still
 # be calculated after format/pair-count changes, while the resulting fields remain editable.
 for token in [
