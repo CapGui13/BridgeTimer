@@ -235,12 +235,16 @@ if 'const msgOn=$("warnMessageEnabled").checked||$("dangerMessageEnabled").check
 if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:grid;grid-template-columns:repeat(4,55px) 47px;gap:4px}' not in html:
     errors.append("alert controls must stay compact and keep the approved grid geometry")
 
-# Debug mode is an emergency UI override only. It must not launch a timer,
-# expose a return path to a non-existent timer, or re-impose normal UI restrictions.
+# Debug mode is an emergency UI override. Normal structural defaults must still
+# be calculated after format/pair-count changes, while the resulting fields remain editable.
 for token in [
     'id="debugBtn" class="btn">Debug</button>',
     'const debugActive=()=>document.body.classList.contains("debugMode")',
     'function applyDebugUnlock()',
+    'function withNormalRulesInDebug(fn)',
+    'withNormalRulesInDebug(()=>updatePairModeUI(true))',
+    'withNormalRulesInDebug(()=>{const target=$("mode").value',
+    'fill();read();updateSavedColorsUI();setLiveStructureLock(st.started&&document.body.classList.contains("settingsLive"))',
     'opts=["mitchell","gueridon","howell"]',
     'if(debugActive()){read();safeJSONWrite(KEY,s);if(!st.started){st.remaining=duration();render()}return}',
     'function applyDebugSettingsToCurrentTimer()',
@@ -255,6 +259,10 @@ if 'body.debugMode .drawerClose{display:inline-flex!important}' in html:
     errors.append("Debug must not expose Retour au timer before a timer exists")
 if 'body.debugMode #stopTimer.hidden{visibility:visible!important}' in html:
     errors.append("Debug must not show Arrêter before the timer is started")
+if 'if(debugActive()){read();applyDebugUnlock();render();scheduleAutosave();return}' in html:
+    errors.append("Debug format changes must not bypass normal format defaults")
+if '$("pairCount").onchange=()=>{updatePairModeUI(true);' in html:
+    errors.append("Debug pair-count changes must not bypass normal pair defaults")
 
 # Fullscreen transition and numpad time hotkeys.
 for token in [
