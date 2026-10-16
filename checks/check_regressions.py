@@ -49,7 +49,7 @@ required_html = [
     'function loadSavedColors()',
     '#submsg.tempMessage{color:var(--accent)',
     '$("submsg").classList.remove("tempMessage","jumpUpcoming")',
-    '$("submsg").textContent=s.quickMessage||"Saisir les scores"',
+    '$("tempmsg").textContent=s.quickMessage||"Saisir les scores"',
     'id="miniTimer"',
     'body.settingsLive #miniTimer',
     'document.body.classList.toggle("settingsLive",live)',
@@ -163,11 +163,15 @@ if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-
 # The central layout is proportional in both presentation modes; clock glyphs are fitted
 # to the actual available space using a fixed HH:MM:SS width for both formats.
 for token in [
-    '#timer .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,14fr) minmax(0,57fr) minmax(14px,3fr) minmax(0,14fr) minmax(0,12fr);',
-    '#timer #status{transform:none;min-height:0;max-width:100%;align-self:center}',
+    '#timer .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,10fr) minmax(0,58fr) minmax(14px,3fr) minmax(0,9fr) minmax(0,9fr) minmax(0,11fr);',
+    '#timer #status{transform:none;min-height:0;max-width:100%;align-self:start;margin-top:clamp(2px,.6vh,8px)}',
     '#timer #clock{transform:none;align-self:center;justify-self:center;letter-spacing:-.055em;font-stretch:condensed}',
     '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}',
     '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
+    '#timer #tempmsg{min-height:0;max-width:calc(100% - 32px);width:100%;justify-self:center;align-self:center;',
+    '<div id="submsg"></div><div id="tempmsg" role="status" aria-live="polite"></div>',
+    '$("tempmsg").textContent="";$("alert").className=""',
+    'if(tempMessageActive()&&st.phase!=="ended"){$("tempmsg").textContent=s.quickMessage||"Saisir les scores"}',
     '#timer #alert{position:absolute;bottom:17%;',
     'p.textContent="01:00:00"',
     'const k=width+"x"+height+"x"+fs',
@@ -182,6 +186,9 @@ if 'c.textContent.length' in html[html.index('function fc()'):html.index('functi
     errors.append("clock size must NOT depend on 59:59 vs 01:00:00 format")
 if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')]:
     errors.append("timer clock must never be horizontally distorted")
+# The M shortcut must not replace the board progress text or jump reminder.
+if '$("submsg").textContent=s.quickMessage' in html or '$("submsg").classList.add("tempMessage")' in html:
+    errors.append("temporary M message must use its independent line, not the board notice")
 # The top and bottom frame dimensions must be unaffected by central reflow.
 for token in ['.top{display:grid;grid-template-columns:1fr auto;align-items:center;gap:15px;padding:14px 22px;border-bottom:1px solid var(--line);',
               '.bottom{position:relative;height:82px;min-height:82px;padding:11px 190px 15px;border-top:1px solid var(--line);']:
