@@ -191,6 +191,8 @@ if 'calcBoardDuration();read();render();scheduleAutosave()' not in html:
     errors.append("format/movement preset changes must keep round time coherent with boards x time per board")
 if '<div class="messageInline"><label for="mainMessage">Message en direct</label>' not in html:
     errors.append("Message en direct must stay inline with its input")
+if '$("status").textContent=s.mainMessage;$("msg").textContent=(s.eventName||"").trim();' not in html:
+    errors.append("timer must show Message en direct in the top status slot and Evenement in the former live-message slot")
 if '<div class="messageInline jumpMessageRow pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
 if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div></div>' not in html or '<div class="jumpAdvanceOption"><label>Alerte tour préc</label><input id="jumpAdvanceNotice" type="checkbox" checked></div>' not in html:
