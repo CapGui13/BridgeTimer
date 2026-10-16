@@ -411,9 +411,35 @@ for field in ("warnMinutes","dangerMinutes","boardMinutes","boards","between"):
         errors.append("main tournament field went missing: " + field)
 if not within("jumpMsgOverlay", "settings"):
     errors.append("MSG floating dialog must be within settings section")
+# MSG layout and Debug mode contracts.
+for token in [
+    'jumpMessage:"Au prochain tour, les EO sautent une table"',
+    'id="jumpMessage" type="text" value="Au prochain tour, les EO sautent une table"',
+    's.jumpMessage==="ATTENTION : les EO sautent une table"',
+    'function applyDebugUnlock(){if(!debugActive())return false;document.querySelectorAll("button,input,select,textarea").forEach(el=>el.disabled=false);$("jumpMsgBtn").classList.remove("hidden")',
+    'function openJumpMsg(){if(!debugActive()&&(',
+    '<div class="jumpMsgTitleRow"><label for="jumpSplashTitleSetting">Titre</label>',
+    'id="jumpSplashBodySetting" rows="2"',
+    'class="jumpMsgTimeRow"',
+    '<div class="jumpMsgPreAlert"><label for="jumpMessage">Message de pré-alerte du saut</label>',
+    '.jumpMsgFields textarea{height:60px;min-height:60px;max-height:60px;resize:none;',
+    '.jumpMsgClose{width:32px;height:32px;min-width:32px;display:flex;align-items:center;justify-content:center;',
+    '.jumpMsgTimeCol .unitField input{width:56px;min-width:56px}',
+]:
+    if token not in html:
+        errors.append("MSG dialog polish or Debug availability regression: " + token)
+for classname, fields in [
+    ("jumpMsgTitleRow", ("jumpSplashTitleSetting",)),
+    ("jumpMsgTimeRow", ("jumpDisplaySecs", "jumpCountdownLabel")),
+    ("jumpMsgPreAlert", ("jumpMessage",)),
+]:
+    for field in fields:
+        if not any(classname in ancestor[2].split() for ancestor in parent_chain(field)):
+            errors.append("MSG layout grouping regressed: " + classname + "/" + field)
+
 if 'Message du saut</label>' in html or 'Affichage saut</label>' in html or 'class="jumpCustomization"' in html:
     errors.append("old inline jump controls must be gone")
-ordered_fields = ['for="jumpSplashTitleSetting">Titre','for="jumpSplashBodySetting">Message au moment du saut','for="jumpDisplaySecs">Nb secondes pour le saut','for="jumpCountdownLabel">Texte du décompte','for="jumpMessage">Message avant le saut']
+ordered_fields = ['for="jumpSplashTitleSetting">Titre','for="jumpSplashBodySetting">Message au moment du saut','for="jumpDisplaySecs">Nb secondes pour le saut','for="jumpCountdownLabel">Texte du décompte','for="jumpMessage">Message de pré-alerte du saut']
 indexes = [html.find(fragment) for fragment in ordered_fields]
 if -1 in indexes or indexes != sorted(indexes):
     errors.append("MSG five controls must remain in the requested order")
