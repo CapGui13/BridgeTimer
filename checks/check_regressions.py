@@ -217,27 +217,29 @@ if 'document.querySelectorAll(".jumpOnly").forEach(el=>{el.classList.toggle("hid
     errors.append("jump-only controls must not reserve layout space when unavailable")
 if '#undoToast{position:fixed;z-index:40;right:18px;bottom:121px;zoom:.78;' not in html or '.fs #undoToast{bottom:94px;zoom:1}' not in html:
     errors.append("undo toast must preserve its approved windowed/fullscreen alignment")
-if '#alert{width:100%;min-height:52px;' not in html or '<div class="progress"><div id="bar"></div></div><div id="alert"></div><div id="msg">' not in html:
-    errors.append("danger/end-of-round alert must have a dedicated non-overlapping lane")
+# End-of-round alerts are strictly time-based; text alerts and percentages are gone.
 for token in [
     '<div class="grid alertGrid"><label>Orange à</label>',
-    '<label class="alertPercentToggle"><input id="warnPercentMode" type="checkbox">En %</label>',
-    '<label class="alertMsgToggle">Msg<input id="warnMessageEnabled" type="checkbox"></label>',
-    '<label class="alertPercentToggle"><input id="dangerPercentMode" type="checkbox">En %</label>',
-    '<label class="alertMsgToggle">Msg<input id="dangerMessageEnabled" type="checkbox" checked></label>',
-    '<label>Message</label><input id="dangerMessage" class="compactText alertMessageInput"',
-    'function updateAlertRulesUI()',
-    'function zoneThreshold(percentMode,minutes,seconds,percent,total)',
-    's.warnMessageEnabled&&s.dangerMessage',
-    's.dangerMessageEnabled&&s.dangerMessage',
-    '#alert.on.warningAlert{background:transparent;color:var(--accent)}',
+    'id="warnMinutes" type="tel" min="0" max="60" value="02"',
+    'id="dangerMinutes" type="tel" min="0" max="60" value="01"',
+    'function warnThreshold(){return Math.max(0,(Number(s.warnMinutes)||0)*60+(Number(s.warnSeconds)||0))}',
+    'function dangerThreshold(){return Math.max(0,(Number(s.dangerMinutes)||0)*60+(Number(s.dangerSeconds)||0))}',
+    'const jumpNoticeAt=ws||ds',
+    's.jumpAdvanceNotice&&s.jumpRound',
+    '$("submsg").classList.add("jumpUpcoming")',
 ]:
     if token not in html:
-        errors.append("alert-zone options regression: " + token)
-if 'const msgOn=$("warnMessageEnabled").checked||$("dangerMessageEnabled").checked;$("dangerMessage").disabled=!msgOn' not in html:
-    errors.append("shared alert message must be disabled when neither zone has Msg enabled")
-if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:grid;grid-template-columns:repeat(4,55px) 47px;gap:4px}' not in html:
-    errors.append("alert controls must stay compact and keep the approved grid geometry")
+        errors.append("fixed-time alert or jump-preview regression: " + token)
+for token in [
+    'id="warnPercentMode"', 'id="dangerPercentMode"', 'id="warnPercent"', 'id="dangerPercent"',
+    'id="warnMessageEnabled"', 'id="dangerMessageEnabled"', 'id="dangerMessage"',
+    'function updateAlertRulesUI()', 'function zoneThreshold(', 's.warnMessageEnabled&&',
+    's.dangerMessageEnabled&&', 'alertPercentToggle', 'alertMsgToggle',
+]:
+    if token in html:
+        errors.append("retired end-of-round percentage or message returned: " + token)
+if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:flex;align-items:center;gap:12px}' not in html:
+    errors.append("compact fixed-time alert controls layout regression")
 
 # Default club identity.
 for token in [
