@@ -158,8 +158,8 @@ if 'sel.disabled=opts.length<=1' not in html:
     errors.append("single-choice round count must be disabled and grey")
 if '#status{font-weight:950;letter-spacing:.04em;color:var(--muted);font-size:clamp(38px,5vw,74px);transform:translateY(-40px);min-height:1.15em;max-width:calc(100vw - 96px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' not in html:
     errors.append("long event names must stay on one line without moving the timer")
-if 'function fc(){let c=$("clock"),z=c.style,k=innerWidth+"x"+innerHeight' not in html or 'p.textContent="01:00:00"' not in html or 'F=Math.min(620,maxW*100/w,(innerHeight-435)/.78)' not in html:
-    errors.append("timer clock must use one stable size based on the longest normal display")
+if 'function fc(){let c=$("clock"),z=c.style,fs=document.body.classList.contains("fs"),k=innerWidth+"x"+innerHeight+"x"+fs' not in html or 'const maxW=c.parentNode.offsetWidth-(fs?96:32)' not in html or 'p.textContent="01:00:00"' not in html or 'if(fs)p.style.fontVariantNumeric="tabular-nums"' not in html or 'F=Math.min(620,maxW*100/w,(innerHeight-435)/.78)' not in html:
+    errors.append("timer clock must keep windowed rendering unchanged and fit safely in fullscreen")
 if 'z.transform="translateY(10px)"' not in html:
     errors.append("timer clock must keep the approved vertical transform")
 if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')]:
