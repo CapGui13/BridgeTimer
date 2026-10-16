@@ -328,7 +328,7 @@ if 'function restoreUndoState(x)' not in html or 'roundDuration:x.roundDuration'
     errors.append("Undo must restore the complete active-round timing snapshot")
 
 # The jump announcement uses a dedicated, configurable, full-timer overlay.
-for token in ['id="jumpDisplaySecs"', 'id="jumpSplash"', 'st.jumpReminderRound===st.pos', 's.jumpDisplaySecs', '$("jumpSplash").classList.toggle("on",!!jumpSplashOn)']:
+for token in ['id="jumpDisplaySecs"', 'id="jumpSplash"', 'st.phase==="jump"', 's.jumpDisplaySecs', '$("jumpSplash").classList.toggle("on",jumpSplashOn)']:
     if token not in html:
         errors.append("jump announcement overlay missing: " + token)
 if 'const between=currentRoundBetween()' not in html:
