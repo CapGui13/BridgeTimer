@@ -160,14 +160,30 @@ if '#status{font-weight:950;letter-spacing:.04em;color:var(--text);font-size:cla
     errors.append("top timer message must follow Text color and stay on one line without moving the timer")
 if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--text);' not in html:
     errors.append("board-progress message must follow Text color")
-if 'function fc(){let c=$("clock"),z=c.style,fs=document.body.classList.contains("fs"),k=innerWidth+"x"+innerHeight+"x"+fs' not in html or 'const maxW=c.parentNode.offsetWidth-(fs?96:32)' not in html or 'p.textContent="01:00:00"' not in html or 'p.style.fontVariantNumeric="tabular-nums"' not in html or 'F=Math.min(620,maxW*100/w,(innerHeight-435)/.78)' not in html:
-    errors.append("timer clock measurement must match rendered tabular numeral metrics in both windowed and fullscreen modes")
-if 'z.transform="translateY(10px)"' not in html:
-    errors.append("timer clock must keep the approved vertical transform")
+# The central layout is proportional in both presentation modes; clock glyphs are fitted
+# to the actual available space and the visible clock length (HH:MM or HH:MM:SS).
+for token in [
+    '#timer .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,14fr) minmax(0,57fr) minmax(14px,3fr) minmax(0,14fr) minmax(0,12fr);',
+    '#timer #status{transform:none;min-height:0;max-width:100%;align-self:center}',
+    '#timer #clock{transform:none;align-self:center;justify-self:center}',
+    '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}',
+    '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
+    '#timer #alert{position:absolute;bottom:17%;',
+    'p.textContent=c.textContent||"00:00"',
+    'const k=width+"x"+height+"x"+fs+"x"+c.textContent.length',
+    'const maxWidth=Math.max(100,width-(fs?96:32)),clockSlotHeight=height*.57',
+    'p.style.fontVariantNumeric="tabular-nums"',
+    'z.transform="none";z.visibility="visible"',
+]:
+    if token not in html:
+        errors.append("proportional central layout / clock fitting regression: " + token)
 if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')]:
     errors.append("timer clock must never be horizontally distorted")
-if 'k=innerWidth+"x"+innerHeight+"x"+c.textContent.length' in html:
-    errors.append("clock font size must not be recalculated when crossing the one-hour display boundary")
+# The top and bottom frame dimensions must be unaffected by central reflow.
+for token in ['.top{display:grid;grid-template-columns:1fr auto;align-items:center;gap:15px;padding:14px 22px;border-bottom:1px solid var(--line);',
+              '.bottom{position:relative;height:82px;min-height:82px;padding:11px 190px 15px;border-top:1px solid var(--line);']:
+    if token not in html:
+        errors.append("timer frame border geometry changed: " + token)
 
 if 's=x?{...def,...x,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"}:{...def}' not in html:
     errors.append("startup tournament presets must be restored on every launch")
@@ -518,12 +534,15 @@ if errors:
 
 print(f"BridgeTimer regression check OK — version {version}")
 
-# FROZEN RENDERING CONTRACT — approved after V3.2 side-by-side comparison.
+# RENDERING CONTRACT — central reflow approved; preserve glyphs, color choices, and frame.
 frozen_render_tokens = [
     '--disable-lcd-text',
-    '#clock{font:700 100px/.78 Bahnschrift,Consolas,monospace;letter-spacing:0;white-space:nowrap;transform:translateY(10px);font-variant-numeric:tabular-nums;visibility:hidden}',
-    '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);line-height:1.05;min-height:1.1em;max-width:1300px}',
-    '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--text);line-height:1.08;max-width:1300px;width:calc(100% - 32px);min-height:42px;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}',
+    '#clock{font:700 100px/.78 Bahnschrift,Consolas,monospace;',
+    '#status{font-weight:950;letter-spacing:.04em;color:var(--text);',
+    '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);',
+    '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;',
+    '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
+    '#timer .main{display:grid;',
 ]
 for token in frozen_render_tokens:
     haystack = main if token == '--disable-lcd-text' else html
