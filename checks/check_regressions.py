@@ -171,7 +171,7 @@ for token in [
     '#timer #alert{position:absolute;bottom:17%;',
     'p.textContent=c.textContent||"00:00"',
     'const k=width+"x"+height+"x"+fs+"x"+c.textContent.length',
-    'const maxWidth=Math.max(100,width-(fs?96:32)),clockSlotHeight=height*.57',
+    'const maxWidth=Math.max(100,Math.min(width-(fs?96:32),innerWidth*.82)),clockSlotHeight=height*.57',
     'p.style.fontVariantNumeric="tabular-nums"',
     'z.transform="none";z.visibility="visible"',
 ]:
