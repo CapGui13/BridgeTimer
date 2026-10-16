@@ -168,7 +168,7 @@ for token in [
     '#timer #clock{transform:none;align-self:center;justify-self:center;letter-spacing:-.055em;font-stretch:condensed;position:relative;top:clamp(9px,1.5vh,16px)}',
     '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center;position:relative;top:clamp(8px,1.25vh,12px)}',
     '#timer #submsg{position:relative;left:auto;bottom:auto;transform:none;',
-    '#timer #tempmsg{min-height:0;max-width:calc(100% - 32px);width:100%;justify-self:center;align-self:center;'
+    '#timer #tempmsg{min-height:0;max-width:calc(100% - 32px);width:100%;justify-self:center;align-self:center;',
     'pointer-events:none;position:relative;top:clamp(11px,1.55vh,16px)',
     '<div id="submsg"></div><div id="tempmsg" role="status" aria-live="polite"></div>',
     '$("tempmsg").textContent="";$("alert").className=""',
