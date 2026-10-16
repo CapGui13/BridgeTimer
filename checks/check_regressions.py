@@ -222,7 +222,7 @@ for token in [
     'function zoneThreshold(percentMode,minutes,seconds,percent,total)',
     's.warnMessageEnabled&&s.dangerMessage',
     's.dangerMessageEnabled&&s.dangerMessage',
-    '#alert.on.warningAlert{background:var(--warn);color:#111827}',
+    '#alert.on.warningAlert{background:transparent;color:var(--accent)}',
 ]:
     if token not in html:
         errors.append("alert-zone options regression: " + token)
