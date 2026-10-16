@@ -164,11 +164,12 @@ if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-
 # to the actual available space using a fixed HH:MM:SS width for both formats.
 for token in [
     '#timer .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,10fr) minmax(0,58fr) minmax(14px,3fr) minmax(0,9fr) minmax(0,9fr) minmax(0,11fr);',
-    '#timer #status{transform:none;min-height:0;max-width:100%;align-self:start;margin-top:clamp(2px,.6vh,8px);font-size:clamp(38px,4.2vw,64px);line-height:1.05;position:relative;top:calc(-1 * clamp(7px,1.4vh,14px))}',
-    '#timer #clock{transform:none;align-self:center;justify-self:center;letter-spacing:-.055em;font-stretch:condensed;position:relative;top:clamp(6px,1.1vh,12px)}',
-    '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}',
-    '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
-    '#timer #tempmsg{min-height:0;max-width:calc(100% - 32px);width:100%;justify-self:center;align-self:center;',
+    '#timer #status{transform:none;min-height:0;max-width:100%;align-self:start;margin-top:clamp(2px,.6vh,8px);font-size:clamp(38px,4.2vw,64px);line-height:1.05;position:relative;top:calc(-1 * clamp(10px,1.8vh,18px))}',
+    '#timer #clock{transform:none;align-self:center;justify-self:center;letter-spacing:-.055em;font-stretch:condensed;position:relative;top:clamp(9px,1.5vh,16px)}',
+    '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center;position:relative;top:clamp(8px,1.25vh,12px)}',
+    '#timer #submsg{position:relative;left:auto;bottom:auto;transform:none;',
+    '#timer #tempmsg{min-height:0;max-width:calc(100% - 32px);width:100%;justify-self:center;align-self:center;'
+    'pointer-events:none;position:relative;top:clamp(11px,1.55vh,16px)',
     '<div id="submsg"></div><div id="tempmsg" role="status" aria-live="polite"></div>',
     '$("tempmsg").textContent="";$("alert").className=""',
     'if(tempMessageActive()&&st.phase!=="ended"){$("tempmsg").textContent=s.quickMessage||"Saisir les scores"}',
@@ -190,7 +191,7 @@ if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')
 if '$("submsg").textContent=s.quickMessage' in html or '$("submsg").classList.add("tempMessage")' in html:
     errors.append("temporary M message must use its independent line, not the board notice")
 # The clock itself and progress bar are not resized/moved as a group; only title and clock clearance change.
-for token in ['#timer .progress{align-self:center}', '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}']:
+for token in ['#timer .progress{align-self:center}', '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center;position:relative;top:clamp(8px,1.25vh,12px)}']:
     if token not in html:
         errors.append('upper text adjustment changed progress or competition layout: '+token)
 
@@ -556,7 +557,7 @@ frozen_render_tokens = [
     '#status{font-weight:950;letter-spacing:.04em;color:var(--text);',
     '#msg{font-weight:950;font-size:clamp(26px,4.2vw,64px);',
     '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;',
-    '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
+    '#timer #submsg{position:relative;left:auto;bottom:auto;transform:none;',
     '#timer .main{display:grid;',
 ]
 for token in frozen_render_tokens:
