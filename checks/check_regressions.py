@@ -164,8 +164,8 @@ if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-
 # to the actual available space using a fixed HH:MM:SS width for both formats.
 for token in [
     '#timer .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,10fr) minmax(0,58fr) minmax(14px,3fr) minmax(0,9fr) minmax(0,9fr) minmax(0,11fr);',
-    '#timer #status{transform:none;min-height:0;max-width:100%;align-self:start;margin-top:clamp(2px,.6vh,8px)}',
-    '#timer #clock{transform:none;align-self:center;justify-self:center;letter-spacing:-.055em;font-stretch:condensed}',
+    '#timer #status{transform:none;min-height:0;max-width:100%;align-self:start;margin-top:clamp(2px,.6vh,8px);font-size:clamp(38px,4.2vw,64px);line-height:1.05;position:relative;top:calc(-1 * clamp(7px,1.4vh,14px))}',
+    '#timer #clock{transform:none;align-self:center;justify-self:center;letter-spacing:-.055em;font-stretch:condensed;position:relative;top:clamp(6px,1.1vh,12px)}',
     '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}',
     '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
     '#timer #tempmsg{min-height:0;max-width:calc(100% - 32px);width:100%;justify-self:center;align-self:center;',
@@ -189,6 +189,11 @@ if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')
 # The M shortcut must not replace the board progress text or jump reminder.
 if '$("submsg").textContent=s.quickMessage' in html or '$("submsg").classList.add("tempMessage")' in html:
     errors.append("temporary M message must use its independent line, not the board notice")
+# The clock itself and progress bar are not resized/moved as a group; only title and clock clearance change.
+for token in ['#timer .progress{align-self:center}', '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}']:
+    if token not in html:
+        errors.append('upper text adjustment changed progress or competition layout: '+token)
+
 # The top and bottom frame dimensions must be unaffected by central reflow.
 for token in ['.top{display:grid;grid-template-columns:1fr auto;align-items:center;gap:15px;padding:14px 22px;border-bottom:1px solid var(--line);',
               '.bottom{position:relative;height:82px;min-height:82px;padding:11px 190px 15px;border-top:1px solid var(--line);']:
