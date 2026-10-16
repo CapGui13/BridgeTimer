@@ -197,8 +197,8 @@ if '$("status").textContent=s.mainMessage;$("msg").textContent=(s.eventName||"")
     errors.append("timer must show Message en direct in the top status slot and Evenement in the former live-message slot")
 if '<div class="messageInline jumpMessageRow pairOnly jumpOnly"><label id="jumpMessageLabel" for="jumpMessage">Message du saut</label>' not in html:
     errors.append("Message du saut must stay inline with its input")
-if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div></div>' not in html or '<div class="jumpAdvanceOption"><label>Alerte tour préc</label><input id="jumpAdvanceNotice" type="checkbox" checked></div>' not in html:
-    errors.append("board tracking/sound row and inline pre-jump alert layout regressed")
+if '<div class="boardOptionsRow"><div class="boardProgressOption"><label>Affichage n° donne en cours</label><input id="boardProgressNotice" type="checkbox" checked></div><div class="soundOption"><label>Son</label><input id="sound" type="checkbox" checked></div></div>' not in html or '<label class="jumpAdvanceOption alertOption pairOnly jumpOnly"><span>Pré-alerte saut</span><input id="jumpAdvanceNotice" type="checkbox" checked></label>' not in html:
+    errors.append("board tracking/sound row or pre-jump alert beside red threshold regressed")
 if '.boardOptionsRow{grid-column:1/-1;display:flex;align-items:center;gap:8px 48px}' not in html or '.soundOption{margin-left:0}' not in html:
     errors.append("sound must stay in its approved compact position")
 if 'Afficher dès la zone orange du tour précédent' in html or 'Prévenir avant le saut' in html:
@@ -221,10 +221,14 @@ if '#undoToast{position:fixed;z-index:40;right:18px;bottom:121px;zoom:.78;' not 
 for token in [
     '<div class="grid alertGrid"><label>Orange à</label>',
     'id="warnMinutes" type="tel" min="0" max="60" value="02"',
+    '<span>Activé</span><input id="warnEnabled" type="checkbox" checked>',
+    'warnEnabled:true',
+    'warnEnabled:$("warnEnabled").checked',
+    'ws=s.warnEnabled===false?0:warnThreshold(total)',
     'id="dangerMinutes" type="tel" min="0" max="60" value="01"',
     'function warnThreshold(){return Math.max(0,(Number(s.warnMinutes)||0)*60+(Number(s.warnSeconds)||0))}',
     'function dangerThreshold(){return Math.max(0,(Number(s.dangerMinutes)||0)*60+(Number(s.dangerSeconds)||0))}',
-    'const jumpNoticeAt=ws||ds',
+    'const jumpNoticeAt=warnThreshold(total)||ds',
     's.jumpAdvanceNotice&&s.jumpRound',
     '$("submsg").classList.add("jumpUpcoming")',
 ]:
@@ -238,7 +242,7 @@ for token in [
 ]:
     if token in html:
         errors.append("retired end-of-round percentage or message returned: " + token)
-if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:flex;align-items:center;gap:12px}' not in html:
+if '.optionCards .grid.alertGrid{grid-template-columns:72px 1fr;gap:8px 6px}' not in html or '.alertRule{display:flex;align-items:center;gap:12px}' not in html or '.alertRule .alertOption{display:inline-flex;' not in html:
     errors.append("compact fixed-time alert controls layout regression")
 
 # Default club identity.
