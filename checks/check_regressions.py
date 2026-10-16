@@ -74,9 +74,9 @@ for token in required_main:
     if token not in main:
         errors.append("main.go missing: " + token[:100])
 
-# Logo, tournament profiles and configuration import/export were deliberately removed
-# from the user interface. Keep the custom saved-color preset instead.
-for token in ('id="logoInput"', 'id="removeLogo"', 'id="logo"', '<h2>Profils</h2>', 'id="exportConfig"', 'id="importConfig"', 'profileSave0', 'function emptyProfiles', 'function exportConfiguration', 'function importConfiguration', 'PROFILEKEY', 'LKEY', 'logoData'):
+# Tournament profiles and configuration import/export remain removed.
+# Optional club logo was intentionally restored. Keep the custom saved-color preset.
+for token in ('id="logoInput"', 'id="removeLogo"', 'id="logo"', '<h2>Profils</h2>', 'id="exportConfig"', 'id="importConfig"', 'profileSave0', 'function emptyProfiles', 'function exportConfiguration', 'function importConfiguration', 'PROFILEKEY', 'LKEY'):
     if token in html:
         errors.append("removed personalization feature returned: " + token)
 
