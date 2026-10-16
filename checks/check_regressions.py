@@ -161,7 +161,7 @@ if '#status{font-weight:950;letter-spacing:.04em;color:var(--text);font-size:cla
 if '#submsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;font-weight:800;font-size:clamp(18px,2.3vw,36px);color:var(--text);' not in html:
     errors.append("board-progress message must follow Text color")
 # The central layout is proportional in both presentation modes; clock glyphs are fitted
-# to the actual available space and the visible clock length (HH:MM or HH:MM:SS).
+# to the actual available space using a fixed HH:MM:SS width for both formats.
 for token in [
     '#timer .main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,14fr) minmax(0,57fr) minmax(14px,3fr) minmax(0,14fr) minmax(0,12fr);',
     '#timer #status{transform:none;min-height:0;max-width:100%;align-self:center}',
@@ -169,14 +169,16 @@ for token in [
     '#timer #msg{min-height:0;max-width:calc(100% - 32px);align-self:center}',
     '#timer #submsg{position:static;left:auto;bottom:auto;transform:none;',
     '#timer #alert{position:absolute;bottom:17%;',
-    'p.textContent=c.textContent||"00:00"',
-    'const k=width+"x"+height+"x"+fs+"x"+c.textContent.length',
+    'p.textContent="01:00:00"',
+    'const k=width+"x"+height+"x"+fs',
     'const maxWidth=Math.max(100,Math.min(width-(fs?96:32),innerWidth*.82)),clockSlotHeight=height*.57',
     'p.style.fontVariantNumeric="tabular-nums"',
     'z.transform="none";z.visibility="visible"',
 ]:
     if token not in html:
         errors.append("proportional central layout / clock fitting regression: " + token)
+if 'c.textContent.length' in html[html.index('function fc()'):html.index('function render()')] or 'p.textContent=c.textContent' in html:
+    errors.append("clock size must NOT depend on 59:59 vs 01:00:00 format")
 if 'scaleX(' in html[html.index('function fc()'):html.index('function render()')]:
     errors.append("timer clock must never be horizontally distorted")
 # The top and bottom frame dimensions must be unaffected by central reflow.
