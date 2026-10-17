@@ -6,14 +6,13 @@ html=Path("timer.html").read_text(encoding="utf-8")
 main=Path("main.go").read_text(encoding="utf-8")
 for ident in ("mode","positions","startPosition","boards","boardMinutes","boardSeconds",
 "boardProgressNotice","jumpAdvanceNotice","warnEnabled","jumpDisplaySecs","accent",
-"background","menu","text","themeTest","themeTestGrid","sessionRecovery",
-"restoreSession","discardSession","saveColorsBtn","savedColorsBtn",
+"background","menu","text","themeTest","themeTestGrid","saveColorsBtn","savedColorsBtn",
 "themeTestBtn","randomColorsBtn","screenPreviewGallery"):
     assert len(re.findall(r'\bid="'+re.escape(ident)+r'"',html))==1, f"Missing/duplicate: {ident}"
 for snippet in (
 "function transitionAfterRound()","function tick()","function pause()",
-"function start()","function persistSessionSnapshot(",
-"function offerSessionRecovery()","function contrastRatio(",
+"function start()","function clearObsoleteSessionRecovery()",
+"function contrastRatio(",
 "function randomColors()","function _rtt()","function _rspg()",
 "function _usd()","function loadSavedColors()","window.nativeSetAwake",
 "window.nativeFullscreen","function showTimer()",
@@ -34,4 +33,9 @@ assert "jumpSecs" in html and "jump<tours" in html
 assert '#sessionDurationBox{display:none}' in html, "Pairs-only duration must be hidden by default"
 assert '#sessionDurationBox.sessionDurationVisible{display:flex' in html, "Pairs mode must show duration"
 assert '$("sessionDurationBox").classList.toggle("sessionDurationVisible",pairs)' in html, "Duration visibility must follow mode"
+for forbidden in ('id="sessionRecovery"', 'id="restoreSession"', 'id="discardSession"',
+                  "function offerSessionRecovery()", "function persistSessionSnapshot(",
+                  "function clearSessionSnapshot()", "Séance interrompue"):
+    assert forbidden not in html, f"Unwanted session recovery returned: {forbidden}"
+assert 'clearObsoleteSessionRecovery();' in html, "Stale recovery data should be cleared"
 print("Current BridgeTimer regressions OK")
