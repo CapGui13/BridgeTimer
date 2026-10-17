@@ -41,10 +41,10 @@ function extractFunction(name) {
 
 const functionNames = [
   "duration",
-  "boardDurationSeconds",
+  "_bds",
   "snapshotRoundSettings",
-  "currentRoundDuration",
-  "currentRoundBetween",
+  "_crd",
+  "_crb",
   "currentRoundBoardTimingMatches",
   "beginRound",
   "applyDebugSettingsToCurrentTimer",
@@ -112,17 +112,17 @@ assert(st.phase === "round" && st.pos === 7 && st.remaining === 900, "Next round
 // Timing edits during a live round do not rewrite the active round; they apply next round.
 reset({mode:"2",positions:13,minutes:30,between:0,boards:4,boardMinutes:7,boardSeconds:30},{pos:3});
 snapshotRoundSettings();
-assert(currentRoundDuration() === 1800, "Initial round duration snapshot is wrong");
+assert(_crd() === 1800, "Initial round duration snapshot is wrong");
 s.minutes = 40;
 s.between = 20;
 s.boards = 8;
 s.boardMinutes = 5;
 s.boardSeconds = 0;
-assert(currentRoundDuration() === 1800, "Live duration edit leaked into current round");
-assert(currentRoundBetween() === 0, "Live between-round edit leaked into current round");
+assert(_crd() === 1800, "Live duration edit leaked into current round");
+assert(_crb() === 0, "Live between-round edit leaked into current round");
 beginRound(4, false);
-assert(currentRoundDuration() === 2400, "Next round did not receive new duration");
-assert(currentRoundBetween() === 20, "Next round did not receive new between-round time");
+assert(_crd() === 2400, "Next round did not receive new duration");
+assert(_crb() === 20, "Next round did not receive new between-round time");
 assert(currentRoundBoardTimingMatches() === true, "Next round board timing snapshot is inconsistent");
 
 // Debug may deliberately rewrite the active round snapshot.
@@ -155,8 +155,8 @@ restoreUndoState({
   roundBoards:4, breakDuration:0, jumpReminderRound:0,
 });
 assert(st.pos === 3 && st.remaining === 1234, "Undo did not restore the previous tour/time");
-assert(currentRoundDuration() === 1800, "Undo did not restore previous round duration");
-assert(currentRoundBetween() === 0, "Undo did not restore previous between-round duration");
+assert(_crd() === 1800, "Undo did not restore previous round duration");
+assert(_crb() === 0, "Undo did not restore previous between-round duration");
 assert(currentRoundBoardTimingMatches() === true, "Undo did not restore previous board timing");
 
 
