@@ -42,7 +42,6 @@ const (
 	swpNoMove = 0x0002
 	swpNoZOrder = 0x0004
 	swpFrameChanged = 0x0020
-	swpNoCopyBits = 0x0100 // Discard prior window pixels when the native frame is resized
 	swpNoOwnerZOrder = 0x0200
 
 	gwlpWndProc = ^uintptr(3) // -4
@@ -362,7 +361,6 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 		getWindowPlacement.Call(hwnd, uintptr(unsafe.Pointer(&savedPlace)))
 
 		newStyle := style &^ uintptr(wsCaption|wsThickFrame|wsMinimizeBox|wsMaximizeBox|wsSysMenu)
-		setWindowLongPtrW.Call(hwnd, uintptr(styleIndex), newStyle)
 
 		mon, _, _ := monitorFromWindow.Call(hwnd, monitorDefaultToNearest)
 		mi := monitorInfo{CbSize: uint32(unsafe.Sizeof(monitorInfo{}))}
@@ -373,13 +371,20 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 		if ok == 0 {
 			return false
 		}
+		// First move the existing frame to the monitor bounds. Only then strip
+		// the non-client chrome, so Windows never composites the old frame
+		// corner in the middle of the new fullscreen surface.
 		setWindowPos.Call(
 			hwnd, 0,
 			uintptr(mi.RcMonitor.Left), uintptr(mi.RcMonitor.Top),
 			uintptr(mi.RcMonitor.Right-mi.RcMonitor.Left),
 			uintptr(mi.RcMonitor.Bottom-mi.RcMonitor.Top),
-			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged|swpNoCopyBits,
+			swpNoZOrder|swpNoOwnerZOrder,
 		)
+		setWindowLongPtrW.Call(hwnd, uintptr(styleIndex), newStyle)
+		setWindowPos.Call(hwnd, 0, 0, 0, 0, 0,
+			swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
+
 		fullscreen = true
 		log.Printf("fullscreen: on")
 		return true
@@ -391,7 +396,7 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 	}
 	setWindowPos.Call(
 		hwnd, 0, 0, 0, 0, 0,
-		swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged|swpNoCopyBits,
+		swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
 	)
 	fullscreen = false
 	log.Printf("fullscreen: off")
