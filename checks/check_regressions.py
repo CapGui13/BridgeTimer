@@ -333,10 +333,11 @@ if '$("pairCount").onchange=()=>{updatePairModeUI(true);' in html:
 
 # Fullscreen transition and numpad time hotkeys.
 for token in [
-    'body.fsTransition #timer{opacity:.12;transform:scale(.985);transform-origin:center;transition:opacity .18s ease,transform .18s ease}',
-    'body.fsTransition.fsReveal #timer{opacity:1;transform:scale(1);transition:opacity .30s cubic-bezier(.22,.61,.36,1),transform .30s cubic-bezier(.22,.61,.36,1)}',
-    'document.body.classList.remove("fsReveal");document.body.classList.add("fsTransition");await new Promise(r=>setTimeout(r,190))',
-    'function finishFsTransition(){C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{fc();requestAnimationFrame(()=>{document.body.classList.add("fsReveal");setTimeout(()=>document.body.classList.remove("fsTransition","fsReveal"),330)})},70)))}',
+    'body.fsControlsMoving .controls{visibility:hidden!important;transition:none!important}',
+    'body.fsTransition .main{opacity:.12;transform:scale(.985);transition:opacity .13s ease,transform .13s ease}',
+    'body.fsTransition.fsReveal .main{opacity:1;transform:scale(1);transition:opacity .24s cubic-bezier(.22,.61,.36,1),transform .24s cubic-bezier(.22,.61,.36,1)}',
+    'document.body.classList.add("fsControlsMoving");try{',
+    'function finishFsTransition(){C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>{fc();document.body.classList.remove("fsControlsMoving");document.body.classList.add("fsReveal");',
     'e.key==="F7"||e.code==="NumpadSubtract"',
     'e.key==="F8"||e.code==="NumpadAdd"',
     'if(tv&&(e.key==="F7"||e.code==="NumpadSubtract"||e.key==="-"))',
