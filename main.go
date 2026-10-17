@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unicode/utf16"
@@ -140,6 +141,9 @@ var (
 	nativeAwake bool
 	logFile *os.File
 	stateFileMu sync.Mutex
+	// Close-request handshake: Windows asks, JS confirms, then nativeExit posts WM_CLOSE.
+	closePromptPending atomic.Bool
+	closeApproved atomic.Bool
 )
 
 func showStartupError(message string) {
@@ -309,6 +313,12 @@ func applyDarkTitleBar(hwnd uintptr) {
 }
 
 func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
+	// The native X / Alt+F4 must not destroy the WebView before the HTML
+	// confirmation. Never invoke COM/WebView code from this Windows callback.
+	if msg == wmClose && !closeApproved.Load() {
+		closePromptPending.Store(true)
+		return 0
+	}
 	switch msg {
 	case wmActivate:
 		if wp&0xFFFF != waInactive {
@@ -610,10 +620,19 @@ func main() {
 	hwnd := uintptr(w.Window())
 	applyDarkTitleBar(hwnd)
 	installDarkTitleHook(hwnd)
-	// Post WM_CLOSE on the WebView window's GUI thread so w.Run() exits
-	// normally and the existing shutdown defers release resources.
+	// Consume close requests on the JS side, without calling WebView/COM from WndProc.
+	if err := w.Bind("nativeConsumeCloseRequest", func() bool {
+		return closePromptPending.Swap(false)
+	}); err != nil {
+		log.Printf("close request bind: %v", err)
+	}
+	// The approved path bypasses the confirmation intercept exactly once.
 	if err := w.Bind("nativeExit", func() bool {
+		closeApproved.Store(true)
 		posted, _, _ := postMessageW.Call(hwnd, wmClose, 0, 0)
+		if posted == 0 {
+			closeApproved.Store(false)
+		}
 		return posted != 0
 	}); err != nil {
 		log.Printf("exit bind: %v", err)
