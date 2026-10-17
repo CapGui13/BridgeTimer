@@ -44,4 +44,16 @@ assert '<button id="saveColorsBtn" class="btn">Svg Custom</button>' in html, "Sv
 assert '#saveColorsBtn{background:var(--bg);color:var(--text);border-color:var(--accent)}' in html, "Svg Custom must reflect current background/text/accent"
 assert '<button id="randomColorsBtn" class="btn primary">Random</button>' in html, "Random must use the blue Timer button style"
 assert 'root.setProperty("--bg",s.background)' in html and 'root.setProperty("--text",s.text||def.text)' in html, "Current theme CSS variables must update with live colors"
+# The exit control is confined to Settings, not the projected timer.
+assert '<div id="exitControlRow"><button id="quitAppBtn" class="btn" type="button">Quitter</button></div>' in html, "Settings Quitter button missing"
+assert html.index('id="quitAppBtn"') < html.index('id="jumpMsgOverlay"'), "Quitter must be in settings"
+assert '#quitAppBtn.btn{background:#ff1744' in html, "Quitter must be brighter than Arrêter"
+for token in ('id="exitConfirmOverlay"', 'id="exitYesBtn"', 'id="exitNoBtn"',
+              'Voulez-vous vraiment fermer cet excellent logiciel, codé par Guillaume Capron et ChatGPT ? 😭',
+              'Oui, NTM FDP, la FFB te own', "Non, c'était une erreur 🤗🤗🤗",
+              'function openExitConfirm()', 'function closeExitConfirm()', 'async function confirmExit()',
+              'if(exitConfirmIsOpen()){if(e.key==="Escape")'):
+    assert token in html, "Exit confirmation regression: "+token
+assert 'window.nativeExit()' in html, "Exit must call native Windows closing"
+assert 'w.Bind("nativeExit"' in main and 'postMessageW.Call(hwnd, wmClose, 0, 0)' in main, "Graceful native WM_CLOSE binding missing"
 print("Current BridgeTimer regressions OK")
