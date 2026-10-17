@@ -3,8 +3,12 @@ from pathlib import Path
 html = Path("variants/BridgeTimer_MSG_bandeau.html").read_text(encoding="utf-8")
 required = [
     "function syncFullscreenUI(on)",
-    "function fitFullscreenOnce()",
-    "async function fs(){if(fullscreenInFlight)return;",
+    "function revealFullscreenControlsWhenStable()",
+    'body.fsSwitching #timer .bottom .controls{visibility:hidden!important}',
+    'fullscreenSettleTimer=setTimeout(',
+    'if(document.body.classList.contains("fsSwitching"))revealFullscreenControlsWhenStable()',
+    'document.body.classList.remove("fsSwitching")',
+    "async function fs(){if(fullscreenInFlight||document.body.classList.contains(\"fsSwitching\"))return;",
     'document.addEventListener("fullscreenchange",()=>syncFullscreenUI(!!document.fullscreenElement))',
     "if(!e.repeat)fs()",
     "if(window.nativeFullscreen)",
