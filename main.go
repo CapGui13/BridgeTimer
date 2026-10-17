@@ -42,6 +42,7 @@ const (
 	swpNoMove = 0x0002
 	swpNoZOrder = 0x0004
 	swpFrameChanged = 0x0020
+	swpNoCopyBits = 0x0100 // Discard prior window pixels when the native frame is resized
 	swpNoOwnerZOrder = 0x0200
 
 	gwlpWndProc = ^uintptr(3) // -4
@@ -377,7 +378,7 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 			uintptr(mi.RcMonitor.Left), uintptr(mi.RcMonitor.Top),
 			uintptr(mi.RcMonitor.Right-mi.RcMonitor.Left),
 			uintptr(mi.RcMonitor.Bottom-mi.RcMonitor.Top),
-			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
+			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged|swpNoCopyBits,
 		)
 		fullscreen = true
 		log.Printf("fullscreen: on")
@@ -390,7 +391,7 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 	}
 	setWindowPos.Call(
 		hwnd, 0, 0, 0, 0, 0,
-		swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
+		swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged|swpNoCopyBits,
 	)
 	fullscreen = false
 	log.Printf("fullscreen: off")
