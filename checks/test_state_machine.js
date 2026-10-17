@@ -53,10 +53,12 @@ const functionNames = [
   "restoreUndoState",
   "warnThreshold",
   "dangerThreshold",
+  "buildScreenPreview",
 ];
 
 let s = {};
 let st = {};
+const def={jumpMessage:"Au prochain tour, les EO sautent une table"};
 const clamp = (n,a,b) => Math.max(a, Math.min(b, n));
 function releaseWakeLock() {}
 function debugActive() { return true; }
@@ -176,5 +178,24 @@ s.warnMinutes=0; s.warnSeconds=45;
 assert(warnThreshold() === 45, "Fixed warning must support seconds");
 s.dangerMinutes=0; s.dangerSeconds=20;
 assert(dangerThreshold() === 20, "Fixed red warning must support seconds");
+
+// Temporary screen-preview values must be independent of the real tournament clock.
+reset({mode:"4",positions:6,between:0,minutes:30,jumpRound:0,jumpDisplaySecs:15,quickMessage:""},{pos:3,phase:"round",remaining:483,running:true});
+const realSettingsJSON=JSON.stringify(s),realStateJSON=JSON.stringify(st);
+for(const kind of ["prejump","jump","between","orange","red","pause","roundend","ended","temporary"]){
+  const {cfg,v}=buildScreenPreview(kind);
+  assert(v.started===true&&v.endAt===null,"Preview "+kind+" must not create any running timer");
+  assert(JSON.stringify(s)===realSettingsJSON&&JSON.stringify(st)===realStateJSON,
+    "Preview "+kind+" modified the real settings or timer state");
+  if(kind==="prejump")assert(cfg.jumpRound>0&&v.phase==="round"&&cfg.jumpAdvanceNotice,"Missing pre-jump notice");
+  if(kind==="jump")assert(v.phase==="jump"&&v.remaining>0,"Missing jump countdown");
+  if(kind==="between")assert(v.phase==="break"&&v.breakDuration>0,"Missing between-rounds screen");
+  if(kind==="orange")assert(v.phase==="round"&&v.remaining===90,"Missing orange warning sample");
+  if(kind==="red")assert(v.phase==="round"&&v.remaining===30,"Missing red warning sample");
+  if(kind==="pause")assert(v.running===false&&v.phase==="round","Missing paused sample");
+  if(kind==="roundend")assert(v.phase==="roundEnd"&&cfg.mode==="4","Missing MP4 ending");
+  if(kind==="ended")assert(v.phase==="ended"&&cfg.mode==="2","Missing pairs ending");
+  if(kind==="temporary")assert(cfg.quickMessage.length>0,"Missing temporary message");
+}
 
 console.log("BridgeTimer state-machine behavior OK");
