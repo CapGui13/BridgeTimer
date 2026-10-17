@@ -109,6 +109,8 @@ var (
 	monitorFromWindow = user32.NewProc("MonitorFromWindow")
 	getMonitorInfoW = user32.NewProc("GetMonitorInfoW")
 	setWindowPos = user32.NewProc("SetWindowPos")
+	createWindowExW = user32.NewProc("CreateWindowExW")
+	destroyWindow = user32.NewProc("DestroyWindow")
 	callWindowProcW = user32.NewProc("CallWindowProcW")
 	postMessageW = user32.NewProc("PostMessageW")
 	sendMessageW = user32.NewProc("SendMessageW")
@@ -357,19 +359,43 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 
 	styleIndex := int32(-16)
 
-	// Keep the top-level window visible: DWM cloaking reveals unrelated
-	// windows beneath it. Freeze native repaints while swapping the border,
-	// then invalidate the entire frame after the new geometry is committed.
-	const wmSetRedraw = 0x000B
-	const rdwInvalidate = 0x0001
-	const rdwErase = 0x0004
-	const rdwFrame = 0x0400
-	const rdwAllChildren = 0x0080
-	sendMessageW.Call(hwnd, wmSetRedraw, 0, 0)
+	// A temporary owned, non-activating cover remains visible while the main
+	// window is DWM-cloaked. This hides the old non-client corner WITHOUT
+	// exposing unrelated windows (or the user's desktop) underneath.
+	mon, _, _ := monitorFromWindow.Call(hwnd, monitorDefaultToNearest)
+	miCover := monitorInfo{CbSize: uint32(unsafe.Sizeof(monitorInfo{}))}
+	var cover uintptr
+	if mon != 0 {
+		if ok, _, _ := getMonitorInfoW.Call(mon, uintptr(unsafe.Pointer(&miCover))); ok != 0 {
+			class, _ := syscall.UTF16PtrFromString("STATIC")
+			caption, _ := syscall.UTF16PtrFromString("")
+			cover, _, _ = createWindowExW.Call(0x08000080, uintptr(unsafe.Pointer(class)), uintptr(unsafe.Pointer(caption)), 0x80000000,
+				uintptr(miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Top),
+				uintptr(miCover.RcMonitor.Right-miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Bottom-miCover.RcMonitor.Top),
+				hwnd, 0, 0, 0)
+			if cover != 0 {
+				showWindow.Call(cover, 4) // SW_SHOWNOACTIVATE; owned by main window
+				setWindowPos.Call(cover, hwnd,
+					uintptr(miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Top),
+					uintptr(miCover.RcMonitor.Right-miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Bottom-miCover.RcMonitor.Top),
+					0x0010) // SWP_NOACTIVATE; keep the main window above the cover
+			}
+		}
+	}
+	cloaked := int32(1)
+	if cover != 0 {
+		dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked))
+	}
 	defer func() {
-		sendMessageW.Call(hwnd, wmSetRedraw, 1, 0)
-		redrawWindow.Call(hwnd, 0, 0, rdwInvalidate|rdwErase|rdwFrame|rdwAllChildren)
+		if cover != 0 {
+			cloaked = 0
+			dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked))
+		}
+		redrawWindow.Call(hwnd, 0, 0, 0x0001|0x0004|0x0080|0x0400)
 		dwmFlush.Call()
+		if cover != 0 {
+			destroyWindow.Call(cover)
+		}
 	}()
 
 	if !fullscreen {
