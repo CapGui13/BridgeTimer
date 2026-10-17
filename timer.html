@@ -27,7 +27,7 @@ body:not(.fs) #timer #fsBtn{width:auto;min-width:0;padding:7px 8px;font-size:12p
 /* Le bouton MSG reste cliquable : seuls le libellé et le champ auto-calculé s'atténuent. */
 #settings #jumpRoundSetting:has(#jumpRound:disabled)>label,
 #settings #jumpRoundSetting:has(#jumpRound:disabled)>#jumpRound{
-  opacity:.4;pointer-events:none
+  opacity:.4!important;pointer-events:none
 }
 #settings .modeInactive{opacity:.4;pointer-events:none}
 #settings .btn:disabled{opacity:.4;filter:none!important;cursor:not-allowed}
