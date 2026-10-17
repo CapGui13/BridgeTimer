@@ -31,4 +31,7 @@ for snippet in ("--disable-lcd-text","SetThreadExecutionState","startLocalServer
 assert "const jumpNoticeAt=ds;" not in html
 assert 'root.setProperty("--accentFg",hexRgb' not in html
 assert "jumpSecs" in html and "jump<tours" in html
+assert '#sessionDurationBox{display:none}' in html, "Pairs-only duration must be hidden by default"
+assert '#sessionDurationBox.sessionDurationVisible{display:flex' in html, "Pairs mode must show duration"
+assert '$("sessionDurationBox").classList.toggle("sessionDurationVisible",pairs)' in html, "Duration visibility must follow mode"
 print("Current BridgeTimer regressions OK")
