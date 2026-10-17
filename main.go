@@ -42,6 +42,7 @@ const (
 	swpNoMove = 0x0002
 	swpNoZOrder = 0x0004
 	swpFrameChanged = 0x0020
+	swpNoRedraw = 0x0008
 	swpNoOwnerZOrder = 0x0200
 
 	gwlpWndProc = ^uintptr(3) // -4
@@ -121,6 +122,8 @@ var (
 	closeHandle = kernel32.NewProc("CloseHandle")
 	setThreadExecutionState = kernel32.NewProc("SetThreadExecutionState")
 	dwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
+	dwmFlush = dwmapi.NewProc("DwmFlush")
+	redrawWindow = user32.NewProc("RedrawWindow")
 	getSaveFileNameW = comdlg32.NewProc("GetSaveFileNameW")
 
 	fullscreenMu sync.Mutex
@@ -353,6 +356,18 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 
 	styleIndex := int32(-16)
 
+	// Cloak the native window while DWM and USER32 replace its non-client frame.
+	// This prevents one stale corner of the old border from being composited at
+	// the former window coordinates during the first fullscreen transition.
+	cloaked := int32(1)
+	dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked)) // DWMWA_CLOAK
+	defer func() {
+		cloaked = 0
+		dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked))
+		redrawWindow.Call(hwnd, 0, 0, 0x0001|0x0004|0x0080|0x0400) // invalidate, erase, frame, all children
+		dwmFlush.Call()
+	}()
+
 	if !fullscreen {
 		style, _, _ := getWindowLongPtrW.Call(hwnd, uintptr(styleIndex))
 		savedStyle = style
@@ -377,7 +392,7 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 			uintptr(mi.RcMonitor.Left), uintptr(mi.RcMonitor.Top),
 			uintptr(mi.RcMonitor.Right-mi.RcMonitor.Left),
 			uintptr(mi.RcMonitor.Bottom-mi.RcMonitor.Top),
-			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
+			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged|swpNoRedraw,
 		)
 		fullscreen = true
 		log.Printf("fullscreen: on")
