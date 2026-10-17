@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -136,6 +138,7 @@ var (
 	awakeMu sync.Mutex
 	nativeAwake bool
 	logFile *os.File
+	stateFileMu sync.Mutex
 )
 
 func showStartupError(message string) {
@@ -464,9 +467,70 @@ func utf16Multi(s string) []uint16 {
 	return append(out, 0)
 }
 
+
+func nativeStateFileName(key string) string {
+	// Accept only BridgeTimer's own keys: never trust arbitrary paths from the web view.
+	switch key {
+	case "bridgeTimerV2.settings":
+		return "native-settings.json"
+	case "bridgeTimerWebView2.savedColors":
+		return "native-colors.json"
+	case "bridgeTimerV2.activeSession":
+		return "native-session.json"
+	default:
+		return ""
+	}
+}
+
+func nativeStateReadAll() map[string]string {
+	stateFileMu.Lock()
+	defer stateFileMu.Unlock()
+	out := make(map[string]string)
+	for _, key := range []string{"bridgeTimerV2.settings", "bridgeTimerWebView2.savedColors", "bridgeTimerV2.activeSession"} {
+		b, err := os.ReadFile(filepath.Join(appDataPath(), nativeStateFileName(key)))
+		if err == nil && len(b) <= 100000 && json.Valid(b) {
+			out[key] = string(b)
+		}
+	}
+	return out
+}
+
+func nativeStateWrite(key, value string) bool {
+	name := nativeStateFileName(key)
+	if name == "" || len(value) > 100000 || !json.Valid([]byte(value)) {
+		return false
+	}
+	stateFileMu.Lock()
+	defer stateFileMu.Unlock()
+	path := filepath.Join(appDataPath(), name)
+	if err := os.WriteFile(path, []byte(value), 0600); err != nil {
+		log.Printf("native state write %s: %v", name, err)
+		return false
+	}
+	return true
+}
+
+func nativeStateDelete(key string) bool {
+	name := nativeStateFileName(key)
+	if name == "" {
+		return false
+	}
+	stateFileMu.Lock()
+	defer stateFileMu.Unlock()
+	err := os.Remove(filepath.Join(appDataPath(), name))
+	return err == nil || os.IsNotExist(err)
+}
+
 func startLocalServer() (*http.Server, string, error) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 	ln, err := net.Listen("tcp", addr)
+	if errors.Is(err, syscall.EADDRINUSE) {
+		// A different local program already owns our stable port.
+		// Keep BridgeTimer usable; native state files preserve preferences
+		// despite the temporary WebView2 origin change.
+		log.Printf("port %d occupied; using a free localhost port", port)
+		ln, err = net.Listen("tcp", net.JoinHostPort(host, "0"))
+	}
 	if err != nil {
 		return nil, "", err
 	}
@@ -486,7 +550,7 @@ func startLocalServer() (*http.Server, string, error) {
 			log.Printf("local server: %v", err)
 		}
 	}()
-	return srv, "http://" + addr + "/", nil
+	return srv, "http://" + ln.Addr().String() + "/", nil
 }
 
 func main() {
@@ -554,6 +618,15 @@ func main() {
 		return setNativeAwake(on)
 	}); err != nil {
 		log.Printf("awake bind: %v", err)
+	}
+	if err := w.Bind("nativeStateReadAll", nativeStateReadAll); err != nil {
+		log.Printf("native state read bind: %v", err)
+	}
+	if err := w.Bind("nativeStateWrite", nativeStateWrite); err != nil {
+		log.Printf("native state write bind: %v", err)
+	}
+	if err := w.Bind("nativeStateDelete", nativeStateDelete); err != nil {
+		log.Printf("native state delete bind: %v", err)
 	}
 	if err := w.Bind("nativeDiagnostics", func() nativeDiagInfo {
 		return getNativeDiagnostics(hwnd)
