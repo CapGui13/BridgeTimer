@@ -42,6 +42,7 @@ const (
 	swpNoMove = 0x0002
 	swpNoZOrder = 0x0004
 	swpFrameChanged = 0x0020
+	swpNoRedraw = 0x0008
 	swpNoOwnerZOrder = 0x0200
 
 	gwlpWndProc = ^uintptr(3) // -4
@@ -108,8 +109,11 @@ var (
 	monitorFromWindow = user32.NewProc("MonitorFromWindow")
 	getMonitorInfoW = user32.NewProc("GetMonitorInfoW")
 	setWindowPos = user32.NewProc("SetWindowPos")
+	createWindowExW = user32.NewProc("CreateWindowExW")
+	destroyWindow = user32.NewProc("DestroyWindow")
 	callWindowProcW = user32.NewProc("CallWindowProcW")
 	postMessageW = user32.NewProc("PostMessageW")
+	sendMessageW = user32.NewProc("SendMessageW")
 	findWindowW = user32.NewProc("FindWindowW")
 	showWindow = user32.NewProc("ShowWindow")
 	setForegroundWindow = user32.NewProc("SetForegroundWindow")
@@ -121,6 +125,8 @@ var (
 	closeHandle = kernel32.NewProc("CloseHandle")
 	setThreadExecutionState = kernel32.NewProc("SetThreadExecutionState")
 	dwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
+	dwmFlush = dwmapi.NewProc("DwmFlush")
+	redrawWindow = user32.NewProc("RedrawWindow")
 	getSaveFileNameW = comdlg32.NewProc("GetSaveFileNameW")
 
 	fullscreenMu sync.Mutex
@@ -353,6 +359,45 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 
 	styleIndex := int32(-16)
 
+	// A temporary owned, non-activating cover remains visible while the main
+	// window is DWM-cloaked. This hides the old non-client corner WITHOUT
+	// exposing unrelated windows (or the user's desktop) underneath.
+	mon, _, _ := monitorFromWindow.Call(hwnd, monitorDefaultToNearest)
+	miCover := monitorInfo{CbSize: uint32(unsafe.Sizeof(monitorInfo{}))}
+	var cover uintptr
+	if mon != 0 {
+		if ok, _, _ := getMonitorInfoW.Call(mon, uintptr(unsafe.Pointer(&miCover))); ok != 0 {
+			class, _ := syscall.UTF16PtrFromString("STATIC")
+			caption, _ := syscall.UTF16PtrFromString("")
+			cover, _, _ = createWindowExW.Call(0x08000080, uintptr(unsafe.Pointer(class)), uintptr(unsafe.Pointer(caption)), 0x80000000,
+				uintptr(miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Top),
+				uintptr(miCover.RcMonitor.Right-miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Bottom-miCover.RcMonitor.Top),
+				hwnd, 0, 0, 0)
+			if cover != 0 {
+				showWindow.Call(cover, 4) // SW_SHOWNOACTIVATE; owned by main window
+				setWindowPos.Call(cover, hwnd,
+					uintptr(miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Top),
+					uintptr(miCover.RcMonitor.Right-miCover.RcMonitor.Left), uintptr(miCover.RcMonitor.Bottom-miCover.RcMonitor.Top),
+					0x0010) // SWP_NOACTIVATE; keep the main window above the cover
+			}
+		}
+	}
+	cloaked := int32(1)
+	if cover != 0 {
+		dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked))
+	}
+	defer func() {
+		if cover != 0 {
+			cloaked = 0
+			dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked))
+		}
+		redrawWindow.Call(hwnd, 0, 0, 0x0001|0x0004|0x0080|0x0400)
+		dwmFlush.Call()
+		if cover != 0 {
+			destroyWindow.Call(cover)
+		}
+	}()
+
 	if !fullscreen {
 		style, _, _ := getWindowLongPtrW.Call(hwnd, uintptr(styleIndex))
 		savedStyle = style
@@ -377,7 +422,7 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 			uintptr(mi.RcMonitor.Left), uintptr(mi.RcMonitor.Top),
 			uintptr(mi.RcMonitor.Right-mi.RcMonitor.Left),
 			uintptr(mi.RcMonitor.Bottom-mi.RcMonitor.Top),
-			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
+			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged|swpNoRedraw,
 		)
 		fullscreen = true
 		log.Printf("fullscreen: on")
