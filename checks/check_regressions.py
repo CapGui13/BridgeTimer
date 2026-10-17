@@ -334,8 +334,8 @@ if '$("pairCount").onchange=()=>{updatePairModeUI(true);' in html:
 # Fullscreen transition and numpad time hotkeys.
 for token in [
     'body.fsControlsMoving .controls{visibility:hidden!important;transition:none!important}',
-    'body.fsTransition .main,body.fsTransition .top,body.fsTransition .bottom{opacity:0;transition:opacity .13s ease}',
-    'body.fsTransition.fsReveal .main,body.fsTransition.fsReveal .top,body.fsTransition.fsReveal .bottom{opacity:1;transition:opacity .24s ease}',
+    'body.fsTransition #timer{opacity:0;transition:opacity .17s ease!important;transform:none!important}',
+    'body.fsTransition.fsReveal #timer{opacity:1;transition:opacity .24s ease!important;transform:none!important}',
     'document.body.classList.add("fsControlsMoving");try{',
     'function finishFsTransition(){C=null;requestAnimationFrame(()=>requestAnimationFrame(()=>{fc();document.body.classList.remove("fsControlsMoving");document.body.classList.add("fsReveal");',
     'e.key==="F7"||e.code==="NumpadSubtract"',
