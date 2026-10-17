@@ -111,6 +111,7 @@ var (
 	setWindowPos = user32.NewProc("SetWindowPos")
 	callWindowProcW = user32.NewProc("CallWindowProcW")
 	postMessageW = user32.NewProc("PostMessageW")
+	sendMessageW = user32.NewProc("SendMessageW")
 	findWindowW = user32.NewProc("FindWindowW")
 	showWindow = user32.NewProc("ShowWindow")
 	setForegroundWindow = user32.NewProc("SetForegroundWindow")
@@ -356,15 +357,18 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 
 	styleIndex := int32(-16)
 
-	// Cloak the native window while DWM and USER32 replace its non-client frame.
-	// This prevents one stale corner of the old border from being composited at
-	// the former window coordinates during the first fullscreen transition.
-	cloaked := int32(1)
-	dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked)) // DWMWA_CLOAK
+	// Keep the top-level window visible: DWM cloaking reveals unrelated
+	// windows beneath it. Freeze native repaints while swapping the border,
+	// then invalidate the entire frame after the new geometry is committed.
+	const wmSetRedraw = 0x000B
+	const rdwInvalidate = 0x0001
+	const rdwErase = 0x0004
+	const rdwFrame = 0x0400
+	const rdwAllChildren = 0x0080
+	sendMessageW.Call(hwnd, wmSetRedraw, 0, 0)
 	defer func() {
-		cloaked = 0
-		dwmSetWindowAttribute.Call(hwnd, 13, uintptr(unsafe.Pointer(&cloaked)), unsafe.Sizeof(cloaked))
-		redrawWindow.Call(hwnd, 0, 0, 0x0001|0x0004|0x0080|0x0400) // invalidate, erase, frame, all children
+		sendMessageW.Call(hwnd, wmSetRedraw, 1, 0)
+		redrawWindow.Call(hwnd, 0, 0, rdwInvalidate|rdwErase|rdwFrame|rdwAllChildren)
 		dwmFlush.Call()
 	}()
 
