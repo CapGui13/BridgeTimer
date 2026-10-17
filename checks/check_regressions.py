@@ -40,4 +40,8 @@ for forbidden in ('id="sessionRecovery"', 'id="restoreSession"', 'id="discardSes
 assert 'clearObsoleteSessionRecovery();' in html, "Stale recovery data should be cleared"
 assert 'function loadSavedColors(){savedColorPreset=safeJSONRead(COLORKEY,validColorPreset)||{accent:def.accent,background:def.background,menu:def.menu,text:def.text};_usc()}' in html, "Custom should start with OG Colors without replacing a saved preset"
 assert 'function _scc(){read();savedColorPreset={accent:s.accent,background:s.background,menu:s.menu,text:s.text};safeJSONWrite(COLORKEY,savedColorPreset)' in html, "Custom save must still persist changes"
+assert '<button id="saveColorsBtn" class="btn">Svg Custom</button>' in html, "Svg Custom must not be fixed to the primary button style"
+assert '#saveColorsBtn{background:var(--bg);color:var(--text);border-color:var(--accent)}' in html, "Svg Custom must reflect current background/text/accent"
+assert '<button id="randomColorsBtn" class="btn primary">Random</button>' in html, "Random must use the blue Timer button style"
+assert 'root.setProperty("--bg",s.background)' in html and 'root.setProperty("--text",s.text||def.text)' in html, "Current theme CSS variables must update with live colors"
 print("Current BridgeTimer regressions OK")
