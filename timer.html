@@ -34,7 +34,7 @@ body:not(.fs) #timer #fsBtn{width:auto;min-width:0;padding:7px 8px;font-size:12p
 #settings #sessionDurationBox.sessionDurationVisible{opacity:.4;pointer-events:none}
 @media(min-width:1200px){#settings #quickMessage{width:100%;max-width:460px!important}}
 #timer.screenPreviewMode{grid-template-rows:auto auto minmax(0,1fr) auto}
-#screenPreviewToolbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:8;flex-wrap:wrap}
+#screenPreviewToolbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:40;flex-wrap:wrap}
 #screenPreviewToolbar strong{font-size:12px;letter-spacing:.05em;color:var(--accent);white-space:nowrap}
 #screenPreviewSelect{width:min(245px,40vw);font-size:13px;min-height:34px}
 #screenPreviewToolbar .screenPreviewInfo{font-size:12px;color:var(--muted);flex:1}
@@ -132,17 +132,21 @@ function openScreenPreview(){
   $("settings").classList.add("hidden");
   $("timer").classList.remove("hidden");
   $("timer").classList.add("screenPreviewMode");
+  $("timer").querySelectorAll(".top,.main,.bottom").forEach(el=>el.inert=true);
   $("screenPreviewToolbar").classList.remove("hidden");
   $("tempMessageOverlay").classList.add("hidden");
   setScreenPreview("prejump");
+  $("screenPreviewSelect").focus();
 }
 function closeScreenPreview(){
   if(!screenPreviewState)return;
   screenPreviewState=null;screenPreviewSettings=null;screenPreviewKind=null;
   $("screenPreviewToolbar").classList.add("hidden");
   $("timer").classList.remove("screenPreviewMode");
+  $("timer").querySelectorAll(".top,.main,.bottom").forEach(el=>el.inert=false);
   C=null;
   showSettings(false);
+  $("screenPreviewBtn").focus();
 }
 function openThemeTest(){read();renderThemeTest();$("themeTest").classList.remove("hidden");$("themeTest").setAttribute("aria-hidden","false");$("themeTest").scrollTop=0}function closeThemeTest(){$("themeTest").classList.add("hidden");$("themeTest").setAttribute("aria-hidden","true");fill()}function resetOriginalColors(){s.accent=def.accent;s.background=def.background;s.menu=def.menu;s.text=def.text;fill();save()
 }let savedColorPreset=null;
