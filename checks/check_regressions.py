@@ -45,8 +45,10 @@ assert '#saveColorsBtn{background:var(--bg);color:var(--text);border-color:var(-
 assert '<button id="randomColorsBtn" class="btn primary">Random</button>' in html, "Random must use the blue Timer button style"
 assert 'root.setProperty("--bg",s.background)' in html and 'root.setProperty("--text",s.text||def.text)' in html, "Current theme CSS variables must update with live colors"
 # The exit control is confined to Settings, not the projected timer.
-assert '<div id="exitControlRow"><button id="quitAppBtn" class="btn" type="button">Quitter</button></div>' in html, "Settings Quitter button missing"
-assert html.index('id="quitAppBtn"') < html.index('id="jumpMsgOverlay"'), "Quitter must be in settings"
+assert '<button id="screenPreviewBtn" class="btn" title="Tester les écrans du chronomètre">Écrans tests</button><button id="quitAppBtn" class="btn" type="button">Quitter</button>' in html, "Quitter must be inside fixed footer"
+assert '#settings .actions #quitAppBtn{position:absolute;right:18px;top:50%;transform:translateY(-50%)' in html, "Quitter must be pinned to right side of bottom bar"
+assert 'id="exitControlRow"' not in html, "Old detached quit row must not return"
+assert html.index('id="quitAppBtn"') < html.index('id="jumpMsgOverlay"'), "Quitter must be confined to settings"
 assert '#quitAppBtn.btn{background:#ff1744' in html, "Quitter must be brighter than Arrêter"
 for token in ('id="exitConfirmOverlay"', 'id="exitYesBtn"', 'id="exitNoBtn"',
               'Voulez-vous vraiment fermer cet excellent logiciel, codé par Guillaume Capron et ChatGPT ? 😭',
@@ -56,4 +58,11 @@ for token in ('id="exitConfirmOverlay"', 'id="exitYesBtn"', 'id="exitNoBtn"',
     assert token in html, "Exit confirmation regression: "+token
 assert 'window.nativeExit()' in html, "Exit must call native Windows closing"
 assert 'w.Bind("nativeExit"' in main and 'postMessageW.Call(hwnd, wmClose, 0, 0)' in main, "Graceful native WM_CLOSE binding missing"
+assert 'if(e.key==="Escape"){e.preventDefault();e.stopPropagation();if(e.repeat)return;' in html, "Escape must be handled before other keyboard shortcuts"
+assert 'document.body.classList.contains("fs")||!!document.fullscreenElement' in html, "Escape must leave fullscreen first"
+assert 'else openExitConfirm();' in html, "Escape in windowed mode must open exit confirmation"
+assert 'if(await window.nativeConsumeCloseRequest())openExitConfirm()' in html, "Windows title bar close must open the same dialog"
+assert 'w.Bind("nativeConsumeCloseRequest"' in main, "Native close request handshake missing"
+assert 'closePromptPending.Store(true)' in main and 'if msg == wmClose && !closeApproved.Load()' in main, "WM_CLOSE must be intercepted, not destroy window"
+assert 'closeApproved.Store(true)' in main and 'postMessageW.Call(hwnd, wmClose, 0, 0)' in main, "Confirmed exit must bypass confirmation and close"
 print("Current BridgeTimer regressions OK")
