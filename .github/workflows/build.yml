@@ -56,3 +56,17 @@ jobs:
           name: BridgeTimer-Comparaison-Windows
           path: dist/BridgeTimer_Comparaison.exe
           if-no-files-found: error
+      - name: Prepare validated message-header edition
+        shell: pwsh
+        run: Copy-Item variants/BridgeTimer_MSG_bandeau.html timer.html -Force
+      - name: Verify message-header JavaScript syntax
+        run: python checks/check_js_syntax.py
+      - name: Build BridgeTimer with M toggle and header editor
+        shell: pwsh
+        run: |
+          go build -trimpath -ldflags "-H=windowsgui -s -w" -o dist/BridgeTimer_MSG_bandeau.exe .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BridgeTimer-M-Message-Bandeau
+          path: dist/BridgeTimer_MSG_bandeau.exe
+          if-no-files-found: error
