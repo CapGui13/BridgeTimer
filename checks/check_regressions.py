@@ -336,7 +336,7 @@ for token in [
     'body.fsControlsMoving .controls{visibility:hidden!important;transition:none!important}',
     'body.fsTransition #timer{opacity:0;transition:opacity .17s ease!important;transform:none!important}',
     'body.fsTransition.fsReveal #timer{opacity:1;transition:opacity .24s ease!important;transform:none!important}',
-    'document.body.classList.add("fsControlsMoving");try{',
+    'document.body.classList.add("fsControlsMoving","fsHardHide");try{',
     'function finishFsTransition(){C=null;',
     'e.key==="F7"||e.code==="NumpadSubtract"',
     'e.key==="F8"||e.code==="NumpadAdd"',
