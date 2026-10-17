@@ -19,6 +19,20 @@ if "instantFullscreen" not in html:
     missing.append("instantaneous fullscreen CSS transition guard")
 if "DWMWA_CLOAK" in main:
     missing.append("unexpected cloak")
+preview_required=[
+    '<option value="all">Tous</option><option value="prejump">',
+    'id="screenPreviewGallery"',
+    'function renderScreenPreviewGallery()',
+    'function screenPreviewCardMarkup(kind)',
+    'function previewEscapeHtml(value)',
+    'screenPreviewGallery").classList.toggle("hidden",!isAll)',
+    'setScreenPreview("all");',
+    'screenPreviewGallery").classList.add("hidden");',
+    'screenPreviewGallery{pointer-events:auto}',
+]
+for item in preview_required:
+    if item not in html:
+        missing.append("Preview gallery missing: "+item)
 if missing:
     raise SystemExit("Preferred baseline regression: "+", ".join(missing))
 print("Preferred EXE baseline and native fullscreen frame guard OK")
