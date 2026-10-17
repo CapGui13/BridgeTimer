@@ -38,4 +38,6 @@ for forbidden in ('id="sessionRecovery"', 'id="restoreSession"', 'id="discardSes
                   "function clearSessionSnapshot()", "Séance interrompue"):
     assert forbidden not in html, f"Unwanted session recovery returned: {forbidden}"
 assert 'clearObsoleteSessionRecovery();' in html, "Stale recovery data should be cleared"
+assert 'function loadSavedColors(){savedColorPreset=safeJSONRead(COLORKEY,validColorPreset)||{accent:def.accent,background:def.background,menu:def.menu,text:def.text};_usc()}' in html, "Custom should start with OG Colors without replacing a saved preset"
+assert 'function _scc(){read();savedColorPreset={accent:s.accent,background:s.background,menu:s.menu,text:s.text};safeJSONWrite(COLORKEY,savedColorPreset)' in html, "Custom save must still persist changes"
 print("Current BridgeTimer regressions OK")
