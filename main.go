@@ -49,6 +49,7 @@ const (
 	gwlpWndProc = ^uintptr(3) // -4
 	wmActivate = 0x0006
 	wmShowWindow = 0x0018
+	wmClose = 0x0010
 	wmThemeChanged = 0x031A
 	wmAppDarkTitle = 0x8061
 	waInactive = 0
@@ -609,6 +610,14 @@ func main() {
 	hwnd := uintptr(w.Window())
 	applyDarkTitleBar(hwnd)
 	installDarkTitleHook(hwnd)
+	// Post WM_CLOSE on the WebView window's GUI thread so w.Run() exits
+	// normally and the existing shutdown defers release resources.
+	if err := w.Bind("nativeExit", func() bool {
+		posted, _, _ := postMessageW.Call(hwnd, wmClose, 0, 0)
+		return posted != 0
+	}); err != nil {
+		log.Printf("exit bind: %v", err)
+	}
 	if err := w.Bind("nativeFullscreen", func() bool {
 		return toggleNativeFullscreen(hwnd)
 	}); err != nil {
