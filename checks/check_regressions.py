@@ -13,8 +13,8 @@ required=[
 'function render()',
 ]
 missing=[x for x in required if x not in html]
-if "swpNoCopyBits" not in main:
-    missing.append("native no-copy-bits flag")
+if "First move the existing frame to the monitor bounds." not in main:
+    missing.append("native resize-before-frame-change")
 if "DWMWA_CLOAK" in main:
     missing.append("unexpected cloak")
 if missing:
