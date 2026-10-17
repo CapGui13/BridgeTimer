@@ -13,8 +13,10 @@ required=[
 'function render()',
 ]
 missing=[x for x in required if x not in html]
-if "First move the existing frame to the monitor bounds." not in main:
-    missing.append("native resize-before-frame-change")
+if "swpNoCopyBits" in main:
+    missing.append("unexpected native pixel-discard behavior")
+if "instantFullscreen" not in html:
+    missing.append("instantaneous fullscreen CSS transition guard")
 if "DWMWA_CLOAK" in main:
     missing.append("unexpected cloak")
 if missing:
