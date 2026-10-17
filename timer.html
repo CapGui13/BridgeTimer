@@ -102,4 +102,45 @@ catch(e){$("diagText").focus();$("diagText").select();document.execCommand("copy
 }catch(e){}
 }function updateLocalTime(){const d=new Date();$("localTime").textContent=`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;}
 updateLocalTime();setInterval(()=>{if(!st.running)updateLocalTime()},200);load();loadSavedColors();updatePairModeUI();activeFormat="4";formatSession["4"]=captureFormatState("4");st.pos=s.startPosition;snapshotRoundSettings();st.remaining=currentRoundDuration();render();</script>
-</body></html>
+<script>
+(function(){
+  const started=performance.now(), samples=[], events=[];let phase="startup",attempt=0,last="",lastSample=0,stopped=false;
+  const now=()=>Math.round(performance.now()-started);
+  function take(reason,force=false){
+    if(stopped)return;
+    const timer=document.getElementById("timer"),clock=document.getElementById("clock");
+    if(!timer||!clock)return;
+    const rect=clock.getBoundingClientRect(),parent=clock.parentElement,pr=parent.getBoundingClientRect(),style=getComputedStyle(clock),ts=getComputedStyle(timer),body=document.body;
+    const item={ms:now(),reason,attempt,phase,viewport:[innerWidth,innerHeight],timer:[timer.clientWidth,timer.clientHeight],clock:[Math.round(rect.x),Math.round(rect.y),Math.round(rect.width),Math.round(rect.height)],parent:[Math.round(pr.width),Math.round(pr.height)],fontSize:style.fontSize,inlineFontSize:clock.style.fontSize,opacity:ts.opacity,visibility:ts.visibility,classes:body.className,fullscreen:!!document.fullscreenElement};
+    const fingerprint=JSON.stringify(item).replace(/"ms":\d+,/,'').replace(/"reason":"[^"]+",/,'');
+    if(force||fingerprint!==last||performance.now()-lastSample>200){samples.push(item);last=fingerprint;lastSample=performance.now()}
+    if(samples.length>3200) samples.shift();
+  }
+  function mark(label){events.push({ms:now(),attempt,phase,label});take(label,true)}
+  function exportLog(){
+    const data={type:"BridgeTimer fullscreen diagnostics",captured:new Date().toISOString(),userAgent:navigator.userAgent,screen:{width:screen.width,height:screen.height,dpr:devicePixelRatio},events,samples};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="BridgeTimer-fullscreen-diagnostic.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+  }
+  window.__btDiag={take,mark,exportLog};
+  window.addEventListener("keydown",e=>{if(e.ctrlKey&&e.shiftKey&&e.code==="KeyD"){e.preventDefault();e.stopImmediatePropagation();exportLog()}},true);
+  window.addEventListener("resize",()=>take("window-resize",true),true);
+  document.addEventListener("fullscreenchange",()=>mark("browser-fullscreenchange"),true);
+  const obs=new MutationObserver(()=>take("body-class-change",true));
+  obs.observe(document.body,{attributes:true,attributeFilter:["class"]});
+  const timer=document.getElementById("timer");
+  if(timer)new ResizeObserver(()=>take("timer-resize",true)).observe(timer);
+  const clock=document.getElementById("clock");
+  if(clock)new ResizeObserver(()=>take("clock-resize",true)).observe(clock);
+  let previousFs=false;
+  function frame(){
+    const state=document.body.classList.contains("fsTransition"),fs=document.body.classList.contains("fs");
+    if(state&&!previousFs){attempt++;phase="transition";mark("transition-start")}
+    if(!state&&previousFs){phase="settled";mark("transition-end")}
+    previousFs=state;
+    if(state||performance.now()-lastSample<1500)take("animation-frame");
+    requestAnimationFrame(frame);
+  }
+  mark("diagnostic-start");requestAnimationFrame(frame);
+  const btn=document.createElement("button");btn.textContent="Exporter diagnostic";btn.title="Enregistrer les mesures du passage en plein écran (Ctrl+Maj+D)";btn.style.cssText="position:fixed;right:12px;bottom:92px;z-index:2147483647;padding:9px 12px;border:1px solid #777;border-radius:7px;background:#24283b;color:#fff;font:600 13px Arial;cursor:pointer;opacity:.85";btn.onclick=exportLog;document.body.appendChild(btn);
+})();
+</script></body></html>
