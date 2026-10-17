@@ -1,0 +1,1 @@
+Temporary pull-request CI trigger for Windows BridgeTimer executable. The main branch is unchanged.
