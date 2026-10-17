@@ -20,7 +20,7 @@ for obsolete in (
     "fsReveal",
     "fullscreenTransitionId",
     "await new Promise(r=>setTimeout(r,190))",
-    "setTimeout(()=>document.body.classList.remove",
+    'setTimeout(()=>document.body.classList.remove("fsTransition"',
     "opacity:.82",
     "opacity:.12;transform:scale(.985)",
     "transform:scale(.985)",
