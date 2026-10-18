@@ -65,7 +65,7 @@ assert 'document.body.classList.contains("fs")||!!document.fullscreenElement' in
 assert 'else openExitConfirm();' in html, "Escape in windowed mode must open exit confirmation"
 assert 'if(await window.nativeConsumeCloseRequest())openExitConfirm()' in html, "Windows title bar close must open the same dialog"
 assert 'w.Bind("nativeConsumeCloseRequest"' in main, "Native close request handshake missing"
-assert 'closePromptPending.Store(true)' in main and 'if msg == wmClose && !closeApproved.Load()' in main, "WM_CLOSE must be intercepted, not destroy window"
+assert 'closePromptPending.CompareAndSwap(false, true)' in main and 'if msg == wmClose && !closeApproved.Load()' in main, "WM_CLOSE must be intercepted, not destroy window"
 assert 'closeApproved.Store(true)' in main and 'postMessageW.Call(hwnd, wmClose, 0, 0)' in main, "Confirmed exit must bypass confirmation and close"
 assert 'function sanitizeStoredSettings(x)' in html, "Stored preference sanitation missing"
 assert 'const sanitized=sanitizeStoredSettings(x);' in html, "Sanitized settings must be used on launch"
