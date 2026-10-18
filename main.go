@@ -143,6 +143,7 @@ var (
 	stateFileMu sync.Mutex
 	// Close-request handshake: Windows asks, JS confirms, then nativeExit posts WM_CLOSE.
 	closePromptPending atomic.Bool
+	closeRequestAt atomic.Int64
 	closeApproved atomic.Bool
 )
 
@@ -312,12 +313,36 @@ func applyDarkTitleBar(hwnd uintptr) {
 	setWindowPos.Call(hwnd, 0, 0, 0, 0, 0, swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
 }
 
+// A second Windows close request after 12 seconds without a WebView
+// acknowledgement provides a last-resort escape when the UI is frozen.
+// Normal closes still always use the user's custom HTML confirmation.
+func confirmUnresponsiveExit(hwnd uintptr) bool {
+	text, _ := syscall.UTF16PtrFromString("BridgeTimer ne répond pas à la demande de fermeture.\\n\\nForcer la fermeture ? Le tournoi en cours sera interrompu.")
+	title, _ := syscall.UTF16PtrFromString("BridgeTimer - Fermeture de secours")
+	response, _, _ := messageBoxW.Call(hwnd, uintptr(unsafe.Pointer(text)), uintptr(unsafe.Pointer(title)), 0x00000024) // MB_YESNO | MB_ICONQUESTION
+	return response == 6 // IDYES
+}
+
 func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 	// The native X / Alt+F4 must not destroy the WebView before the HTML
 	// confirmation. Never invoke COM/WebView code from this Windows callback.
 	if msg == wmClose && !closeApproved.Load() {
-		closePromptPending.Store(true)
-		return 0
+		now := time.Now().UnixMilli()
+		if closePromptPending.CompareAndSwap(false, true) {
+			closeRequestAt.Store(now)
+			return 0
+		}
+		first := closeRequestAt.Load()
+		if first == 0 || now-first < 12000 {
+			return 0
+		}
+		// WebView did not consume a close request for 12 seconds.
+		closePromptPending.Store(false)
+		closeRequestAt.Store(0)
+		if !confirmUnresponsiveExit(hwnd) {
+			return 0
+		}
+		closeApproved.Store(true)
 	}
 	switch msg {
 	case wmActivate:
@@ -622,7 +647,9 @@ func main() {
 	installDarkTitleHook(hwnd)
 	// Consume close requests on the JS side, without calling WebView/COM from WndProc.
 	if err := w.Bind("nativeConsumeCloseRequest", func() bool {
-		return closePromptPending.Swap(false)
+		if !closePromptPending.Swap(false) { return false }
+		closeRequestAt.Store(0)
+		return true
 	}); err != nil {
 		log.Printf("close request bind: %v", err)
 	}
