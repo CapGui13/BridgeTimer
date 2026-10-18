@@ -28,6 +28,8 @@ jobs:
         run: python checks/check_js_syntax.py
       - name: State machine behavior
         run: node checks/test_state_machine.js
+      - name: Corrupted preferences and button contrast
+        run: node checks/test_settings_validation.js
       - name: Generate Windows resources
         shell: pwsh
         run: |
