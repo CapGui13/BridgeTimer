@@ -45,11 +45,13 @@ assert '#saveColorsBtn{background:var(--bg);color:var(--text);border-color:var(-
 assert '<button id="randomColorsBtn" class="btn primary">Random</button>' in html, "Random must use the blue Timer button style"
 assert 'root.setProperty("--bg",s.background)' in html and 'root.setProperty("--text",s.text||def.text)' in html, "Current theme CSS variables must update with live colors"
 # The exit control is confined to Settings, not the projected timer.
-assert '<button id="screenPreviewBtn" class="btn" title="Tester les écrans du chronomètre">Écrans tests</button><button id="quitAppBtn" class="btn" type="button">Quitter</button>' in html, "Quitter must be inside fixed footer"
-assert '#settings .actions #quitAppBtn{position:absolute;right:18px;top:50%;transform:translateY(-50%)' in html, "Quitter must be pinned to right side of bottom bar"
+assert '<div class="settingsActionButtons"><button id="fresh"' in html, "Settings footer action group missing"
+assert '</div><button id="quitAppBtn" class="btn" type="button">Quitter</button>' in html, "Quitter must be outside the button group but inside fixed footer"
+assert '#settings .actions #quitAppBtn{grid-column:3;justify-self:end;margin:0}' in html, "Quitter needs a separate right-hand grid zone"
+assert 'grid-template-columns:minmax(180px,1fr) minmax(0,auto) minmax(140px,1fr)' in html, "Three column responsive footer missing"
 assert 'id="exitControlRow"' not in html, "Old detached quit row must not return"
 assert html.index('id="quitAppBtn"') < html.index('id="jumpMsgOverlay"'), "Quitter must be confined to settings"
-assert '#quitAppBtn.btn{background:#ff1744' in html, "Quitter must be brighter than Arrêter"
+assert '#quitAppBtn.btn{background:#e60033' in html, "High-contrast vivid Quitter color missing"
 for token in ('id="exitConfirmOverlay"', 'id="exitYesBtn"', 'id="exitNoBtn"',
               'Voulez-vous vraiment fermer cet excellent logiciel, codé par Guillaume Capron et ChatGPT ? 😭',
               'Oui, NTM FDP, la FFB te own', "Non, c'était une erreur 🤗🤗🤗",
@@ -65,4 +67,10 @@ assert 'if(await window.nativeConsumeCloseRequest())openExitConfirm()' in html, 
 assert 'w.Bind("nativeConsumeCloseRequest"' in main, "Native close request handshake missing"
 assert 'closePromptPending.Store(true)' in main and 'if msg == wmClose && !closeApproved.Load()' in main, "WM_CLOSE must be intercepted, not destroy window"
 assert 'closeApproved.Store(true)' in main and 'postMessageW.Call(hwnd, wmClose, 0, 0)' in main, "Confirmed exit must bypass confirmation and close"
+assert 'function sanitizeStoredSettings(x)' in html, "Stored preference sanitation missing"
+assert 'const sanitized=sanitizeStoredSettings(x);' in html, "Sanitized settings must be used on launch"
+assert 'for(const [key,base] of Object.entries(def))' in html, "Saved settings must be validated per field"
+assert 'closePromptPending.CompareAndSwap(false, true)' in main, "Native unresponsive-close escape state missing"
+assert 'func confirmUnresponsiveExit(hwnd uintptr) bool' in main, "Native fallback confirmation missing"
+assert 'closeRequestAt.Store(0)' in main and 'now-first < 12000' in main, "Native fallback must require an unanswered close for 12s"
 print("Current BridgeTimer regressions OK")
