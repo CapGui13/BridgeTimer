@@ -317,7 +317,7 @@ func applyDarkTitleBar(hwnd uintptr) {
 // acknowledgement provides a last-resort escape when the UI is frozen.
 // Normal closes still always use the user's custom HTML confirmation.
 func confirmUnresponsiveExit(hwnd uintptr) bool {
-	text, _ := syscall.UTF16PtrFromString("BridgeTimer ne répond pas à la demande de fermeture.\\n\\nForcer la fermeture ? Le tournoi en cours sera interrompu.")
+	text, _ := syscall.UTF16PtrFromString("BridgeTimer ne répond pas à la demande de fermeture.\n\nForcer la fermeture ? Le tournoi en cours sera interrompu.")
 	title, _ := syscall.UTF16PtrFromString("BridgeTimer - Fermeture de secours")
 	response, _, _ := messageBoxW.Call(hwnd, uintptr(unsafe.Pointer(text)), uintptr(unsafe.Pointer(title)), 0x00000024) // MB_YESNO | MB_ICONQUESTION
 	return response == 6 // IDYES
