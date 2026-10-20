@@ -30,6 +30,8 @@ jobs:
         run: node checks/test_state_machine.js
       - name: Corrupted preferences and button contrast
         run: node checks/test_settings_validation.js
+      - name: Running timer messages
+        run: node checks/test_running_notices.js
       - name: Generate Windows resources
         shell: pwsh
         run: |
