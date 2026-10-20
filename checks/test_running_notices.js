@@ -17,7 +17,7 @@ assert.ok(html.includes('$("msg").classList.toggle("roundMessageJump"'));
 assert.ok(html.includes('$("msg").classList.toggle("roundMessageTemporary"'));
 assert.ok(html.includes('if((_sps?screenPreviewKind==="temporary":tempMessageActive())&&st.phase!=="ended"&&st.phase!=="round")'));
 assert.ok(html.includes('function fitRoundNotice()'));
-assert.ok(html.includes('fitRoundNotice()\n}'));
+assert.ok(html.includes('fc();fitRoundNotice()'));
 assert.ok(html.includes('t.classList.toggle("roundReading",st.phase==="round")'));
 assert.ok(!html.includes('id="mainMessage"'));
 assert.ok(!html.includes('s.mainMessage'));
