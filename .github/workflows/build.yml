@@ -32,6 +32,8 @@ jobs:
         run: node checks/test_settings_validation.js
       - name: Running timer messages
         run: node checks/test_running_notices.js
+      - name: Special screen readability
+        run: node checks/test_special_screens.js
       - name: Generate Windows resources
         shell: pwsh
         run: |
