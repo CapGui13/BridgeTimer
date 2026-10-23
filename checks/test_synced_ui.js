@@ -35,4 +35,14 @@ assert.ok(html.includes('#settings #stopTimer.hidden{display:inline-flex!importa
 assert.ok(html.includes('function q48(){')&&html.includes('st.syncDisplayCeiling=0;start();q4c(prev'),'Recommencer must restart immediately');
 assert.ok(!html.includes('textContent="+"+fmt('),'End-of-round overrun must have no plus prefix');
 assert.ok(html.includes('st.phase==="roundEnd"||st.phase==="ended"'),'Both modes must keep a terminal overtime display');
+// Regression guarantees: Message publishes only after Valider;
+// advancing from the MP4 end screen restarts immediately; overtime controls are grey.
+assert.ok(!html.includes('id="sendTempBtn"'),'The obsolete instant-send M button must not return');
+assert.ok(html.includes('$("messageBtn").onclick=()=>$("tempMessageOverlay").classList.contains("hidden")?q2c():q20()'),'Message toggle must remain');
+assert.ok(html.includes('$("tempMessageForm").onsubmit=q1e'),'Only form submit can publish message');
+assert.ok(html.includes('q20();q23();q2f()'),'Valider must publish the new message');
+assert.ok(html.includes('q4a(st.pos+1,false);start();q4c(prev);return'),'MP4 next position must auto-start');
+for (const selector of ['#timer.roundEndState #minus:disabled','#timer.roundEndState #plus:disabled','#timer.pairEndState #minus:disabled','#timer.pairEndState #plus:disabled'])
+  assert.ok(html.includes(selector),'Overtime disabled control styling missing: '+selector);
+
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
