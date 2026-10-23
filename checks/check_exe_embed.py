@@ -2,6 +2,7 @@ from pathlib import Path
 import hashlib
 
 source = Path("timer.html").read_bytes()
+assert b"\r\n" not in source, "Windows checkout converted timer.html to CRLF; keep the original LF line endings"
 exe = Path("dist/BridgeTimer.exe").read_bytes()
 assert exe[:2] == b"MZ", "Output is not a Windows executable"
 assert exe.count(source) == 1, "Windows EXE does not contain the exact published timer.html"
