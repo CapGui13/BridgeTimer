@@ -28,4 +28,11 @@ const sandbox={Math}; vm.runInNewContext(match[0],sandbox);
 assert.equal(sandbox.q15(0,60),60000);
 assert.equal(sandbox.q15(250,60),59750);
 assert.equal(sandbox.q15(0,-20),0);
+// Lock the October 23 footer/restart/overtime contracts.
+const stopPos=html.indexOf('id="stopTimer"'),launchPos=html.indexOf('id="fresh"');
+assert.ok(stopPos>0&&launchPos>stopPos,'Arrêter must precede Lancer/Timer in the footer');
+assert.ok(html.includes('#settings #stopTimer.hidden{display:inline-flex!important;visibility:hidden!important'),'The hidden Arrêter slot must remain reserved');
+assert.ok(html.includes('function q48(){')&&html.includes('st.syncDisplayCeiling=0;start();q4c(prev'),'Recommencer must restart immediately');
+assert.ok(!html.includes('textContent="+"+fmt('),'End-of-round overrun must have no plus prefix');
+assert.ok(html.includes('st.phase==="roundEnd"||st.phase==="ended"'),'Both modes must keep a terminal overtime display');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
