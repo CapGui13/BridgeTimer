@@ -22,12 +22,10 @@ jobs:
           cache: true
       - run: go mod download
       - run: python patch_webview_dark.py
-      - name: Regression guard
-        run: python checks/check_regressions.py
       - name: JavaScript syntax
         run: python checks/check_js_syntax.py
-      - name: State machine behavior
-        run: node checks/test_state_machine.js
+      - name: Production UI regression tests
+        run: node checks/test_synced_ui.js
       - name: Verify release version
         shell: pwsh
         run: |
@@ -48,6 +46,8 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           go build -trimpath -ldflags "-H=windowsgui -s -w" -o dist/BridgeTimer.exe .
+      - name: Verify production HTML inside Windows EXE
+        run: python checks/check_exe_embed.py
       - name: Create GitHub release
         shell: pwsh
         env:
