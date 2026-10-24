@@ -128,4 +128,11 @@ assert.ok(html.includes('<div class="timeEntry boardTimeSetting"><label for="boa
 assert.ok(!html.includes('text-shadow:0 0 22px color-mix(in srgb,var(--warn) 38%,transparent)'),'Legacy green jump-message halo must be removed');
 assert.ok(html.includes('#timer.roundReading #msg.roundMessageJump{color:var(--message-color);text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px rgba(0,0,0,.30)}'),'Jump notice must use the same shadow and stroke as a temporary notice');
 assert.ok(html.includes('#timer #msg.roundMessageTemporary{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px rgba(0,0,0,.30)}'),'Temporary notice relief must remain intact');
+// Screen Tests gallery must resize each message in its own 778px snapshot viewport.
+assert.ok(html.includes('function fitGalleryNotice(frame){'),'Gallery must recalculate message font size after cloning');
+assert.ok(html.includes('e.style.fontSize="";e.style.whiteSpace="";'),'Gallery must clear stale inline font sizing from the live off-screen DOM');
+assert.ok(html.includes('const viewport=frame.contentWindow?.innerWidth||778;'),'Gallery fitting uses iframe viewport rather than actual app width');
+assert.ok(html.includes('frame.setAttribute("sandbox","allow-same-origin")'),'Parent needs read access to its own script-disabled static preview');
+assert.ok(html.includes('frame.onload=()=>requestAnimationFrame(()=>fitGalleryNotice(frame))'),'Re-fit only after preview iframe has laid out');
+assert.ok(!html.includes('frame.setAttribute("sandbox","");frame.setAttribute("aria-hidden","true")'),'Opaque preview iframe cannot be remeasured');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
