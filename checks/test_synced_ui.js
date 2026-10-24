@@ -120,4 +120,8 @@ assert.ok(html.includes('$("msg").classList.toggle("roundMessageTemporary",!!tem
 assert.ok(html.includes('#resumeTime:invalid:not(:focus){background:#30202a!important'),'Reprise may turn red only if invalid AND not focused');
 assert.ok(!html.includes('#resumeTime:invalid{background:#30202a!important'),'The old always-red-on-focus style must not return');
 
+// Tournoi: delicate green border encloses the full per-board time label, inputs and trailing S.
+assert.ok(html.includes('.tournamentCard #timingLayout .boardTimeSetting{position:relative;justify-self:start;width:max-content;max-width:100%}'),'Per-board timing enclosure should fit content without stretching');
+assert.ok(html.includes('.boardTimeSetting::before{content:"";position:absolute;inset:-3px -7px;border:1px solid rgba(73,202,114,.52);border-radius:9px;pointer-events:none}'),'Board time outline must remain subtle and noninteractive');
+assert.ok(html.includes('<div class="timeEntry boardTimeSetting"><label for="boardMinutes">Temps par donne</label>'),'Complete minutes-seconds element should remain present');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
