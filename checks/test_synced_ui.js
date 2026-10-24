@@ -63,4 +63,15 @@ assert.ok(html.includes('#finishOverlay .finishResume{position:absolute;top:calc
 assert.ok(html.includes('font-size:clamp(60px,9vw,170px);line-height:1.06;font-weight:1000;color:#ff202d'),'MP4 red line must match headline scale');
 assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(60.5% + clamp(72px,8vw,128px));font-size:clamp(31px,5.8vw,112px)'),'Pairs restart line must match pairs headline scale');
 
+// Tournoi duration layout: common right-hand column and no height jump between formats.
+for(const id of ['timingLayout','hours','boardMinutes','boardSeconds','minutes','seconds','sessionDurationBox','resumeTime','betweenField'])
+  assert.equal(counts.get(id),1,'Lost/doubled tournament field: '+id);
+assert.ok(html.includes('class="timeEntry durationSetting"')&&html.includes('class="timeEntry boardTimeSetting"'),'Duration form groups missing');
+assert.ok(html.includes('<span class="mp4TimeTitle">Temps par match</span>'),'MP4 time heading must be Temps par match');
+assert.ok(html.includes('<span class="tppTimeTitle">Temps par tour</span>'),'TPP time heading must remain Temps par tour');
+assert.ok(html.includes('classList.toggle("pairsTiming",pairs)'),'Mode switching must synchronize duration layout');
+assert.ok(html.includes('grid-template-rows:38px 38px;gap:5px 16px;min-height:81px'),'MP4 must reserve the second duration row');
+assert.ok(html.includes('grid-column:2!important;grid-row:1!important'),'TPP session duration must align with MP4 match duration');
+assert.ok(html.includes('.boardOptionsRow .resumeTimeOption{justify-self:start;display:flex'),'Reprise must remain underneath the right duration column');
+
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
