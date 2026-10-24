@@ -230,7 +230,41 @@ render();q4c(prev);}function adjustmentStep(){return st.phase==="jump"?15:60}fun
 function openResumeEditor(){if(!st.started)return;if(!$('tempMessageOverlay').classList.contains('hidden'))q20();if(resumeEditorOpen())return;const input=$('resumeInput');input.value=s.resumeTime||'';const top=$('timer').querySelector('.top');top.style.height=top.getBoundingClientRect().height+'px';top.classList.add('messageEditing');$('resumeOverlay').classList.remove('hidden');input.focus()}
 function closeResumeEditor(focusButton=true){if(!resumeEditorOpen())return;$('resumeOverlay').classList.add('hidden');const top=$('timer').querySelector('.top');top.classList.remove('messageEditing');top.style.height='';if(focusButton)$('resumeBtn').focus()}
 function commitResumeTime(e){e.preventDefault();const raw=$('resumeInput').value;if(raw&&!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(raw))return;const v=raw||'';s.resumeTime=v;$('resumeTime').value=v;q41(KEY,s);closeResumeEditor();render()}
-function q1e(e){e.preventDefault();const v=$("tempMessageInput").value.trim();if(!v)return;s.quickMessage=v;$("quickMessage").value=v;q41(KEY,s);q20();q23();q2f()}let C,F;function fc(){let c=$("clock"),z=c.style,fs=document.body.classList.contains("fs"),k=innerWidth+"x"+innerHeight+"x"+fs;if(!c.offsetParent)return;const maxW=Math.min(innerWidth-24,(c.parentNode.offsetWidth-(fs?96:32))*1.02);if(k!=C){C=k;const p=c.cloneNode(false);p.textContent="01:00:00";p.style.cssText="position:absolute;visibility:hidden;pointer-events:none;font:700 100px/.78 Bahnschrift,Consolas,monospace;letter-spacing:-.01em;white-space:nowrap;transform:none";p.style.fontVariantNumeric="tabular-nums";c.parentNode.appendChild(p);const w=Math.max(1,p.scrollWidth);p.remove();F=Math.min(620,maxW*100/w,(innerHeight-435)/.78);z.fontSize=F+"px"}z.transform="translateY(10px)";z.visibility="visible"}function render(){
+function q1e(e){e.preventDefault();const v=$("tempMessageInput").value.trim();if(!v)return;s.quickMessage=v;$("quickMessage").value=v;q41(KEY,s);q20();q23();q2f()}let C,F,SF;
+/* Keep the 01:00:00 layout untouched. With HH absent, grow the same font
+   proportionally, keeping the display centered in its original vertical band. */
+function fc(){
+ const c=$("clock"),z=c.style,fs=document.body.classList.contains("fs");
+ const k=innerWidth+"x"+innerHeight+"x"+fs;
+ if(!c.offsetParent)return;
+ const maxW=Math.min(innerWidth-24,(c.parentNode.offsetWidth-(fs?96:32))*1.02);
+ if(k!==C){
+  C=k;
+  const p=c.cloneNode(false);
+  p.textContent="01:00:00";
+  p.style.cssText="position:absolute;visibility:hidden;pointer-events:none;font:700 100px/.78 Bahnschrift,Consolas,monospace;letter-spacing:-.01em;white-space:nowrap;transform:none";
+  p.style.fontVariantNumeric="tabular-nums";
+  c.parentNode.appendChild(p);
+  const wideW=Math.max(1,p.scrollWidth);
+  p.textContent="59:59";
+  const shortW=Math.max(1,p.scrollWidth);
+  p.remove();
+  F=Math.min(620,maxW*100/wideW,(innerHeight-435)/.78);
+  z.fontSize=F+"px";
+  z.transform="translateY(10px)";
+  const base=c.getBoundingClientRect();
+  const main=c.parentNode.getBoundingClientRect();
+  const barTop=main.top+main.height*.652;
+  const upperGuard=main.top+main.height*.12;
+  const verticalExtra=Math.max(0,Math.min(base.top-upperGuard,barTop-base.bottom)-8)*2/.78;
+  SF=Math.max(F,Math.min(620,maxW*100/shortW,F+verticalExtra));
+ }
+ const shortClock=/^\d{2}:\d{2}$/.test(c.textContent);
+ const f=shortClock?SF:F;
+ z.fontSize=f+"px";
+ z.transform="translateY("+(10-(f-F)*.39)+"px)";
+ z.visibility="visible";
+}function render(){
 if(!_sps)return q42();const realState=st,realSettings=s;st=_sps;s=_spset;try{return q42()}finally{st=realState;s=realSettings}}function q17(btx,jtx,ttx){if(ttx)return {text:ttx,kind:"temporary"};if(jtx)return {text:jtx,kind:"jump"};return {text:btx||"",kind:"board"}}
 let lrf="";function q38(){const e=$("msg");if(!$("timer").classList.contains("roundReading")||!e.textContent){e.style.fontSize="";e.style.whiteSpace="";lrf="";return}if(!e.getClientRects().length)return;const temp=e.classList.contains("roundMessageTemporary"),key=e.textContent+"|"+e.clientWidth+"|"+e.clientHeight+"|"+window.innerWidth+"|"+temp;if(key===lrf)return;lrf=key;const standard=Math.min(100,Math.max(32,Math.floor(e.clientWidth*(e.clientWidth<960?.052:.067))));if(temp){const big=Math.min(154,Math.max(52,innerWidth*.08));e.style.whiteSpace="nowrap";e.style.fontSize=big+"px";if(e.scrollWidth<=e.clientWidth+2&&e.scrollHeight<=e.clientHeight+2)return}e.style.whiteSpace="normal";let lo=22,hi=standard;for(let i=0;i<10&&lo<hi;i++){const mid=Math.ceil((lo+hi)/2);e.style.fontSize=mid+"px";if(e.scrollHeight<=e.clientHeight+2&&e.scrollWidth<=e.clientWidth+2)lo=mid;else hi=mid-1}e.style.fontSize=lo+"px"}let lsf="";function q40(){const parent=$("jumpSplash"),el=$("jumpSplashText");if(!parent.classList.contains("on")){lsf="";el.style.fontSize="";return}const key=el.textContent+"|"+el.clientWidth+"|"+el.clientHeight;if(key===lsf)return;lsf=key;const max=Math.min(112,Math.max(30,Math.floor(el.clientWidth*.075))),min=20;let lo=min,hi=max;for(let i=0;i<10&&lo<hi;i++){const mid=Math.ceil((lo+hi)/2);el.style.fontSize=mid+"px";if(el.scrollHeight<=el.clientHeight+2&&el.scrollWidth<=el.clientWidth+2)lo=mid;else hi=mid-1}
 el.style.fontSize=lo+"px";}function q42(){theme();_usd();let t=$("timer");t.classList.remove("warning","dangerState","breakState","endState","roundEndState","pairEndState");t.classList.toggle("roundReading",st.phase==="round");$("msg").classList.remove("roundMessageJump","roundMessageTemporary");$("submsg").classList.remove("jumpUpcoming");$("alert").className="";$("alert").textContent="";const drm=st.syncHoldUntil&&_mon()<st.syncHoldUntil?Math.min(st.remaining,st.syncDisplayCeiling):st.remaining,ctx=fmt(drm),cel=$("clock");cel.textContent=ctx;$("round").textContent=`TOUR ${st.pos} sur ${s.positions}`;let total=_crd();if(st.phase==="round"){$("pause").disabled=false;$("pause").textContent=st.running?"Pause":"Reprendre";$("status").textContent=(s.eventName||"").trim();$("submsg").textContent="";let btx="",jtx="";const elapsed=clamp(_crd()-st.remaining,0,_crd());if(s.boardProgressNotice&&zboard()){const per=Math.max(1,Number(st.roundBoardDuration)||1);let board=Math.min(Math.max(1,Number(st.roundBoards)||1),Math.floor(elapsed/per)+1);const sinceBoardStart=elapsed-(board-1)*per;btx=board>1&&sinceBoardStart<15?`Vous êtes censés attaquer la donne ${board}`:`Vous êtes censés jouer la donne ${board}`}
