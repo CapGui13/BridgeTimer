@@ -136,7 +136,7 @@ assert.ok(html.includes('frame.setAttribute("sandbox","allow-same-origin")'),'Pa
 assert.ok(html.includes('frame.onload=()=>requestAnimationFrame(()=>fitGalleryNotice(frame))'),'Re-fit only after preview iframe has laid out');
 assert.ok(!html.includes('frame.setAttribute("sandbox","");frame.setAttribute("aria-hidden","true")'),'Opaque preview iframe cannot be remeasured');
 // Keep the original full-hour reference sizing, enlarge ONLY 5-digit MM:SS.
-assert.ok(html.includes('let C,F,SF;'),'Clock must cache normal and short-hour dimensions independently');
+assert.ok(html.includes('let C,F,SF,shortClockOffset=10;'),'Clock must cache both font sizes and vertical offset independently');
 assert.ok(html.includes('p.textContent="01:00:00";'),'One-hour reference display must remain unchanged');
 assert.ok(html.includes('p.textContent="59:59";'),'Width reference for subhour should match MM:SS format');
 assert.ok(html.includes('const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'),'Only MM:SS receives the larger font');
