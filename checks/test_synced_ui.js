@@ -71,7 +71,7 @@ assert.ok(html.includes('<span class="mp4TimeTitle">Temps par match</span>'),'MP
 assert.ok(html.includes('<span class="tppTimeTitle">Temps par tour</span>'),'TPP time heading must remain Temps par tour');
 assert.ok(html.includes('classList.toggle("pairsTiming",pairs)'),'Mode switching must synchronize duration layout');
 assert.ok(html.includes('grid-template-rows:38px 38px;gap:5px 16px;min-height:81px'),'MP4 must reserve the second duration row');
-assert.ok(html.includes('grid-column:2!important;grid-row:1!important'),'TPP session duration must align with MP4 match duration');
+assert.ok(html.includes('grid-column:2!important;grid-row:2!important'),'TPP session duration must occupy lower right row');
 assert.ok(html.includes('.boardOptionsRow .resumeTimeOption{justify-self:start;display:flex'),'Reprise must remain underneath the right duration column');
 
 // MP4 blank first row left; Temps par donne aligns vertically with TPP's second row.
@@ -89,4 +89,10 @@ assert.ok(html.includes('const written=await window.nativeStateWrite(KEY,JSON.st
 assert.ok(html.includes('id="resumeTime" type="time"'),'The HH:MM input type must stay unchanged');
 assert.ok(html.includes('id="resumeInput" type="time"'),'Timer Reprise editor must stay unchanged');
 
+// TPP duration positions and compact hour field.
+assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming .betweenTimeSetting{grid-column:2;grid-row:1;display:flex}'),'TPP between-round time must be upper-right');
+assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming #sessionDurationBox.sessionDurationVisible{display:flex;grid-column:2!important;grid-row:2!important'),'TPP session duration must be lower-right');
+assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming .betweenTimeSetting{grid-column:1;grid-row:3}'),'Small-window TPP between-round time must be row three');
+assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming #sessionDurationBox.sessionDurationVisible{grid-column:1!important;grid-row:4!important}'),'Small-window TPP session duration must be row four');
+assert.ok(html.includes('#resumeTime{box-sizing:border-box;width:84px;min-width:84px;max-width:84px;flex:0 0 84px;height:33px;font-weight:700}'),'Reprise should have a compact field');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
