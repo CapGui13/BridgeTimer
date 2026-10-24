@@ -99,4 +99,8 @@ assert.ok(html.includes('#resumeTime{box-sizing:border-box;width:64px;min-width:
 assert.ok(html.includes('#finishOverlay .finishBig.pairFinish{top:58.8%;font-size:clamp(52px,8vw,154px)}'),'Pairs green headline must match MP4');
 assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,13.8vw,220px));font-size:clamp(60px,9vw,170px)}'),'Pairs red announcement must match MP4');
 assert.ok(html.includes('#resumeTime::-webkit-datetime-edit-ampm-field{display:none!important}'),'Hide extra AM/PM field in settings');
+// Resume time is for the current application launch only.
+assert.ok(html.includes('function q41(key,value){const next=JSON.stringify(key===KEY?{...value,resumeTime:""}:value);'),'Saved settings must not retain restart time');
+assert.ok(html.includes('movement:"mitchell"};s.resumeTime=""; /* The next tournament must request its own restart time. */'),'Opening BridgeTimer must clear the old restart time');
+assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('s.resumeTime=v;$("resumeTime").value=v;'),'Live change of restart time must remain supported');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
