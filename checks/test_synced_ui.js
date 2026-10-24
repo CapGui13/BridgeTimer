@@ -103,4 +103,13 @@ assert.ok(html.includes('#resumeTime::-webkit-datetime-edit-ampm-field{display:n
 assert.ok(html.includes('function q41(key,value){const next=JSON.stringify(key===KEY?{...value,resumeTime:""}:value);'),'Saved settings must not retain restart time');
 assert.ok(html.includes('movement:"mitchell"};s.resumeTime=""; /* The next tournament must request its own restart time. */'),'Opening BridgeTimer must clear the old restart time');
 assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('s.resumeTime=v;')&&html.includes('q41(KEY,s);closeResumeEditor();render()'),'Live edit must still update the timer and UI');
+// Default toggles: unchecked for fresh/reset settings, previously saved choices still honored.
+assert.ok(html.includes('boardProgressNotice:false,sound:false,warnEnabled:true'),'Son and board notice must be OFF by default');
+assert.ok(!html.includes('id="sound" type="checkbox" checked'),'Sound HTML default must be unchecked');
+assert.ok(!html.includes('id="boardProgressNotice" type="checkbox" checked'),'Board notice HTML default must be unchecked');
+assert.ok(html.includes('if(!x||!Object.prototype.hasOwnProperty.call(x,"boardProgressNotice"))s.boardProgressNotice=false;'),'Older settings with missing board notice must default OFF');
+// Reprise input: muted red when empty; browser validity automatically restores normal style when HH:MM exists.
+assert.ok(html.includes('id="resumeTime" type="time" value="" required'),'The Reprise HH:MM field must signal an empty value');
+assert.ok(html.includes('#resumeTime:invalid{background:#30202a!important;border-color:#94535d!important'),'The empty restart input needs a muted red background and border');
+assert.ok(html.includes('#resumeTime::-webkit-calendar-picker-indicator{display:none!important'),'The time picker icon must remain hidden');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
