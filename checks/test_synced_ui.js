@@ -94,5 +94,9 @@ assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming .betweenTimeS
 assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming #sessionDurationBox.sessionDurationVisible{display:flex;grid-column:2!important;grid-row:2!important'),'TPP session duration must be lower-right');
 assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming .betweenTimeSetting{grid-column:1;grid-row:3}'),'Small-window TPP between-round time must be row three');
 assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming #sessionDurationBox.sessionDurationVisible{grid-column:1!important;grid-row:4!important}'),'Small-window TPP session duration must be row four');
-assert.ok(html.includes('#resumeTime{box-sizing:border-box;width:84px;min-width:84px;max-width:84px;flex:0 0 84px;height:33px;font-weight:700}'),'Reprise should have a compact field');
+assert.ok(html.includes('#resumeTime{box-sizing:border-box;width:64px;min-width:64px;max-width:64px;flex:0 0 64px;height:33px;font-weight:700;padding-inline:4px!important}'),'Reprise should have a genuinely narrow HH:MM field');
+// Both end displays use equal headline and restart font-size/placement.
+assert.ok(html.includes('#finishOverlay .finishBig.pairFinish{top:58.8%;font-size:clamp(52px,8vw,154px)}'),'Pairs green headline must match MP4');
+assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,13.8vw,220px));font-size:clamp(60px,9vw,170px)}'),'Pairs red announcement must match MP4');
+assert.ok(html.includes('#resumeTime::-webkit-datetime-edit-ampm-field{display:none!important}'),'Hide extra AM/PM field in settings');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);

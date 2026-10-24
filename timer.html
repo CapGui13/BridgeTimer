@@ -87,7 +87,7 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 #timer #resumeOverlay input[type=time]{width:120px;max-width:130px;min-width:118px;flex:0 0 120px;color-scheme:dark}
 #timer #resumeBtn{white-space:nowrap}
 .boardOptionsRow .resumeTimeOption{gap:8px;white-space:nowrap}
-#resumeTime{box-sizing:border-box;width:84px;min-width:84px;max-width:84px;flex:0 0 84px;height:33px;font-weight:700}
+#resumeTime{box-sizing:border-box;width:64px;min-width:64px;max-width:64px;flex:0 0 64px;height:33px;font-weight:700;padding-inline:4px!important}
 @media(max-width:1000px){.boardOptionsRow{gap:8px 20px;flex-wrap:wrap}.resumeTimeOption{margin-left:0}}
 
 /* Keep 24-hour time inputs in the same dark visual language as other settings. */
@@ -95,11 +95,12 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 #resumeInput::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer}
 /* Native dropdown removed ONLY for the settings field; HH:MM stays an editable time value. */
 #resumeTime::-webkit-calendar-picker-indicator{display:none!important;-webkit-appearance:none!important;opacity:0!important;width:0!important;pointer-events:none!important}
+#resumeTime::-webkit-datetime-edit-ampm-field{display:none!important}
 /* Red restart time: background timer stays blurred, green title unchanged. */
 #finishOverlay .finishBig{top:58.8%;text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.5px rgba(0,0,0,.3)}
 #finishOverlay .finishResume{position:absolute;top:calc(58.8% + clamp(112px,13.8vw,220px));left:50%;transform:translate(-50%,-50%);width:calc(100% - 16px);font-size:clamp(60px,9vw,170px);line-height:1.06;font-weight:1000;color:#ff202d;text-shadow:0 6px 26px #000d,0 0 1px #000;text-align:center;white-space:nowrap;letter-spacing:0;-webkit-text-stroke:1.5px rgba(0,0,0,.32)}
-#finishOverlay .finishBig.pairFinish{top:60.5%}
-#finishOverlay .finishBig.pairFinish~.finishResume{top:calc(60.5% + clamp(72px,8vw,128px));font-size:clamp(31px,5.8vw,112px)}
+#finishOverlay .finishBig.pairFinish{top:58.8%;font-size:clamp(52px,8vw,154px)}
+#finishOverlay .finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,13.8vw,220px));font-size:clamp(60px,9vw,170px)}
 #timer .controls #prev.hidden{display:none!important}
 @media(max-width:850px){#timer .controls{gap:4px}#timer .controls .btn{padding:7px 7px;font-size:11px}}
 
