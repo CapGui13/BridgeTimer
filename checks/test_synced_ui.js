@@ -102,5 +102,5 @@ assert.ok(html.includes('#resumeTime::-webkit-datetime-edit-ampm-field{display:n
 // Resume time is for the current application launch only.
 assert.ok(html.includes('function q41(key,value){const next=JSON.stringify(key===KEY?{...value,resumeTime:""}:value);'),'Saved settings must not retain restart time');
 assert.ok(html.includes('movement:"mitchell"};s.resumeTime=""; /* The next tournament must request its own restart time. */'),'Opening BridgeTimer must clear the old restart time');
-assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('s.resumeTime=v;$("resumeTime").value=v;'),'Live change of restart time must remain supported');
+assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('s.resumeTime=v;')&&html.includes('q41(KEY,s);closeResumeEditor();render()'),'Live edit must still update the timer and UI');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
