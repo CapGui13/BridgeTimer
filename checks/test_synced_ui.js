@@ -110,7 +110,7 @@ assert.ok(!html.includes('id="boardProgressNotice" type="checkbox" checked'),'Bo
 assert.ok(html.includes('if(!x||!Object.prototype.hasOwnProperty.call(x,"boardProgressNotice"))s.boardProgressNotice=false;'),'Older settings with missing board notice must default OFF');
 // Reprise input: muted red when empty; browser validity automatically restores normal style when HH:MM exists.
 assert.ok(html.includes('id="resumeTime" type="time" value="" required'),'The Reprise HH:MM field must signal an empty value');
-assert.ok(html.includes('#resumeTime:invalid{background:#30202a!important;border-color:#94535d!important'),'The empty restart input needs a muted red background and border');
+assert.ok(html.includes('#resumeTime:invalid:not(:focus){background:#30202a!important;border-color:#94535d!important'),'The empty, unfocused restart input needs a muted red background and border');
 assert.ok(html.includes('#resumeTime::-webkit-calendar-picker-indicator{display:none!important'),'The time picker icon must remain hidden');
 // Visual regression: consistent text relief, no overlay for live temporary notices.
 assert.ok(html.includes('#timer #msg.roundMessageTemporary{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px'),'Temporary notice relief must not disappear');
