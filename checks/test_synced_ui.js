@@ -59,8 +59,8 @@ assert.ok(html.includes('resumeTime:$("resumeTime").value'),'Resume time not bou
 assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('function openResumeEditor()'),'Live resume time editing missing');
 
 // Restart-time announcement must be as prominent as the finish headline in both modes.
-assert.ok(html.includes('#finishOverlay .finishResume{position:absolute;top:calc(60.5% + clamp(100px,12.5vw,198px))'),'Large MP4 restart announcement missing');
-assert.ok(html.includes('font-size:clamp(52px,8vw,154px);line-height:1.08;font-weight:1000;color:#ff202d'),'MP4 red line must match headline scale');
-assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(62% + clamp(64px,7vw,115px));font-size:clamp(27px,5.2vw,100px)'),'Pairs restart line must match pairs headline scale');
+assert.ok(html.includes('#finishOverlay .finishResume{position:absolute;top:calc(58.8% + clamp(112px,13.8vw,220px))'),'Large MP4 restart announcement missing');
+assert.ok(html.includes('font-size:clamp(60px,9vw,170px);line-height:1.06;font-weight:1000;color:#ff202d'),'MP4 red line must match headline scale');
+assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(60.5% + clamp(72px,8vw,128px));font-size:clamp(31px,5.8vw,112px)'),'Pairs restart line must match pairs headline scale');
 
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
