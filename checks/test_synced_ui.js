@@ -140,6 +140,13 @@ assert.ok(html.includes('let C,F,SF;'),'Clock must cache normal and short-hour d
 assert.ok(html.includes('p.textContent="01:00:00";'),'One-hour reference display must remain unchanged');
 assert.ok(html.includes('p.textContent="59:59";'),'Width reference for subhour should match MM:SS format');
 assert.ok(html.includes('const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'),'Only MM:SS receives the larger font');
-assert.ok(html.includes('const verticalExtra=Math.max(0,Math.min(base.top-upperGuard,barTop-base.bottom)-8)*2/.78;'),'Sub-hour growth must respect the progress bar and title');
-assert.ok(html.includes('z.transform="translateY("+(10-(f-F)*.39)+"px)";'),'Clock must remain vertically centered as size changes');
+assert.ok(html.includes('const maxVertical=room/lineHeight;'),'Fullscreen enlargement should be limited by all free vertical space between event and progress bar');
+assert.ok(html.includes('z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'),'Short clock should recenter within available vertical band');
+// Fullscreen resize must be actively remeasured rather than cached from a pre-resize window.
+assert.ok(html.includes('const titleRect=$("status").getBoundingClientRect();'),'Clock limit must account for event-title height');
+assert.ok(html.includes('const bottomLimit=(barRect?.top??mainRect.bottom)-12;'),'Clock must stop above the progress bar');
+assert.ok(html.includes('SF=Math.max(F,Math.min(1100,maxW*100/shortW,maxVertical))'),'MM:SS should expand without the former small-screen 620px ceiling');
+assert.ok(html.includes('const desiredTop=Math.max(topLimit,Math.min((base.top+base.bottom-shortHeight)/2,bottomLimit-shortHeight))'),'Short clock must reposition within its existing band without shifting other elements');
+assert.ok(html.includes('if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})'),'Native fullscreen layout changes must trigger clock remeasurement');
+assert.ok(html.includes('onresize=()=>{C=null;fc();syncFaithfulMini(true);'),'Windows fullscreen resize must invalidate the old cached dimensions');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
