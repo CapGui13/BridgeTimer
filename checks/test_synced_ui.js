@@ -147,6 +147,12 @@ assert.ok(html.includes('const titleRect=$("status").getBoundingClientRect();'),
 assert.ok(html.includes('const bottomLimit=(barRect?.top??mainRect.bottom)-12;'),'Clock must stop above the progress bar');
 assert.ok(html.includes('SF=Math.max(F,Math.min(1100,maxW*100/shortW,maxVertical))'),'MM:SS should expand without the former small-screen 620px ceiling');
 assert.ok(html.includes('const desiredTop=Math.max(topLimit,Math.min((base.top+base.bottom-shortHeight)/2,bottomLimit-shortHeight))'),'Short clock must reposition within its existing band without shifting other elements');
+
+assert.ok(html.includes('const shortDrop=Math.max(0,Math.min(16,(barRect?.top??mainRect.bottom)-2-(desiredTop+shortHeight)))'),'Short MM:SS clock must drop by at most 16px without touching progress bar');
+assert.ok(html.includes('shortClockOffset=10+desiredTop-base.top+shortDrop;'),'Short-clock vertical nudge must not alter HH:MM:SS');
+assert.ok(html.includes('z.fontSize=(shortClock?SF:F)+"px";'),'Both clock font sizes must be retained');
+assert.ok(html.includes('z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'),'HH:MM:SS must retain its original 10px transform');
+
 assert.ok(html.includes('if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})'),'Native fullscreen layout changes must trigger clock remeasurement');
 assert.ok(html.includes('onresize=()=>{C=null;fc();syncFaithfulMini(true);'),'Windows fullscreen resize must invalidate the old cached dimensions');
 // Visible regression diagnosed on 25 Oct 2026: shrinking HH:MM:SS with
