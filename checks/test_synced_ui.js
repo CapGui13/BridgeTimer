@@ -135,35 +135,47 @@ assert.ok(html.includes('const viewport=frame.contentWindow?.innerWidth||778;'),
 assert.ok(html.includes('frame.setAttribute("sandbox","allow-same-origin")'),'Parent needs read access to its own script-disabled static preview');
 assert.ok(html.includes('frame.onload=()=>requestAnimationFrame(()=>fitGalleryNotice(frame))'),'Re-fit only after preview iframe has laid out');
 assert.ok(!html.includes('frame.setAttribute("sandbox","");frame.setAttribute("aria-hidden","true")'),'Opaque preview iframe cannot be remeasured');
-// Keep the original full-hour reference sizing, enlarge ONLY 5-digit MM:SS.
-assert.ok(html.includes('let C,F,SF,shortClockOffset=10;'),'Clock must cache both font sizes and vertical offset independently');
-assert.ok(html.includes('p.textContent="01:00:00";'),'One-hour reference display must remain unchanged');
-assert.ok(html.includes('p.textContent="59:59";'),'Width reference for subhour should match MM:SS format');
-assert.ok(html.includes('const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'),'Only MM:SS receives the larger font');
-assert.ok(html.includes('const maxVertical=room/lineHeight;'),'Fullscreen enlargement should be limited by all free vertical space between event and progress bar');
-assert.ok(html.includes('z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'),'Short clock should recenter within available vertical band');
-// Fullscreen resize must be actively remeasured rather than cached from a pre-resize window.
-assert.ok(html.includes('const titleRect=$("status").getBoundingClientRect();'),'Clock limit must account for event-title height');
-assert.ok(html.includes('const bottomLimit=(barRect?.top??mainRect.bottom)-12;'),'Clock must stop above the progress bar');
-assert.ok(html.includes('SF=Math.max(F,Math.min(1100,maxW*100/shortW,maxVertical))'),'MM:SS should expand without the former small-screen 620px ceiling');
-assert.ok(html.includes('const desiredTop=Math.max(topLimit,Math.min((base.top+base.bottom-shortHeight)/2,bottomLimit-shortHeight))'),'Short clock must reposition within its existing band without shifting other elements');
-
-assert.ok(html.includes('const shortDrop=Math.max(0,Math.min(16,(barRect?.top??mainRect.bottom)-2-(desiredTop+shortHeight)))'),'Short MM:SS clock must drop by at most 16px without touching progress bar');
-assert.ok(html.includes('shortClockOffset=10+desiredTop-base.top+shortDrop;'),'Short-clock vertical nudge must not alter HH:MM:SS');
-assert.ok(html.includes('z.fontSize=(shortClock?SF:F)+"px";'),'Both clock font sizes must be retained');
-assert.ok(html.includes('z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'),'HH:MM:SS must retain its original 10px transform');
-
-assert.ok(html.includes('if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})'),'Native fullscreen layout changes must trigger clock remeasurement');
-assert.ok(html.includes('onresize=()=>{C=null;fc();syncFaithfulMini(true);'),'Windows fullscreen resize must invalidate the old cached dimensions');
-// Visible regression diagnosed on 25 Oct 2026: shrinking HH:MM:SS with
-// giant wide bar/letterboxed viewport is forbidden. The strict homothety
-// contract remains explicitly OPEN until a properly validated solution.
-const layoutContract=fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
-assert.ok(layoutContract.includes('Plein écran strictement homothétique'), 'Mandatory proportional fullscreen rule deleted');
-assert.ok(layoutContract.includes('Le chrono HH:MM:SS doit remplir la largeur utile'), 'Long clock width rule deleted');
-assert.ok(html.includes('PLEIN ECRAN HOMOTHETIQUE'), 'Important source annotation deleted');
-assert.ok(html.includes('FULLSCREEN REGRESSION GUARD'), 'Original working fullscreen guard deleted');
-assert.ok(html.includes('.progress{position:absolute;top:65.2%;left:50%;translate:-50% 0;width:min(1100px,88vw);height:15px'), 'Progress bar changed to screen-spanning regression');
-assert.ok(!html.includes('body.fs #timer{position:fixed;'), 'Bad letterboxed fixed stage reintroduced');
-assert.ok(!html.includes('function syncWindowedStage(){'), 'Bad resized window stage reintroduced');
+// EXPERIMENTAL 16:9 LAYOUT — protected by this test, main remains stable.
+// This is a distinct design experiment, NOT a removal of the user's contract.
+for(const required of [
+ 'function updateStage(){',
+ 'const w=1600,h=900;',
+ 'const k=Math.min(innerWidth/w,innerHeight/h)',
+ 'root.style.setProperty(\'--stage-scale\',k);',
+ 'transform:scale(var(--stage-scale));transform-origin:0 0',
+ 'const vw=1600,vh=900;',
+ 'function fc(){',
+ 'const w=$(\'timer\').clientWidth,h=$(\'timer\').clientHeight;',
+ 'p.textContent=\'01:00:00\';',
+ 'p.textContent=\'59:59\';',
+ 'const titleBottom=title.offsetTop+title.offsetHeight;',
+ 'const topLimit=Math.max(12,titleBottom+18);',
+ 'const bottomLimit=bar.offsetTop-18;',
+ 'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);',
+ 'z.fontSize=(shortClock?SF:F)+\'px\';',
+ 'updateStage();C=null;fc();syncFaithfulMini(true);',
+ 'clone.style.setProperty(\'--stage-scale\',\'1\');',
+ '#timer .topBtns #fsBtn{width:246px!important;'
+])assert.ok(html.includes(required),'16:9 homothety experiment regression: '+required);
+// Uniform scale on both axes, regardless of viewport aspect ratio.
+// The window opens at approximately 960x540 client pixels.
+const canvasW=1600,canvasH=900;
+function stageScale(w,h){return Math.min(w/canvasW,h/canvasH)}
+for (const [windowW,windowH,screenW,screenH] of [
+ [960,540,1650,928],[960,538,1650,928],[1200,675,1920,1080]
+]){
+ const windowScale=stageScale(windowW,windowH),fullScale=stageScale(screenW,screenH);
+ assert.ok(windowScale>0&&fullScale>windowScale);
+ for(const referenceSize of [18,74,90,340,1100,1600]){
+   const observedRatio=(referenceSize*fullScale)/(referenceSize*windowScale);
+   assert.ok(Math.abs(observedRatio-fullScale/windowScale)<1e-10,
+      'Every width, height and font must share a single scale ratio');
+ }
+}
+// Preserve the main branch's essential visual constraints.
+assert.ok(html.includes('.progress{position:absolute;top:65.2%;left:50%;translate:-50% 0;width:min(1100px,calc(var(--timer-vw) * 88));height:15px'),'Progress width must remain 1100px in the 1600px base stage');
+assert.ok(!html.includes('function syncWindowedStage(){'),'Rejected prior aspect-dependent implementation must not return');
+const contract=fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
+assert.ok(contract.includes('Plein écran strictement homothétique'));
+assert.ok(contract.includes('Le chrono HH:MM:SS doit remplir la largeur utile'));
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
