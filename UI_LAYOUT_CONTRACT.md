@@ -39,13 +39,19 @@ de l'ancienne maquette au rapport de la fenêtre étroite provoquait de grandes
 bandes latérales, réduisant le chrono long au lieu de lui laisser presque toute
 la largeur. Ce rendu a été rejeté par l'utilisateur.
 
-**CORRECTION DE CODE :** `syncWindowedStage()` prépare maintenant une maquette
-qui possède **le rapport d'aspect du moniteur** (déterminé via `screen.width /
-screen.height`), y compris dans la fenêtre. Le plein écran agrandit ensuite
-ce même cadre par **un facteur unique**. Cela préserve l'homothétie et utilise
-presque toute la largeur du moniteur pour `HH:MM:SS`. La fenêtre peut comporter
-du fond libre au-dessus et en dessous du contenu selon son propre rapport
-d'aspect : c'est la conséquence mathématique d'une maquette commune.
+**RETOUR AU RENDU ANTÉRIEUR :** la tentative de correction utilisant
+`syncWindowedStage()` a elle aussi provoqué une régression visible :
+une barre bleue trop large, un chrono HH:MM:SS plus petit, des contrôles
+non affichés sur la première capture et une composition bouleversée.
+**L'utilisateur a rejeté cette version le 25 octobre 2026.**
+
+Le code d'affichage a donc été **restauré depuis le commit
+`0e5b340`** (dernier rendu antérieur à ces régressions), avec uniquement
+des annotations et des tests de protection ajoutés. Cette restauration
+ne résout PAS encore parfaitement l'homothétie : cette exigence reste
+ouverte. Toute future tentative devra d'abord prouver visuellement
+qu'elle conserve la grande taille du chrono long et l'apparence globale,
+en fenêtre ET en plein écran.
 
 **Validation encore nécessaire :** vérifier cet affichage dans l'application
 Windows native sur les écrans de l'utilisateur. Ne jamais réintroduire
@@ -88,7 +94,7 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
   ne jamais assouplir ou supprimer une assertion parce qu'elle gêne une
   correction sans expliquer pourquoi le contrat est toujours respecté.
 - Conserver explicitement ce document lors des refontes du moteur d'affichage.
-- **État au 25/10/2026 :** le code a été adapté pour conserver une
-  maquette commune au format du moniteur et redonner au chrono long sa
-  largeur utile. Les tests automatisés et la compilation doivent passer ;
-  validation visuelle **Windows native** encore à réaliser.
+- **État au 25/10/2026 :** régression graphique annulée en restaurant
+  l'affichage du commit `0e5b340`. Grande largeur du chrono HH:MM:SS et
+  largeur normale de la barre conservées. **Homothétie stricte toujours
+  à améliorer**, après validation avec captures comparatives sur Windows.
