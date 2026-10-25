@@ -193,7 +193,7 @@ const uiContract = fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
 for(const key of [
  'Plein écran strictement homothétique',
  'Le chrono HH:MM:SS doit remplir la largeur utile',
- 'BUG CONSTATÉ / NON CORRIGÉ',
+ 'RÉGRESSION HISTORIQUE (25/10/2026)',
  'Chiffres MM:SS : grands mais sans chevauchement',
  'Vérifications obligatoires avant de proposer un nouvel EXE'
 ]) assert.ok(uiContract.includes(key),'Fullscreen contract deleted or weakened: '+key);
