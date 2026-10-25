@@ -31,8 +31,8 @@ const (
 	appVersion = "1.7.8"
 	host = "127.0.0.1"
 	port = 43831
-	defaultWindowWidth = 960
-	defaultWindowHeight = 570
+	defaultWindowWidth = 812
+	defaultWindowHeight = 612
 
 	wsCaption = 0x00C00000
 	wsThickFrame = 0x00040000
@@ -292,7 +292,7 @@ func releaseSingleInstance() {
 
 func startupWindowGeometry() (int32, int32, uint, uint, bool) {
 	// Always open Bridge Timer centered, regardless of where the previous
-	// session's window was moved. Experimental 16:9 timer canvas opens near 960x540 client pixels.
+	// session's window was moved. Experimental 16:9 timer canvas opens in a native 812x612 window; this is also its minimum.
 	return 0, 0, defaultWindowWidth, defaultWindowHeight, false
 }
 
