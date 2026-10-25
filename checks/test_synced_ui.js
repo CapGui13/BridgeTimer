@@ -143,13 +143,32 @@ for(const token of [
  'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);',
  'const titleBottom=title.offsetTop+title.offsetHeight;',
  'const progressTop=progress?.offsetTop??mh;',
- 'const topLimit=Math.max(12,titleBottom+28);',
- 'const bottomLimit=progressTop-22;',
+ 'const topLimit=Math.max(12,titleBottom+16);',
+ 'const bottomLimit=progressTop-12;',
  'const room=Math.max(12,bottomLimit-topLimit);',
  'SF=Math.max(12,Math.min(1100,maxW*100/shortW,room/.78));',
  'shortClockOffset=topLimit+Math.max(0,(room-shortHeight)/2)-clockTop;',
  'z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'
 ])assert.ok(html.includes(token),'Stage-relative clock layout missing: '+token);
+// Monitor-aspect window stage makes full-width fullscreen mathematically possible
+// without changing relative proportions of any rendered element.
+for (const token of [
+ 'function syncWindowedStage(){',
+ 'const t=$("timer"),sw=Number(screen.width),sh=Number(screen.height);',
+ 'let ratio=(sw>0&&sh>0)?sw/sh:16/9;',
+ 'const w=Math.max(1,Math.min(innerWidth,innerHeight*ratio));',
+ 'const h=w/ratio;',
+ 't.style.setProperty("--window-stage-width",w+"px");',
+ 't.style.setProperty("--window-stage-height",h+"px");',
+ 't.style.setProperty("--timer-vw",w/100+"px");',
+ 'syncWindowedStage();function q1c(){',
+ 'const r=timer.getBoundingClientRect();fullscreenStage={width:Math.max(1,r.width),height:Math.max(1,r.height)};',
+ 'if(document.body.classList.contains("fs"))scaleFullscreenStage();else syncWindowedStage();',
+ 'body:not(.fs) #timer{position:fixed;',
+ 'body.fs.fsLt980 #localTime,body.fs.fsLt980 #round{font-size:20px}',
+ 'F=Math.max(12,Math.min(620,maxW*100/wideW,longRoom/.78));'
+])assert.ok(html.includes(token),'Fullscreen width/homothety contract regressed: '+token);
+assert.ok(!html.includes('Math.max(24,stageHeight-435)/.78'),'Obsolete clock cap must not shrink long clock on a landscape stage');
 // All fullscreen elements must scale together, with centered letterboxing when aspect ratios differ.
 for(const token of [
  'function captureFullscreenStage(){',
@@ -181,7 +200,7 @@ for(const key of [
 for(const key of [
  'CONTRAT UI PRIORITAIRE — PLEIN ÉCRAN',
  'HOMOTHÉTIE',
- 'letterboxing massif',
+ 'bandes latérales massives',
  'INVARIANT — CHIFFRES DU TIMER',
  'UN SEUL facteur d\'échelle'
 ]) assert.ok(html.includes(key),'Required source warning about UI proportions removed: '+key);
