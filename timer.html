@@ -303,13 +303,17 @@ function fc(){
   const topLimit=Math.max(12,titleBottom+18);
   const bottomLimit=bar.offsetTop-18;
   const room=Math.max(0,bottomLimit-topLimit);
-  SF=Math.max(F,Math.min(1100,maxW*100/shortW,room/.78));
-  const shortHeight=SF*.78;
+  // MM:SS only: larger digits (~8.3%) with a compact 0.72 line box.
+  // The event title and progress bar keep their exact positions and sizes.
+  const shortLineHeight=.72;
+  SF=Math.max(F,Math.min(1100,maxW*100/shortW,room/shortLineHeight));
+  const shortHeight=SF*shortLineHeight;
   const desiredTop=Math.max(topLimit,Math.min(baseTop+baseHeight-shortHeight/2,bottomLimit-shortHeight));
   shortClockOffset=desiredTop-c.offsetTop;
  }
  const shortClock=/^\d{2}:\d{2}$/.test(c.textContent);
  z.fontSize=(shortClock?SF:F)+'px';
+ z.lineHeight=shortClock?'.72':'.78'; // Never change HH:MM:SS metrics.
  z.transform='translateY('+(shortClock?shortClockOffset:10)+'px)';
  z.visibility='visible';
 }
