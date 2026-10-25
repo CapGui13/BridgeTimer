@@ -59,9 +59,9 @@ assert.ok(html.includes('resumeTime:$("resumeTime").value'),'Resume time not bou
 assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('function openResumeEditor()'),'Live resume time editing missing');
 
 // Restart-time announcement must be as prominent as the finish headline in both modes.
-assert.ok(html.includes('#finishOverlay .finishResume{position:absolute;top:calc(58.8% + clamp(112px,13.8vw,220px))'),'Large MP4 restart announcement missing');
-assert.ok(html.includes('font-size:clamp(60px,9vw,170px);line-height:1.06;font-weight:1000;color:#ff202d'),'MP4 red line must match headline scale');
-assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,13.8vw,220px));font-size:clamp(60px,9vw,170px)'),'Pairs restart line must match MP4 headline scale');
+assert.ok(html.includes('#finishOverlay .finishResume{position:absolute;top:calc(58.8% + clamp(112px,calc(var(--timer-vw) * 13.8),220px))'),'Large MP4 restart announcement missing');
+assert.ok(html.includes('font-size:clamp(60px,calc(var(--timer-vw) * 9),170px);line-height:1.06;font-weight:1000;color:#ff202d'),'MP4 red line must match headline scale');
+assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,calc(var(--timer-vw) * 13.8),220px));font-size:clamp(60px,calc(var(--timer-vw) * 9),170px)'),'Pairs restart line must match MP4 headline scale');
 
 // Tournoi duration layout: common right-hand column and no height jump between formats.
 for(const id of ['timingLayout','hours','boardMinutes','boardSeconds','minutes','seconds','sessionDurationBox','resumeTime','betweenField'])
@@ -96,8 +96,8 @@ assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming .betweenTimeS
 assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming #sessionDurationBox.sessionDurationVisible{grid-column:1!important;grid-row:4!important}'),'Small-window TPP session duration must be row four');
 assert.ok(html.includes('#resumeTime{box-sizing:border-box;width:64px;min-width:64px;max-width:64px;flex:0 0 64px;height:33px;font-weight:700;padding-inline:4px!important}'),'Reprise should have a genuinely narrow HH:MM field');
 // Both end displays use equal headline and restart font-size/placement.
-assert.ok(html.includes('#finishOverlay .finishBig.pairFinish{top:58.8%;font-size:clamp(52px,8vw,154px)}'),'Pairs green headline must match MP4');
-assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,13.8vw,220px));font-size:clamp(60px,9vw,170px)}'),'Pairs red announcement must match MP4');
+assert.ok(html.includes('#finishOverlay .finishBig.pairFinish{top:58.8%;font-size:clamp(52px,calc(var(--timer-vw) * 8),154px)}'),'Pairs green headline must match MP4');
+assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,calc(var(--timer-vw) * 13.8),220px));font-size:clamp(60px,calc(var(--timer-vw) * 9),170px)}'),'Pairs red announcement must match MP4');
 assert.ok(html.includes('#resumeTime::-webkit-datetime-edit-ampm-field{display:none!important}'),'Hide extra AM/PM field in settings');
 // Resume time is for the current application launch only.
 assert.ok(html.includes('function q41(key,value){const next=JSON.stringify(key===KEY?{...value,resumeTime:""}:value);'),'Saved settings must not retain restart time');
