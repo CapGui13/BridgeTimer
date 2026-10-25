@@ -159,19 +159,35 @@ for(const required of [
 ])assert.ok(html.includes(required),'16:9 homothety experiment regression: '+required);
 // October 25 — increase MM:SS size without moving any other element.
 for(const token of [
- 'const shortLineHeight=.72;',
+ 'const shortLineHeight=.68;',
  'SF=Math.max(F,Math.min(1100,maxW*100/shortW,room/shortLineHeight));',
  'const shortHeight=SF*shortLineHeight;',
- 'z.lineHeight=shortClock?\'.72\':\'.78\';',
+ 'z.lineHeight=shortClock?\'.68\':\'.78\';',
  'z.fontSize=(shortClock?SF:F)+\'px\';',
  'z.transform=\'translateY(\'+(shortClock?shortClockOffset:10)+\'px)\';',
  'const topLimit=Math.max(12,titleBottom+18);',
  'const bottomLimit=bar.offsetTop-18;'
 ])assert.ok(html.includes(token),'MM:SS-only size or safety spacing changed unexpectedly: '+token);
-assert.ok(Math.abs(.78/.72-13/12)<1e-10,'Subhour line-height should increase the font approximately 8.3 percent');
+assert.ok(.78/.68>1.14,'Subhour 0.68 line-height allows more font growth than before');
 // HH:MM:SS font size and transform remain unchanged, including after returning from MM:SS.
 assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"));
 assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
+// October 25: requested exact native opening/minimum size from Windows screenshot.
+const nativeSource=fs.readFileSync('main.go','utf8');
+assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Opening width must be 812px');
+assert.ok(/defaultWindowHeight\s*=\s*612/.test(nativeSource),'Opening height must be 612px');
+assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
+  'Native minimum must equal initial window dimensions');
+// MM:SS: larger and lower with a conditional progress gap; HH:MM:SS unchanged.
+for(const token of [
+ "bar.style.top=shortClock?'calc(65.2% + 75px)':'';",
+ 'const desiredTop=Math.min(topLimit+30,bottomLimit-shortHeight);',
+ "z.lineHeight=shortClock?'.68':'.78';",
+ "F=Math.min(620,maxW*100/wideW,(h-435)/.78);",
+ 'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'
+])assert.ok(html.includes(token),'Subhour-only alignment requirement lost: '+token);
+assert.ok(!html.includes("z.lineHeight=shortClock?'.72':'.78';"),
+  'Do not revert to the previous smaller MM:SS clock');
 // Uniform scale on both axes, regardless of viewport aspect ratio.
 // The window opens at approximately 960x540 client pixels.
 const canvasW=1600,canvasH=900;
