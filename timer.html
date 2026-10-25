@@ -283,6 +283,10 @@ function fc(){
  const c=$('clock'),z=c.style;
  if(!c.offsetParent)return;
  const main=c.parentNode,title=$('status'),bar=main.querySelector('.progress');
+ const shortClock=/^\d{2}:\d{2}$/.test(c.textContent);
+ // Only while showing MM:SS: reserve a little more vertical room for larger
+ // digits, without touching the normal HH:MM:SS progress-bar position.
+ bar.style.top=shortClock?'calc(65.2% + 75px)':'';
  const w=$('timer').clientWidth,h=$('timer').clientHeight;
  const k=[w,h,main.clientWidth,main.clientHeight,title.offsetTop,title.offsetHeight,bar.offsetTop].join('x');
  if(k!==C){
@@ -303,17 +307,16 @@ function fc(){
   const topLimit=Math.max(12,titleBottom+18);
   const bottomLimit=bar.offsetTop-18;
   const room=Math.max(0,bottomLimit-topLimit);
-  // MM:SS only: larger digits (~8.3%) with a compact 0.72 line box.
-  // The event title and progress bar keep their exact positions and sizes.
-  const shortLineHeight=.72;
+  // MM:SS only: grow the digits to the width limit, with a 0.68 line box.
+  // Keep the top of the ink comfortably below the event title.
+  const shortLineHeight=.68;
   SF=Math.max(F,Math.min(1100,maxW*100/shortW,room/shortLineHeight));
   const shortHeight=SF*shortLineHeight;
-  const desiredTop=Math.max(topLimit,Math.min(baseTop+baseHeight-shortHeight/2,bottomLimit-shortHeight));
+  const desiredTop=Math.min(topLimit+30,bottomLimit-shortHeight);
   shortClockOffset=desiredTop-c.offsetTop;
  }
- const shortClock=/^\d{2}:\d{2}$/.test(c.textContent);
  z.fontSize=(shortClock?SF:F)+'px';
- z.lineHeight=shortClock?'.72':'.78'; // Never change HH:MM:SS metrics.
+ z.lineHeight=shortClock?'.68':'.78'; // Never change HH:MM:SS metrics.
  z.transform='translateY('+(shortClock?shortClockOffset:10)+'px)';
  z.visibility='visible';
 }
