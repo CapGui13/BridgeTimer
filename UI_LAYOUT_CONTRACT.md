@@ -98,3 +98,21 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
   l'affichage du commit `0e5b340`. Grande largeur du chrono HH:MM:SS et
   largeur normale de la barre conservées. **Homothétie stricte toujours
   à améliorer**, après validation avec captures comparatives sur Windows.
+
+## 6. Essai isolé du 25/10/2026 — maquette 16:9
+
+- **Branche de test seulement :** `experiment/bridge-timer-16x9-20261025`.
+- **Retour arrière immédiat :** branche stable `main`, commit de départ
+  `a76fe0dbf5e4304bce04d3c77aa49c7371416429`, non modifié par l'essai.
+- La scène du timer se calcule toujours sur **1600 × 900** unités (16:9).
+  Mode fenêtré et plein écran appliquent exactement **un seul coefficient** à
+  tout le timer, sans recalcul des éléments lors du changement de mode.
+- Ouverture Windows d'essai : fenêtre extérieure **960 × 570**, destinée
+  à donner une zone de rendu interne proche de 960 × 540.
+- Les boutons d'en-tête ont une largeur suffisante pour « Paramètres » et
+  « Quitter plein écran », et la miniature copie le rendu au format 16:9.
+- **Contrôle manuel obligatoire sur Windows :** lisibilité des boutons, ratio
+  correct, absence de chevauchement sous le titre, grande largeur du chrono
+  à une heure et affichage MM:SS. Vérifier les deux passages de mode.
+- Si le résultat ne convient pas, **ne pas fusionner cette branche**. Continuer
+  à utiliser `main` et l'EXE précédemment validé.
