@@ -166,4 +166,23 @@ for(const token of [
  'if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})',
  'body.fs .bottom{height:82px;min-height:82px;padding:11px 190px 15px}'
 ])assert.ok(html.includes(token),'Fullscreen homothetic stage missing: '+token);
+// PROTECTION DES EXIGENCES UTILISATEUR — ne jamais supprimer pour faire passer le CI.
+// Le test lie les avertissements au code lui-même et au contrat maintenu dans le dépôt.
+// IMPORTANT : la largeur HH:MM:SS en plein écran reste à corriger ; ce test de
+// documentation ne doit pas être confondu avec une validation visuelle Windows.
+const uiContract = fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
+for(const key of [
+ 'Plein écran strictement homothétique',
+ 'Le chrono HH:MM:SS doit remplir la largeur utile',
+ 'BUG CONSTATÉ / NON CORRIGÉ',
+ 'Chiffres MM:SS : grands mais sans chevauchement',
+ 'Vérifications obligatoires avant de proposer un nouvel EXE'
+]) assert.ok(uiContract.includes(key),'Fullscreen contract deleted or weakened: '+key);
+for(const key of [
+ 'CONTRAT UI PRIORITAIRE — PLEIN ÉCRAN',
+ 'HOMOTHÉTIE',
+ 'letterboxing massif',
+ 'INVARIANT — CHIFFRES DU TIMER',
+ 'UN SEUL facteur d\'échelle'
+]) assert.ok(html.includes(key),'Required source warning about UI proportions removed: '+key);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
