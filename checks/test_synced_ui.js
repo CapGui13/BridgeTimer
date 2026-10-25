@@ -169,6 +169,27 @@ for (const token of [
  'F=Math.max(12,Math.min(620,maxW*100/wideW,longRoom/.78));'
 ])assert.ok(html.includes(token),'Fullscreen width/homothety contract regressed: '+token);
 assert.ok(!html.includes('Math.max(24,stageHeight-435)/.78'),'Obsolete clock cap must not shrink long clock on a landscape stage');
+
+for(const required of [
+ '#timer{grid-template-columns:minmax(0,1fr)}',
+ '#timer .progress{top:70.2%}',
+ '#timer #msg{top:76%}',
+ '#timer.roundReading #msg{top:75%}',
+ 'body.fs.fsNarrow #timer .controls{gap:4px}',
+ 'body.fs.fsNarrow #timer .controls .btn{padding:7px 7px;font-size:11px}',
+ 'body.classList.toggle("fsLt980",stage.width<=980);'
+])assert.ok(html.includes(required),'Narrow-stage/full-width regression: '+required);
+// Algebraic regression: on screens whose aspect differs from the window,
+// the shared-stage aspect must allow one scalar to occupy FULL monitor width.
+// Include the previously failing 778x596 screenshot size.
+for(const [ww,wh,sw,sh] of [[778,596,1650,928],[920,700,1650,928],[1280,800,1920,1080]]){
+ const aspect=sw/sh;
+ const stageWidth=Math.min(ww,wh*aspect),stageHeight=stageWidth/aspect;
+ const k=Math.min(sw/stageWidth,sh/stageHeight);
+ assert.ok(Math.abs(stageWidth*k-sw)<1e-7,'Monitor-stage must reach full width');
+ assert.ok(Math.abs(stageHeight*k-sh)<1e-7,'Monitor-stage must reach full height');
+}
+
 // All fullscreen elements must scale together, with centered letterboxing when aspect ratios differ.
 for(const token of [
  'function captureFullscreenStage(){',
