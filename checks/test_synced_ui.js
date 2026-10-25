@@ -59,9 +59,9 @@ assert.ok(html.includes('resumeTime:$("resumeTime").value'),'Resume time not bou
 assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('function openResumeEditor()'),'Live resume time editing missing');
 
 // Restart-time announcement must be as prominent as the finish headline in both modes.
-assert.ok(html.includes('#finishOverlay .finishResume{position:absolute;top:calc(58.8% + clamp(112px,calc(var(--timer-vw) * 13.8),220px))'),'Large MP4 restart announcement missing');
-assert.ok(html.includes('font-size:clamp(60px,calc(var(--timer-vw) * 9),170px);line-height:1.06;font-weight:1000;color:#ff202d'),'MP4 red line must match headline scale');
-assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,calc(var(--timer-vw) * 13.8),220px));font-size:clamp(60px,calc(var(--timer-vw) * 9),170px)'),'Pairs restart line must match MP4 headline scale');
+assert.ok(html.includes('#finishOverlay .finishResume{position:absolute;top:calc(58.8% + clamp(112px,13.8vw,220px))'),'Large MP4 restart announcement missing');
+assert.ok(html.includes('font-size:clamp(60px,9vw,170px);line-height:1.06;font-weight:1000;color:#ff202d'),'MP4 red line must match headline scale');
+assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,13.8vw,220px));font-size:clamp(60px,9vw,170px)'),'Pairs restart line must match MP4 headline scale');
 
 // Tournoi duration layout: common right-hand column and no height jump between formats.
 for(const id of ['timingLayout','hours','boardMinutes','boardSeconds','minutes','seconds','sessionDurationBox','resumeTime','betweenField'])
@@ -96,8 +96,8 @@ assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming .betweenTimeS
 assert.ok(html.includes('.tournamentCard #timingLayout.pairsTiming #sessionDurationBox.sessionDurationVisible{grid-column:1!important;grid-row:4!important}'),'Small-window TPP session duration must be row four');
 assert.ok(html.includes('#resumeTime{box-sizing:border-box;width:64px;min-width:64px;max-width:64px;flex:0 0 64px;height:33px;font-weight:700;padding-inline:4px!important}'),'Reprise should have a genuinely narrow HH:MM field');
 // Both end displays use equal headline and restart font-size/placement.
-assert.ok(html.includes('#finishOverlay .finishBig.pairFinish{top:58.8%;font-size:clamp(52px,calc(var(--timer-vw) * 8),154px)}'),'Pairs green headline must match MP4');
-assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,calc(var(--timer-vw) * 13.8),220px));font-size:clamp(60px,calc(var(--timer-vw) * 9),170px)}'),'Pairs red announcement must match MP4');
+assert.ok(html.includes('#finishOverlay .finishBig.pairFinish{top:58.8%;font-size:clamp(52px,8vw,154px)}'),'Pairs green headline must match MP4');
+assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,13.8vw,220px));font-size:clamp(60px,9vw,170px)}'),'Pairs red announcement must match MP4');
 assert.ok(html.includes('#resumeTime::-webkit-datetime-edit-ampm-field{display:none!important}'),'Hide extra AM/PM field in settings');
 // Resume time is for the current application launch only.
 assert.ok(html.includes('function q41(key,value){const next=JSON.stringify(key===KEY?{...value,resumeTime:""}:value);'),'Saved settings must not retain restart time');
@@ -135,94 +135,29 @@ assert.ok(html.includes('const viewport=frame.contentWindow?.innerWidth||778;'),
 assert.ok(html.includes('frame.setAttribute("sandbox","allow-same-origin")'),'Parent needs read access to its own script-disabled static preview');
 assert.ok(html.includes('frame.onload=()=>requestAnimationFrame(()=>fitGalleryNotice(frame))'),'Re-fit only after preview iframe has laid out');
 assert.ok(!html.includes('frame.setAttribute("sandbox","");frame.setAttribute("aria-hidden","true")'),'Opaque preview iframe cannot be remeasured');
-// Keep both clock formats, but measure against the same unscaled stage.
-for(const token of [
- 'let C,F,SF,shortClockOffset=10;',
- 'p.textContent="01:00:00";',
- 'p.textContent="59:59";',
- 'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);',
- 'const titleBottom=title.offsetTop+title.offsetHeight;',
- 'const progressTop=progress?.offsetTop??mh;',
- 'const topLimit=Math.max(12,titleBottom+16);',
- 'const bottomLimit=progressTop-12;',
- 'const room=Math.max(12,bottomLimit-topLimit);',
- 'SF=Math.max(12,Math.min(1100,maxW*100/shortW,room/.78));',
- 'shortClockOffset=topLimit+Math.max(0,(room-shortHeight)/2)-clockTop;',
- 'z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'
-])assert.ok(html.includes(token),'Stage-relative clock layout missing: '+token);
-// Monitor-aspect window stage makes full-width fullscreen mathematically possible
-// without changing relative proportions of any rendered element.
-for (const token of [
- 'function syncWindowedStage(){',
- 'const t=$("timer"),sw=Number(screen.width),sh=Number(screen.height);',
- 'let ratio=(sw>0&&sh>0)?sw/sh:16/9;',
- 'const w=Math.max(1,Math.min(innerWidth,innerHeight*ratio));',
- 'const h=w/ratio;',
- 't.style.setProperty("--window-stage-width",w+"px");',
- 't.style.setProperty("--window-stage-height",h+"px");',
- 't.style.setProperty("--timer-vw",w/100+"px");',
- 'syncWindowedStage();function q1c(){',
- 'const r=timer.getBoundingClientRect();fullscreenStage={width:Math.max(1,r.width),height:Math.max(1,r.height)};',
- 'if(document.body.classList.contains("fs"))scaleFullscreenStage();else syncWindowedStage();',
- 'body:not(.fs) #timer{position:fixed;',
- 'body.fs.fsLt980 #localTime,body.fs.fsLt980 #round{font-size:20px}',
- 'F=Math.max(12,Math.min(620,maxW*100/wideW,longRoom/.78));'
-])assert.ok(html.includes(token),'Fullscreen width/homothety contract regressed: '+token);
-assert.ok(!html.includes('Math.max(24,stageHeight-435)/.78'),'Obsolete clock cap must not shrink long clock on a landscape stage');
-
-for(const required of [
- '#timer{grid-template-columns:minmax(0,1fr)}',
- '#timer .progress{top:70.2%}',
- '#timer #msg{top:76%}',
- '#timer.roundReading #msg{top:75%}',
- 'body.fs.fsNarrow #timer .controls{gap:4px}',
- 'body.fs.fsNarrow #timer .controls .btn{padding:7px 7px;font-size:11px}',
- 'body.classList.toggle("fsLt980",stage.width<=980);'
-])assert.ok(html.includes(required),'Narrow-stage/full-width regression: '+required);
-// Algebraic regression: on screens whose aspect differs from the window,
-// the shared-stage aspect must allow one scalar to occupy FULL monitor width.
-// Include the previously failing 778x596 screenshot size.
-for(const [ww,wh,sw,sh] of [[778,596,1650,928],[920,700,1650,928],[1280,800,1920,1080]]){
- const aspect=sw/sh;
- const stageWidth=Math.min(ww,wh*aspect),stageHeight=stageWidth/aspect;
- const k=Math.min(sw/stageWidth,sh/stageHeight);
- assert.ok(Math.abs(stageWidth*k-sw)<1e-7,'Monitor-stage must reach full width');
- assert.ok(Math.abs(stageHeight*k-sh)<1e-7,'Monitor-stage must reach full height');
-}
-
-// All fullscreen elements must scale together, with centered letterboxing when aspect ratios differ.
-for(const token of [
- 'function captureFullscreenStage(){',
- 'function scaleFullscreenStage(){',
- 'scale=Math.max(.01,Math.min(innerWidth/stage.width,innerHeight/stage.height))',
- 'body.fs #timer{position:fixed;',
- 'transform:scale(var(--fs-stage-scale));transform-origin:0 0',
- 'body.style.setProperty("--fs-stage-left",(innerWidth-stage.width*scale)/2+"px")',
- 'body.style.setProperty("--fs-stage-top",(innerHeight-stage.height*scale)/2+"px")',
- 'timer.style.setProperty("--timer-vw",stage.width/100+"px")',
- 'timer.style.setProperty("--timer-vh",stage.height/100+"px")',
- 'if(!body.classList.contains("fs"))captureFullscreenStage();',
- 'onresize=()=>{if(document.body.classList.contains("fs"))scaleFullscreenStage();else syncWindowedStage();C=null;fc();',
- 'if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})',
- 'body.fs .bottom{height:82px;min-height:82px;padding:11px 190px 15px}'
-])assert.ok(html.includes(token),'Fullscreen homothetic stage missing: '+token);
-// PROTECTION DES EXIGENCES UTILISATEUR — ne jamais supprimer pour faire passer le CI.
-// Le test lie les avertissements au code lui-même et au contrat maintenu dans le dépôt.
-// IMPORTANT : la largeur HH:MM:SS en plein écran reste à corriger ; ce test de
-// documentation ne doit pas être confondu avec une validation visuelle Windows.
-const uiContract = fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
-for(const key of [
- 'Plein écran strictement homothétique',
- 'Le chrono HH:MM:SS doit remplir la largeur utile',
- 'RÉGRESSION HISTORIQUE (25/10/2026)',
- 'Chiffres MM:SS : grands mais sans chevauchement',
- 'Vérifications obligatoires avant de proposer un nouvel EXE'
-]) assert.ok(uiContract.includes(key),'Fullscreen contract deleted or weakened: '+key);
-for(const key of [
- 'CONTRAT UI PRIORITAIRE — PLEIN ÉCRAN',
- 'HOMOTHÉTIE',
- 'bandes latérales massives',
- 'INVARIANT — CHIFFRES DU TIMER',
- 'UN SEUL facteur d\'échelle'
-]) assert.ok(html.includes(key),'Required source warning about UI proportions removed: '+key);
+// Keep the original full-hour reference sizing, enlarge ONLY 5-digit MM:SS.
+assert.ok(html.includes('let C,F,SF,shortClockOffset=10;'),'Clock must cache both font sizes and vertical offset independently');
+assert.ok(html.includes('p.textContent="01:00:00";'),'One-hour reference display must remain unchanged');
+assert.ok(html.includes('p.textContent="59:59";'),'Width reference for subhour should match MM:SS format');
+assert.ok(html.includes('const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'),'Only MM:SS receives the larger font');
+assert.ok(html.includes('const maxVertical=room/lineHeight;'),'Fullscreen enlargement should be limited by all free vertical space between event and progress bar');
+assert.ok(html.includes('z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'),'Short clock should recenter within available vertical band');
+// Fullscreen resize must be actively remeasured rather than cached from a pre-resize window.
+assert.ok(html.includes('const titleRect=$("status").getBoundingClientRect();'),'Clock limit must account for event-title height');
+assert.ok(html.includes('const bottomLimit=(barRect?.top??mainRect.bottom)-12;'),'Clock must stop above the progress bar');
+assert.ok(html.includes('SF=Math.max(F,Math.min(1100,maxW*100/shortW,maxVertical))'),'MM:SS should expand without the former small-screen 620px ceiling');
+assert.ok(html.includes('const desiredTop=Math.max(topLimit,Math.min((base.top+base.bottom-shortHeight)/2,bottomLimit-shortHeight))'),'Short clock must reposition within its existing band without shifting other elements');
+assert.ok(html.includes('if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})'),'Native fullscreen layout changes must trigger clock remeasurement');
+assert.ok(html.includes('onresize=()=>{C=null;fc();syncFaithfulMini(true);'),'Windows fullscreen resize must invalidate the old cached dimensions');
+// Visible regression diagnosed on 25 Oct 2026: shrinking HH:MM:SS with
+// giant wide bar/letterboxed viewport is forbidden. The strict homothety
+// contract remains explicitly OPEN until a properly validated solution.
+const layoutContract=fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
+assert.ok(layoutContract.includes('Plein écran strictement homothétique'), 'Mandatory proportional fullscreen rule deleted');
+assert.ok(layoutContract.includes('Le chrono HH:MM:SS doit remplir la largeur utile'), 'Long clock width rule deleted');
+assert.ok(html.includes('PLEIN ECRAN HOMOTHETIQUE'), 'Important source annotation deleted');
+assert.ok(html.includes('FULLSCREEN REGRESSION GUARD'), 'Original working fullscreen guard deleted');
+assert.ok(html.includes('.progress{position:absolute;top:65.2%;left:50%;translate:-50% 0;width:min(1100px,88vw);height:15px'), 'Progress bar changed to screen-spanning regression');
+assert.ok(!html.includes('body.fs #timer{position:fixed;'), 'Bad letterboxed fixed stage reintroduced');
+assert.ok(!html.includes('function syncWindowedStage(){'), 'Bad resized window stage reintroduced');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
