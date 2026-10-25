@@ -1,5 +1,12 @@
 # Bridge Timer
 
+> **Avant toute modification de l'interface ou du plein écran :** lire
+> [UI_LAYOUT_CONTRACT.md](UI_LAYOUT_CONTRACT.md). Les proportions homothétiques
+> de **tous** les éléments et le chrono **HH:MM:SS presque pleine largeur**
+> sont deux contraintes obligatoires. Le letterboxing excessif du 25/10/2026
+> est un bug encore ouvert ; ne pas le confondre avec un rendu accepté.
+
+
 Bridge Timer is a portable Windows timer for bridge tournaments.
 
 It provides a large projection-friendly countdown, round management, configurable breaks, temporary messages, color customization with a reusable saved color preset, fullscreen display, and local settings persistence.
