@@ -181,7 +181,7 @@ for(const token of [
  'timer.style.setProperty("--timer-vw",stage.width/100+"px")',
  'timer.style.setProperty("--timer-vh",stage.height/100+"px")',
  'if(!body.classList.contains("fs"))captureFullscreenStage();',
- 'onresize=()=>{scaleFullscreenStage();C=null;fc();',
+ 'onresize=()=>{if(document.body.classList.contains("fs"))scaleFullscreenStage();else syncWindowedStage();C=null;fc();',
  'if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})',
  'body.fs .bottom{height:82px;min-height:82px;padding:11px 190px 15px}'
 ])assert.ok(html.includes(token),'Fullscreen homothetic stage missing: '+token);
