@@ -34,19 +34,23 @@ lorsqu'il reste **plus d'une heure** (p. ex. `01:03:30`), les grands chiffres
 doivent occuper **presque toute la largeur utile du plein écran**, comme dans
 les versions précédentes de Bridge Timer.
 
-**BUG CONSTATÉ / NON CORRIGÉ :** la version du 25/10/2026 utilise
-`Math.min(innerWidth/stage.width, innerHeight/stage.height)` pour préserver
-l'homothétie, mais cela rétrécit la maquette et laisse de **grandes bandes
-latérales** lorsque les proportions de la fenêtre et du moniteur diffèrent.
-L'utilisateur a expressément rejeté ce rendu.
+**RÉGRESSION HISTORIQUE (25/10/2026) :** le passage en plein écran
+de l'ancienne maquette au rapport de la fenêtre étroite provoquait de grandes
+bandes latérales, réduisant le chrono long au lieu de lui laisser presque toute
+la largeur. Ce rendu a été rejeté par l'utilisateur.
 
-**Ne pas déclarer le bug résolu** au seul motif que la transformation est
-homothétique. Le comportement final devra respecter à la fois (1) et (2).
-Lorsque les rapports d'aspect diffèrent, un simple zoom uniforme de l'intégralité
-d'une maquette de dimensions figées ne peut pas remplir simultanément la
-largeur et la hauteur sans marges ou découpe. Résoudre ce conflit avec une
-maquette de référence / une stratégie de composition validée, **sans revenir**
-à des mises à l'échelle indépendantes par élément.
+**CORRECTION DE CODE :** `syncWindowedStage()` prépare maintenant une maquette
+qui possède **le rapport d'aspect du moniteur** (déterminé via `screen.width /
+screen.height`), y compris dans la fenêtre. Le plein écran agrandit ensuite
+ce même cadre par **un facteur unique**. Cela préserve l'homothétie et utilise
+presque toute la largeur du moniteur pour `HH:MM:SS`. La fenêtre peut comporter
+du fond libre au-dessus et en dessous du contenu selon son propre rapport
+d'aspect : c'est la conséquence mathématique d'une maquette commune.
+
+**Validation encore nécessaire :** vérifier cet affichage dans l'application
+Windows native sur les écrans de l'utilisateur. Ne jamais réintroduire
+l'agrandissement d'une fenêtre au rapport d'aspect différent : cela rétablirait
+les marges latérales excessives.
 
 ## 3. Chiffres MM:SS : grands mais sans chevauchement
 
@@ -84,6 +88,7 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
   ne jamais assouplir ou supprimer une assertion parce qu'elle gêne une
   correction sans expliquer pourquoi le contrat est toujours respecté.
 - Conserver explicitement ce document lors des refontes du moteur d'affichage.
-- **État au 25/10/2026 :** homothétie structurelle introduite, mais largeur
-  du chrono long en plein écran **non conforme** à l'attente ; la correction
-  reste à faire, distinctement des présentes annotations.
+- **État au 25/10/2026 :** le code a été adapté pour conserver une
+  maquette commune au format du moniteur et redonner au chrono long sa
+  largeur utile. Les tests automatisés et la compilation doivent passer ;
+  validation visuelle **Windows native** encore à réaliser.
