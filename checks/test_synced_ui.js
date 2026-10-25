@@ -173,9 +173,12 @@ assert.ok(.78/.68>1.14,'Subhour 0.68 line-height allows more font growth than be
 assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"));
 assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // October 25: requested exact native opening/minimum size from Windows screenshot.
+// On the user's ~1.18x Windows DPI, the original 812x612 constants opened
+// a visibly ~684x519 window. 960x720 restores about ~810x610 on screen.
+// These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
-assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Opening width must be 812px');
-assert.ok(/defaultWindowHeight\s*=\s*612/.test(nativeSource),'Opening height must be 612px');
+assert.ok(/defaultWindowWidth\s*=\s*960/.test(nativeSource),'Opening window must be 960 logical px wide to match approved screenshot at Windows DPI');
+assert.ok(/defaultWindowHeight\s*=\s*720/.test(nativeSource),'Opening window must be 720 logical px high to match approved screenshot at Windows DPI');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 // MM:SS: larger and lower with a conditional progress gap; HH:MM:SS unchanged.
@@ -186,6 +189,20 @@ for(const token of [
  "F=Math.min(620,maxW*100/wideW,(h-435)/.78);",
  'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'
 ])assert.ok(html.includes(token),'Subhour-only alignment requirement lost: '+token);
+// Explicit October 25 request: the blue progress bar is visually removed,
+// but retains its geometric box so the approved large MM:SS font does NOT shrink.
+assert.ok(html.includes('#timer .progress{visibility:hidden!important;pointer-events:none!important}'),
+  'Progress bar must be hidden in every timer state');
+assert.ok(!html.includes('#timer .progress{display:none'),
+  'Do not remove bar geometry: short-clock sizing currently measures offsetTop');
+assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+75;'),
+  'MM:SS digits must be 75 reference-stage pixels lower, without resizing');
+assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"),
+  'HH:MM:SS font sizing must remain untouched');
+assert.ok(html.includes('const shortLineHeight=.68;'),
+  'Previously approved MM:SS font size must remain intact');
+assert.ok(html.includes("z.lineHeight=shortClock?'.68':'.78';"),
+  'MM:SS font increase and HH:MM:SS original metrics must be retained');
 assert.ok(!html.includes("z.lineHeight=shortClock?'.72':'.78';"),
   'Do not revert to the previous smaller MM:SS clock');
 // Uniform scale on both axes, regardless of viewport aspect ratio.
