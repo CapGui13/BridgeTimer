@@ -157,6 +157,21 @@ for(const required of [
  'clone.style.setProperty(\'--stage-scale\',\'1\');',
  '#timer .topBtns #fsBtn{width:246px!important;'
 ])assert.ok(html.includes(required),'16:9 homothety experiment regression: '+required);
+// October 25 — increase MM:SS size without moving any other element.
+for(const token of [
+ 'const shortLineHeight=.72;',
+ 'SF=Math.max(F,Math.min(1100,maxW*100/shortW,room/shortLineHeight));',
+ 'const shortHeight=SF*shortLineHeight;',
+ 'z.lineHeight=shortClock?\'.72\':\'.78\';',
+ 'z.fontSize=(shortClock?SF:F)+\'px\';',
+ 'z.transform=\'translateY(\'+(shortClock?shortClockOffset:10)+\'px)\';',
+ 'const topLimit=Math.max(12,titleBottom+18);',
+ 'const bottomLimit=bar.offsetTop-18;'
+])assert.ok(html.includes(token),'MM:SS-only size or safety spacing changed unexpectedly: '+token);
+assert.ok(Math.abs(.78/.72-13/12)<1e-10,'Subhour line-height should increase the font approximately 8.3 percent');
+// HH:MM:SS font size and transform remain unchanged, including after returning from MM:SS.
+assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"));
+assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // Uniform scale on both axes, regardless of viewport aspect ratio.
 // The window opens at approximately 960x540 client pixels.
 const canvasW=1600,canvasH=900;
