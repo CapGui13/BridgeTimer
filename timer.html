@@ -162,7 +162,29 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 .tournamentCard #timingLayout .boardTimeSetting{position:relative;justify-self:start;width:max-content;max-width:100%}
 .tournamentCard #timingLayout .boardTimeSetting::before{content:"";position:absolute;inset:-3px -7px;border:1px solid rgba(73,202,114,.52);border-radius:9px;pointer-events:none}
 
-/* A single stage scale: all positions, sizes and margins remain identical. */
+/*
+ * CONTRAT UI PRIORITAIRE — PLEIN ÉCRAN (25/10/2026).
+ * NE PAS SUPPRIMER cette règle lors d'une autre correction.
+ * Le plein écran DOIT être une HOMOTHÉTIE du mode fenêtré pour un même état
+ * du chrono : un facteur d'échelle UNIQUE, identique pour les chiffres,
+ * titres, boutons, horloge, messages, espacements et barres.
+ * INTERDIT : agrandir individuellement un élément, modifier indépendamment
+ * le facteur horizontal/vertical, ou recalculer les polices sur les pixels
+ * physiques du moniteur lors du passage en plein écran.
+ *
+ * AUTRE EXIGENCE À RESPECTER SIMULTANÉMENT :
+ * à 01:03:30 (HH:MM:SS), le chrono doit OCCUPER LA LARGEUR UTILE DE L'ÉCRAN.
+ * Le letterboxing massif constaté le 25/10/2026 EST UN BUG NON RÉSOLU :
+ * le min(widthRatio,heightRatio) ci-dessous garde les proportions mais
+ * produit de grosses marges latérales. NE PAS considérer cela comme validé.
+ * Si les rapports largeur/hauteur diffèrent, ne PAS sacrifier silencieusement
+ * l'une des deux exigences ; concevoir et vérifier une mise en page de référence
+ * compatible, sans étirement non uniforme.
+ *
+ * À 59:59 (MM:SS), le chrono peut être plus gros qu'en HH:MM:SS mais doit
+ * préserver de l'air sous le nom d'évènement et au-dessus de la barre.
+ * Voir UI_LAYOUT_CONTRACT.md pour les tests visuels incontournables.
+ */
 #timer{--timer-vw:1vw;--timer-vh:1vh}
 body.fs{overflow:hidden}
 body.fs #timer{position:fixed;left:var(--fs-stage-left);top:var(--fs-stage-top);width:var(--fs-stage-width);height:var(--fs-stage-height);transform:scale(var(--fs-stage-scale));transform-origin:0 0}
@@ -250,7 +272,17 @@ function openResumeEditor(){if(!st.started)return;if(!$('tempMessageOverlay').cl
 function closeResumeEditor(focusButton=true){if(!resumeEditorOpen())return;$('resumeOverlay').classList.add('hidden');const top=$('timer').querySelector('.top');top.classList.remove('messageEditing');top.style.height='';if(focusButton)$('resumeBtn').focus()}
 function commitResumeTime(e){e.preventDefault();const raw=$('resumeInput').value;if(raw&&!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(raw))return;const v=raw||'';s.resumeTime=v;$('resumeTime').value=v;q41(KEY,s);closeResumeEditor();render()}
 function q1e(e){e.preventDefault();const v=$("tempMessageInput").value.trim();if(!v)return;s.quickMessage=v;$("quickMessage").value=v;q41(KEY,s);q20();q23();q2f()}let C,F,SF,shortClockOffset=10;
-/* All measurements in local layout px, independent of fullscreen scaling. */
+/*
+ * INVARIANT — CHIFFRES DU TIMER.
+ * Le calcul HH:MM:SS / MM:SS est fait en coordonnées LOCALES de la maquette ;
+ * ne jamais fonder les deux tailles sur une résolution écran différente
+ * entre fenêtré et plein écran. À format de temps identique, la taille du chrono
+ * doit recevoir exactement le même facteur global que le reste des éléments.
+ * À moins d'une heure, limiter l'agrandissement par les bordures réelles
+ * de la zone : marge lisible sous #status et au-dessus de .progress.
+ * L'affichage 01:03:30 doit rester presque aussi large que l'espace utile
+ * prévu par la maquette — signalement du 25/10/2026 à revérifier.
+ */
 function fc(){
  const c=$("clock"),z=c.style;
  if(!c.offsetParent)return;
@@ -346,10 +378,22 @@ function syncFaithfulMini(force=false){
 }
 let fif=false,fff=0,fullscreenStage=null;
 function q1c(){cancelAnimationFrame(fff);fff=requestAnimationFrame(()=>{C=null;fc()})}
+/*
+ * IMPORTANT — capturer la maquette AVANT le passage natif au plein écran.
+ * Ne modifier ni cette référence ni le calcul d'échelle sans vérifier
+ * les invariants de UI_LAYOUT_CONTRACT.md.
+ */
 function captureFullscreenStage(){
  const timer=$("timer");
  fullscreenStage={width:Math.max(1,timer.clientWidth),height:Math.max(1,timer.clientHeight)};
 }
+/*
+ * UN SEUL facteur d'échelle pour le bloc complet du timer.
+ * ATTENTION : le choix actuel min(largeur, hauteur) crée des bandes latérales
+ * trop importantes selon l'écran : bug ouvert, voir UI_LAYOUT_CONTRACT.md.
+ * Un futur correctif doit satisfaire AUSSI le remplissage horizontal du
+ * chrono HH:MM:SS, sans rompre l'homothétie des autres éléments.
+ */
 function scaleFullscreenStage(){
  if(!fullscreenStage||!document.body.classList.contains("fs"))return;
  const stage=fullscreenStage,scale=Math.max(.01,Math.min(innerWidth/stage.width,innerHeight/stage.height));
