@@ -281,7 +281,10 @@ function fc(){
   SF=Math.max(F,Math.min(1100,maxW*100/shortW,maxVertical));
   const shortHeight=base.height*SF/Math.max(1,F);
   const desiredTop=Math.max(topLimit,Math.min((base.top+base.bottom-shortHeight)/2,bottomLimit-shortHeight));
-  shortClockOffset=10+desiredTop-base.top;
+  // MM:SS only: lower the short clock slightly without changing its font size
+  // or the HH:MM:SS position. Keep at least 2px clear of the progress bar.
+  const shortDrop=Math.max(0,Math.min(16,(barRect?.top??mainRect.bottom)-2-(desiredTop+shortHeight)));
+  shortClockOffset=10+desiredTop-base.top+shortDrop;
  }
  const shortClock=/^\d{2}:\d{2}$/.test(c.textContent);
  z.fontSize=(shortClock?SF:F)+"px";
