@@ -135,18 +135,35 @@ assert.ok(html.includes('const viewport=frame.contentWindow?.innerWidth||778;'),
 assert.ok(html.includes('frame.setAttribute("sandbox","allow-same-origin")'),'Parent needs read access to its own script-disabled static preview');
 assert.ok(html.includes('frame.onload=()=>requestAnimationFrame(()=>fitGalleryNotice(frame))'),'Re-fit only after preview iframe has laid out');
 assert.ok(!html.includes('frame.setAttribute("sandbox","");frame.setAttribute("aria-hidden","true")'),'Opaque preview iframe cannot be remeasured');
-// Keep the original full-hour reference sizing, enlarge ONLY 5-digit MM:SS.
-assert.ok(html.includes('let C,F,SF,shortClockOffset=10;'),'Clock must cache both font sizes and vertical offset independently');
-assert.ok(html.includes('p.textContent="01:00:00";'),'One-hour reference display must remain unchanged');
-assert.ok(html.includes('p.textContent="59:59";'),'Width reference for subhour should match MM:SS format');
-assert.ok(html.includes('const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'),'Only MM:SS receives the larger font');
-assert.ok(html.includes('const maxVertical=room/lineHeight;'),'Fullscreen enlargement should be limited by all free vertical space between event and progress bar');
-assert.ok(html.includes('z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'),'Short clock should recenter within available vertical band');
-// Fullscreen resize must be actively remeasured rather than cached from a pre-resize window.
-assert.ok(html.includes('const titleRect=$("status").getBoundingClientRect();'),'Clock limit must account for event-title height');
-assert.ok(html.includes('const bottomLimit=(barRect?.top??mainRect.bottom)-12;'),'Clock must stop above the progress bar');
-assert.ok(html.includes('SF=Math.max(F,Math.min(1100,maxW*100/shortW,maxVertical))'),'MM:SS should expand without the former small-screen 620px ceiling');
-assert.ok(html.includes('const desiredTop=Math.max(topLimit,Math.min((base.top+base.bottom-shortHeight)/2,bottomLimit-shortHeight))'),'Short clock must reposition within its existing band without shifting other elements');
-assert.ok(html.includes('if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})'),'Native fullscreen layout changes must trigger clock remeasurement');
-assert.ok(html.includes('onresize=()=>{C=null;fc();syncFaithfulMini(true);'),'Windows fullscreen resize must invalidate the old cached dimensions');
+// Keep both clock formats, but measure against the same unscaled stage.
+for(const token of [
+ 'let C,F,SF,shortClockOffset=10;',
+ 'p.textContent="01:00:00";',
+ 'p.textContent="59:59";',
+ 'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);',
+ 'const titleBottom=title.offsetTop+title.offsetHeight;',
+ 'const progressTop=progress?.offsetTop??mh;',
+ 'const topLimit=Math.max(12,titleBottom+28);',
+ 'const bottomLimit=progressTop-22;',
+ 'const room=Math.max(12,bottomLimit-topLimit);',
+ 'SF=Math.max(12,Math.min(1100,maxW*100/shortW,room/.78));',
+ 'shortClockOffset=topLimit+Math.max(0,(room-shortHeight)/2)-clockTop;',
+ 'z.transform="translateY("+(shortClock?shortClockOffset:10)+"px)";'
+])assert.ok(html.includes(token),'Stage-relative clock layout missing: '+token);
+// All fullscreen elements must scale together, with centered letterboxing when aspect ratios differ.
+for(const token of [
+ 'function captureFullscreenStage(){',
+ 'function scaleFullscreenStage(){',
+ 'scale=Math.max(.01,Math.min(innerWidth/stage.width,innerHeight/stage.height))',
+ 'body.fs #timer{position:fixed;',
+ 'transform:scale(var(--fs-stage-scale));transform-origin:0 0',
+ 'body.style.setProperty("--fs-stage-left",(innerWidth-stage.width*scale)/2+"px")',
+ 'body.style.setProperty("--fs-stage-top",(innerHeight-stage.height*scale)/2+"px")',
+ 'timer.style.setProperty("--timer-vw",stage.width/100+"px")',
+ 'timer.style.setProperty("--timer-vh",stage.height/100+"px")',
+ 'if(!body.classList.contains("fs"))captureFullscreenStage();',
+ 'onresize=()=>{scaleFullscreenStage();C=null;fc();',
+ 'if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()})',
+ 'body.fs .bottom{height:82px;min-height:82px;padding:11px 190px 15px}'
+])assert.ok(html.includes(token),'Fullscreen homothetic stage missing: '+token);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
