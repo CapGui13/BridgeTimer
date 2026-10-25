@@ -1,5 +1,9 @@
 # Bridge Timer
 
+> **Essai isolé 16:9 :** cette branche teste une fenêtre plus large et une
+> scène unique 1600×900 pour le mode fenêtré et le plein écran. La version
+> stable reste sur `main`. Ne pas fusionner avant vérification sur Windows.
+
 > **Avant toute modification du plein écran :** lire
 > [UI_LAYOUT_CONTRACT.md](UI_LAYOUT_CONTRACT.md). La tentative d'agrandissement
 > global du 25/10/2026 a rétréci les chiffres HH:MM:SS et élargi la barre.
