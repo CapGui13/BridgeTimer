@@ -492,4 +492,23 @@ assert.ok(!html.includes('const font=Math.min(520,available*100/needed,verticalR
 // The numeric 1920x1080 screenshot baseline is a guard for Windows ink
 // alignment, but a native Windows comparison is still needed after UI edits.
 // ========================================================================
+// Documentation guard: each new assistant session/change must consult AGENTS.md,
+// then the permanent layout contract, BEFORE editing. Presence is checked by CI.
+{
+ const instructions=fs.readFileSync('AGENTS.md','utf8');
+ for(const token of [
+  'AVANT tout changement',
+  'UI_LAYOUT_CONTRACT.md',
+  'checks/test_synced_ui.js',
+  'Homothétie fenêtré',
+  'Parité court',
+  'Source de vérité commune',
+  '56 %',
+  'durée **initiale**',
+  'Procédure obligatoire'
+ ]){
+   assert.ok(instructions.includes(token),
+     'Missing mandatory agent preflight procedure: '+token);
+ }
+}
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
