@@ -363,7 +363,7 @@ for(const token of [
  'const target=Math.max(normalF,shortSF*.931);',
  'const font=Math.min(target,available*100/needed);',
  'const desiredTop=Math.min(shortTop+30,shortBottom-height);',
- 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-51;',
+ 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-63;',
  '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
  'shortClockOffset=desiredTop-c.offsetTop+26;',
  'SF=Math.max(F,SF*.931);',
@@ -383,7 +383,7 @@ assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offset
  assert.ok(Math.abs(longFont-shortFont)<1e-6,'Reference long and short font sizes must match');
 }
 // The short-clock width reference now drives LONG font size as well; maintain ink alignment.
-assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-51;'),
+assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-63;'),
  'Long digits must sit 4 reference pixels higher, with the same font');
 assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;'),
  'Previous high offset must not return');
@@ -398,4 +398,22 @@ assert.ok(!html.includes('const normalF=Math.min(620,available*100/wideW,(h-435)
  'Long format must not calculate its short reference using the larger available width');
 assert.ok(!html.includes('const shortSF=Math.max(normalF,Math.min(1100,available*100/shortW,shortRoom/.68));'),
  'Long format must use exact short width for shortSF');
+// Native Windows full-screen screenshots (same 1920x1080 resolution)
+// showed actual long-primary numeral ink precisely 14px lower than short:
+// '0' y=273 long vs y=259 short; '5' y=279 long vs y=265 short.
+// The immutable stage is 1600x900, zoomed by 1.2; shifting long clock
+// up 12 reference pixels compensates for ~14.4 physical pixels.
+// This test forbids edits that accidentally reset the long-only correction.
+assert.equal(273-259,14);
+assert.equal(279-265,14);
+assert.ok(Math.abs(12*(1920/1600)-14)<.5,
+ 'Long timer native screenshot correction must resolve 14px displacement');
+assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-63;'),
+ 'Long-only native Windows baseline fix has been removed');
+assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+26;'),
+ 'Short format must not move');
+assert.ok(html.includes('#timer.roundReading #status{transform:translateY(-19px)}'),
+ 'Event title must remain in place');
+assert.ok(html.includes('#timer #clock.longStartClock .clockSeconds{font-size:.56em;'),
+ 'Long-format small seconds must remain at 56 percent');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
