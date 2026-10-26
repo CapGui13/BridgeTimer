@@ -226,4 +226,38 @@ assert.ok(!html.includes('function syncWindowedStage(){'),'Rejected prior aspect
 const contract=fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
 assert.ok(contract.includes('Plein écran strictement homothétique'));
 assert.ok(contract.includes('Le chrono HH:MM:SS doit remplir la largeur utile'));
+
+// Locked-duration clock: new composition only for a round started at >=1h.
+// Do not silently regress into time-remaining-based format changes.
+for(const required of [
+ 'longClockAtStart:false',
+ 'st.longClockAtStart=_crd()>=3600;',
+ 'longClockAtStart:st.longClockAtStart',
+ 'longClockAtStart:x.longClockAtStart??(x.roundDuration>=3600)',
+ 'const longStarted=st.phase==="round"&&(st.started?(st.longClockAtStart??(_crd()>=3600)):(q4e()>=3600));',
+ 'cel.classList.toggle("longStartClock",longStarted);',
+ 'if(longStarted){',
+ 'cel.innerHTML=\'<span class="clockPrimary">\'+hr+\':\'+String(mi).padStart(2,"0")+\'</span><span class="clockSeconds">\'+String(sec).padStart(2,"0")+\'</span>\';',
+ '}else cel.textContent=ctx;',
+ '#timer #clock.longStartClock{display:inline-flex;align-items:baseline;justify-content:center;gap:22px}',
+ '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
+ 'let longClockKey="",longClockFont=0,longClockOffset=0;',
+ "if(c.classList.contains('longStartClock')){",
+ "const font=Math.min(520,available*100/needed,verticalRoom/.68);",
+ 'return;'
+])assert.ok(html.includes(required),'Start-duration-locked long-clock layout is missing: '+required);
+// Original short clock is untouched. Check visible format and font-size formula.
+for(const token of [
+ 'const shortLineHeight=.68;',
+ "z.lineHeight=shortClock?'.68':'.78';",
+ "shortClockOffset=desiredTop-c.offsetTop+75;",
+ "F=Math.min(620,maxW*100/wideW,(h-435)/.78);",
+ 'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'
+])assert.ok(html.includes(token),'Approved short-clock rendering changed: '+token);
+assert.ok(html.includes('#timer .progress{visibility:hidden!important;pointer-events:none!important}'),
+ 'Removed progress bar must stay removed');
+for(const [original,expected] of [[7198,'1:59 / 58'],[3600,'1:00 / 00'],[3599,'0:59 / 59'],[58,'0:00 / 58']]){
+ const hr=Math.floor(original/3600),mi=Math.floor((original%3600)/60),sec=original%60;
+ assert.equal(hr+':'+String(mi).padStart(2,'0')+' / '+String(sec).padStart(2,'0'),expected);
+}
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
