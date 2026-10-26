@@ -195,7 +195,7 @@ assert.ok(html.includes('#timer .progress{visibility:hidden!important;pointer-ev
   'Progress bar must be hidden in every timer state');
 assert.ok(!html.includes('#timer .progress{display:none'),
   'Do not remove bar geometry: short-clock sizing currently measures offsetTop');
-assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+39;'),
+assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+31;'),
   'MM:SS digits must be 75 reference-stage pixels lower, without resizing');
 assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"),
   'HH:MM:SS font sizing must remain untouched');
@@ -257,7 +257,7 @@ assert.ok(Math.abs((400*.95)*.98-400*.931)<1e-8,
 for(const token of [
  'const shortLineHeight=.68;',
  "z.lineHeight=shortClock?'.68':'.78';",
- "shortClockOffset=desiredTop-c.offsetTop+39;",
+ "shortClockOffset=desiredTop-c.offsetTop+31;",
  "F=Math.min(620,maxW*100/wideW,(h-435)/.78);",
  'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'
 ])assert.ok(html.includes(token),'Approved short-clock rendering changed: '+token);
@@ -304,7 +304,7 @@ for(const running of [false,true]){
  assert.equal(applyActualShift({running,phase:'break',remaining:3590,amount:60}).display,3650,
   'Break-state adjustments must not gain a short-round restriction');
 }
-assert.ok(zshiftSource.includes('shortClockOffset=desiredTop-c.offsetTop+39;'),
+assert.ok(zshiftSource.includes('shortClockOffset=desiredTop-c.offsetTop+31;'),
  'Short MM:SS glyphs must be raised 16 reference px; long digits untouched');
 assert.ok(zshiftSource.includes('SF=Math.max(F,SF*.931);'),
  'The approved MM:SS font-size must not change');
@@ -336,11 +336,11 @@ assert.ok(html.includes("const top=$('timer').querySelector('.top');top.style.he
 /* Screenshot positioning only: compare unchanged typography, body and footer,
    while moving the event and MM:SS upward by the requested distances.
    A 1920x1080 screen scales the reference 1600x900 canvas by exactly 1.2. */
-assert.ok(html.includes('#timer.roundReading #status{transform:translateY(-11px)}'),
+assert.ok(html.includes('#timer.roundReading #status{transform:translateY(-16px)}'),
  'Event text must be visually moved 11 virtual px upward without relayout');
-assert.equal(Math.round(11*(1920/1600)),13,'Event screenshot shift');
-assert.equal(20*(1920/1600),24,'Short-clock screenshot shift');
-assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+39;'),
+assert.equal(16-11,5,'Event additional upward shift in virtual canvas pixels');
+assert.equal(39-31,8,'MM:SS additional upward shift in virtual canvas pixels');
+assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+31;'),
  'Short MM:SS must be 20 base pixels higher without a font-size change');
 assert.ok(html.includes('SF=Math.max(F,SF*.931);'),
  'Keep accepted short-clock font size');
