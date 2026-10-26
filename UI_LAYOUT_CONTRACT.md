@@ -116,3 +116,30 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
   à une heure et affichage MM:SS. Vérifier les deux passages de mode.
 - Si le résultat ne convient pas, **ne pas fusionner cette branche**. Continuer
   à utiliser `main` et l'EXE précédemment validé.
+
+## 7. Contrat du chrono selon la DURÉE INITIALE du tour (26/10/2026)
+
+**Règle impérative : la durée du tour au DÉMARRAGE fixe le rendu pour tout le tour.**
+Ne JAMAIS basculer le style lorsque le compte à rebours passe sous une heure.
+
+- **Tour initial inférieur à 3600 secondes :** conserver EXACTEMENT le chrono
+  approuvé `MM:SS` en cinq grands caractères, sans modifier l'alignement,
+  les polices, les titres, les boutons, le fond ni les autres zones.
+- **Tour initial supérieur ou égal à 3600 secondes :** afficher
+  `H:MM  SS` en deux blocs. `H:MM` légèrement plus petit que l'ancien
+  grand `MM:SS`, puis les deux chiffres des secondes à **56 %** de sa taille,
+  sur la même ligne et alignés visuellement en bas.
+- Exemple : au début d'un tour de 1 h 54 min 58 s → `1:54  58` ;
+  lorsqu'il reste 59 min 59 s → `0:59  59`, sans changement de style.
+- Au commencement de chaque nouveau tour, la sélection peut être recalculée
+  sur sa nouvelle durée initiale. Les réglages de temps pendant un tour ne
+  doivent pas modifier rétrospectivement son style.
+- Conserver le retour en arrière/annulation d'une position avec sa sélection.
+- **Ne pas réintroduire** la barre de progression bleue précédemment supprimée.
+- Les éléments restent identiquement proportionnés entre la fenêtre et le
+  plein écran au moyen de la maquette commune 16:9.
+
+En cas d'incompatibilité avec un futur correctif : préserver le format court
+déjà approuvé, préserver la durée initiale comme unique discriminant, et
+mettre à jour le test `checks/test_synced_ui.js` uniquement si le contrat est
+toujours pleinement respecté.
