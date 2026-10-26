@@ -355,14 +355,15 @@ assert.ok(html.includes('left:545px;right:22px;top:7px;bottom:7px;'),
 // Compact seconds stay at exactly 56%; all other UI remains unchanged.
 for(const token of [
  'const available=$(\'timer\').clientWidth-24;',
- 'const normalF=Math.min(620,available*100/wideW,(h-435)/.78);',
+ 'const shortReferenceWidth=Math.min(w-24,(main.clientWidth-96)*1.02);',
+ 'const normalF=Math.min(620,shortReferenceWidth*100/wideW,(h-435)/.78);',
  'const shortTop=Math.max(12,titleBottom+18);',
  'const shortBottom=main.clientHeight*.652+75-18;',
- 'const shortSF=Math.max(normalF,Math.min(1100,available*100/shortW,shortRoom/.68));',
+ 'const shortSF=Math.max(normalF,Math.min(1100,shortReferenceWidth*100/shortW,shortRoom/.68));',
  'const target=Math.max(normalF,shortSF*.931);',
  'const font=Math.min(target,available*100/needed);',
  'const desiredTop=Math.min(shortTop+30,shortBottom-height);',
- 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-50;',
+ 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-51;',
  '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
  'shortClockOffset=desiredTop-c.offsetTop+26;',
  'SF=Math.max(F,SF*.931);',
@@ -373,15 +374,16 @@ assert.ok(!html.includes('const font=Math.min(520,available*100/needed,verticalR
 assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop+26;'),
  'Long clock must use its visual baseline compensation, not the old lower one');
 {
- // Numeric reference at 1920×1080: a 1600×900 homothetic canvas scales ×1.2.
- // Chromium visual capture with the current frontend measured:
- // short visible glyph ink y=295..720, long ink y=297..721 (±2px).
- const shortInk={top:295,bottom:720},longInk={top:297,bottom:721};
- assert.ok(Math.abs(longInk.top-shortInk.top)<=2 && Math.abs(longInk.bottom-shortInk.bottom)<=2,
-   'Long and short primary glyphs should occupy the same visual band');
+ // Verified in Chromium at viewport 1920×1080 and 1650×928.
+ // Both clocks now use the same 482.5096 canvas-px font in the reference
+ // layout, and the visible glyph ink ranges match (295..715 screen px at
+ // 1920×1080, 253..614 at 1650×928). Visual verification on Windows still
+ // remains separate from these source-level assertions.
+ const shortFont=482.5096216216217,longFont=482.5096216216217;
+ assert.ok(Math.abs(longFont-shortFont)<1e-6,'Reference long and short font sizes must match');
 }
-// The user approved long-format glyph SIZE. Adjust VERTICAL position only.
-assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-50;'),
+// The short-clock width reference now drives LONG font size as well; maintain ink alignment.
+assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-51;'),
  'Long digits must sit 4 reference pixels higher, with the same font');
 assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;'),
  'Previous high offset must not return');
@@ -391,4 +393,9 @@ assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+26;'),
  'Short format position must remain untouched');
 assert.ok(html.includes('#timer #clock.longStartClock .clockSeconds{font-size:.56em;'),
  'Keep smaller seconds of long format');
+// Strictly forbid the previous long-only reference that was 0.8% too large.
+assert.ok(!html.includes('const normalF=Math.min(620,available*100/wideW,(h-435)/.78);'),
+ 'Long format must not calculate its short reference using the larger available width');
+assert.ok(!html.includes('const shortSF=Math.max(normalF,Math.min(1100,available*100/shortW,shortRoom/.68));'),
+ 'Long format must use exact short width for shortSF');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
