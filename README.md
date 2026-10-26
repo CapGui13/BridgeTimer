@@ -4,11 +4,17 @@
 > scène unique 1600×900 pour le mode fenêtré et le plein écran. La version
 > stable reste sur `main`. Ne pas fusionner avant vérification sur Windows.
 
-> **Avant toute modification du plein écran :** lire
-> [UI_LAYOUT_CONTRACT.md](UI_LAYOUT_CONTRACT.md). La tentative d'agrandissement
-> global du 25/10/2026 a rétréci les chiffres HH:MM:SS et élargi la barre.
-> **Le rendu antérieur a été restauré** ; l'homothétie stricte reste
-> un objectif non résolu, jamais une raison de casser la présentation.
+> **RÈGLES VISUELLES IMPÉRATIVES — NE PAS INTRODUIRE DE RÉGRESSION :**
+> lire [UI_LAYOUT_CONTRACT.md](UI_LAYOUT_CONTRACT.md) et préserver les tests.
+> **Homothétie** : le mode fenêtré et le plein écran sont EXACTEMENT la même
+> maquette 1600×900 agrandie par un coefficient uniforme unique, pour TOUS
+> les éléments (titre, chrono, boutons, espaces, footer et messages).
+> **Parité court / long** : les grands chiffres et leur position verticale
+> sous l'évènement doivent être les mêmes dans les deux formats.
+> Seuls changent la présentation du temps (`MM:SS` contre `H:MM SS`)
+> et les secondes à **56 %** en format long. Le format est fixé d'après
+> la durée **initiale** du tour. Toute modification doit préserver ces deux
+> invariants.
 
 Bridge Timer is a portable Windows timer for bridge tournaments.
 
