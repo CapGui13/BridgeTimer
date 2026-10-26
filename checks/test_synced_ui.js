@@ -362,7 +362,7 @@ for(const token of [
  'const target=Math.max(normalF,shortSF*.931);',
  'const font=Math.min(target,available*100/needed);',
  'const desiredTop=Math.min(shortTop+30,shortBottom-height);',
- 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;',
+ 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-50;',
  '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
  'shortClockOffset=desiredTop-c.offsetTop+26;',
  'SF=Math.max(F,SF*.931);',
@@ -381,8 +381,10 @@ assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offset
    'Long and short primary glyphs should occupy the same visual band');
 }
 // The user approved long-format glyph SIZE. Adjust VERTICAL position only.
-assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;'),
+assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-50;'),
  'Long digits must sit 4 reference pixels higher, with the same font');
+assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;'),
+ 'Previous high offset must not return');
 assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-49;'),
  'Old slightly-too-low long clock offset must not return');
 assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+26;'),
