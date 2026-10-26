@@ -346,7 +346,10 @@ function fc(){
   const key=[main.clientWidth,main.clientHeight,title.offsetTop,title.offsetHeight,bar.offsetTop,c.querySelector('.clockPrimary')?.textContent.length].join('x');
   if(key!==longClockKey){
    longClockKey=key;
-   const available=Math.min($('timer').clientWidth-24,(main.clientWidth-96)*1.02);
+   // The same usable width as the short clock; allow the long primary digits
+   // to reach the already-approved short-clock height (do not shrink for an
+   // invisible progress bar or the old 520px long-only cap).
+   const available=$('timer').clientWidth-24;
    const probe=c.cloneNode(true);
    probe.style.cssText='position:absolute;left:0;top:0;visibility:hidden;transform:none;font:700 100px/.68 Bahnschrift,Consolas,monospace;letter-spacing:-.01em;white-space:nowrap;max-width:none';
    main.appendChild(probe);
@@ -355,14 +358,34 @@ function fc(){
    const titleBottom=title.offsetTop+title.offsetHeight;
    const topLimit=Math.max(12,titleBottom+44),bottomLimit=bar.offsetTop-18;
    const verticalRoom=Math.max(1,bottomLimit-topLimit);
-   const font=Math.min(520,available*100/needed,verticalRoom/.68);
+   /*
+    * CRITICAL VISUAL CONTRACT — long-start primary digits must have the SAME
+    * visible height and vertical placement as short-round MM:SS.
+    * 26/10/2026 screenshot comparison and Chromium visual validation:
+    * short ink bounds y=295..720; long ink bounds y=297..721 at 1920x1080.
+    * The long-only 520px/hidden-bar height limiter broke this contract.
+    * Only the seconds remain smaller (.clockSeconds = 56% via existing CSS).
+    * Do not modify the working short-round calculation below.
+    */
+   const p=document.createElement('span');
+   p.style.cssText='position:absolute;visibility:hidden;pointer-events:none;font:700 100px/.78 Bahnschrift,Consolas,monospace;letter-spacing:-.01em;white-space:nowrap;transform:none;font-variant-numeric:tabular-nums';
+   p.textContent='01:00:00';main.appendChild(p);
+   const wideW=Math.max(1,p.scrollWidth);
+   p.textContent='59:59';
+   const shortW=Math.max(1,p.scrollWidth);
+   p.remove();
+   const w=$('timer').clientWidth,h=$('timer').clientHeight;
+   const normalF=Math.min(620,available*100/wideW,(h-435)/.78);
+   const shortTop=Math.max(12,titleBottom+18);
+   const shortBottom=main.clientHeight*.652+75-18;
+   const shortRoom=Math.max(0,shortBottom-shortTop);
+   const shortSF=Math.max(normalF,Math.min(1100,available*100/shortW,shortRoom/.68));
+   const target=Math.max(normalF,shortSF*.931);
+   const font=Math.min(target,available*100/needed);
    const height=font*.68;
-   // Same vertical alignment as the validated short MM:SS layout:
-   // titleBottom + 18px margin + 30px target + 26px clock adjustment.
-   // Keep the long clock's font calculation and 56% seconds untouched.
-   const shortLayoutTop=Math.max(12,titleBottom+18);
-   const desiredTop=Math.min(shortLayoutTop+30,bottomLimit-height);
-   longClockFont=font;longClockOffset=desiredTop-c.offsetTop+26;
+   const desiredTop=Math.min(shortTop+30,shortBottom-height);
+   // Baseline adjustment for the separate small-seconds inline-flex layout.
+   longClockFont=font;longClockOffset=desiredTop-c.offsetTop-49;
   }
   z.fontSize=longClockFont+'px';
   z.lineHeight='.68';
