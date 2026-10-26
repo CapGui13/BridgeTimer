@@ -128,13 +128,43 @@ assert.ok(html.includes('<div class="timeEntry boardTimeSetting"><label for="boa
 assert.ok(!html.includes('text-shadow:0 0 22px color-mix(in srgb,var(--warn) 38%,transparent)'),'Legacy green jump-message halo must be removed');
 assert.ok(html.includes('#timer.roundReading #msg.roundMessageJump{color:var(--message-color);text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px rgba(0,0,0,.30)}'),'Jump notice must use the same shadow and stroke as a temporary notice');
 assert.ok(html.includes('#timer #msg.roundMessageTemporary{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px rgba(0,0,0,.30)}'),'Temporary notice relief must remain intact');
-// Screen Tests gallery must resize each message in its own 778px snapshot viewport.
-assert.ok(html.includes('function fitGalleryNotice(frame){'),'Gallery must recalculate message font size after cloning');
-assert.ok(html.includes('e.style.fontSize="";e.style.whiteSpace="";'),'Gallery must clear stale inline font sizing from the live off-screen DOM');
-assert.ok(html.includes('const viewport=frame.contentWindow?.innerWidth||778;'),'Gallery fitting uses iframe viewport rather than actual app width');
-assert.ok(html.includes('frame.setAttribute("sandbox","allow-same-origin")'),'Parent needs read access to its own script-disabled static preview');
-assert.ok(html.includes('frame.onload=()=>requestAnimationFrame(()=>fitGalleryNotice(frame))'),'Re-fit only after preview iframe has laid out');
-assert.ok(!html.includes('frame.setAttribute("sandbox","");frame.setAttribute("aria-hidden","true")'),'Opaque preview iframe cannot be remeasured');
+// Gallery thumbnails are exactly scaled copies of the 1600x900 timer stage.
+// No separate typography, no 778x595 alternate reflow, and no stage re-scaling
+// inside the iframe. These properties must apply to ALL 9 special screens.
+for(const needed of [
+ '.pv{position:relative;width:100%;aspect-ratio:16/9;',
+ '.pv iframe{display:block;position:absolute;left:0;top:0;width:1600px;height:900px;',
+ 'function fitGalleryFrames(){',
+ 'cell.clientWidth/1600',
+ 'tm.classList.remove("spa","spm");',
+ 'toolbar.style.display="none";target.style.display="none";',
+ 'C=null;longClockKey="";render();',
+ 'clone.classList.remove("spa","spm","hidden");',
+ '"--stage-scale":"1"',
+ '"--stage-width":"1600px","--stage-height":"900px"',
+ 'width:1600px!important;height:900px!important;min-height:0!important',
+ 'transform:none!important',
+ 'frame.setAttribute("sandbox","allow-same-origin")',
+ 'frame.onload=()=>requestAnimationFrame(fitGalleryFrames)',
+ 'tm.classList.add("spm","spa");'
+])assert.ok(html.includes(needed),'Screen Tests homothetic thumbnails regression: '+needed);
+assert.ok(!html.includes('cell.clientWidth/778'),'Obsolete 778px gallery scaling must never return');
+assert.ok(!html.includes('function fitGalleryNotice(frame){'),'Never resize thumbnail fonts differently from native timer');
+{
+ const source=scripts.map(x=>x[1]).join('\n');
+ const fit=source.match(/function fitGalleryFrames\(\)\{([\s\S]*?)\n\}/);
+ assert.ok(fit,'Gallery scale function missing');
+ // Exercise the same scaling function used on resize and gallery rendering.
+ const elements=[400,640,800].map(width=>{
+  const iframe={style:{transform:''}};
+  return {clientWidth:width,querySelector:()=>iframe,iframe};
+ });
+ const stub={ $:()=>({querySelectorAll:()=>elements}) };
+ vm.runInNewContext('(function fitGalleryFrames(){'+fit[1]+'\n})',stub)();
+ for(const cell of elements)assert.equal(cell.iframe.style.transform,
+   'scale('+(cell.clientWidth/1600)+')',
+   'Gallery preview must scale the whole stage uniformly');
+}
 // EXPERIMENTAL 16:9 LAYOUT — protected by this test, main remains stable.
 // This is a distinct design experiment, NOT a removal of the user's contract.
 for(const required of [
