@@ -8,6 +8,59 @@
 > les ajustements visuels opportunistes. Ne pas les supprimer pour résoudre un
 > autre problème.
 
+## RÈGLES FONDAMENTALES — NE JAMAIS FAIRE RÉGRESSER (26/10/2026)
+
+**RÈGLE A — Homothétie totale entre fenêtre et plein écran.**
+Une seule maquette de référence de **1600 × 900 (16:9)**, avec **un seul
+coefficient d’agrandissement uniforme** pour chaque affichage. Fenêtré et plein
+écran doivent montrer **exactement la même composition** pour un état identique :
+positions relatives, tailles relatives, chiffres, titre, nom du club, boutons,
+messages, espaces, bandeau et écrans spéciaux. **Aucun élément ne doit avoir son
+propre facteur d’échelle**, ni sa position recalculée différemment selon le mode.
+L'espace libre hors maquette n'autorise ni déformation ni déplacement interne.
+
+**RÈGLE B — Parité visuelle des formats court et long.**
+Le format est sélectionné **une fois à partir de la durée initiale du tour**
+(voir §7), pas d'après le temps restant. **Les grands chiffres** du format long
+(`H:MM`) doivent avoir **exactement la même taille de police, la même hauteur
+visuelle et le même placement vertical** que ceux du format court (`MM:SS`),
+avec la **même distance visible entre le bas du nom de l’évènement et le haut
+des chiffres**. Le titre, le nom du club, les contrôles et tous les éléments
+communs conservent les mêmes positions et proportions. Seules exceptions
+explicitement voulues : le **contenu et la composition du temps** (`MM:SS`
+contre `H:MM  SS`), et les secondes du format long affichées à **56 %**
+de la taille des chiffres principaux. Ces secondes réduites ne doivent PAS
+entraîner une réduction des grands chiffres ou un déplacement du groupe.
+
+**Important :** « même hauteur » signifie **mêmes mesures typographiques et
+même bande visuelle à glyphes comparables**, et non pas artificiellement la
+même boîte englobante pour des chiffres de formes différentes. Vérifier les
+rendus à caractères comparables et dans plusieurs tailles de fenêtre.
+
+**AUCUN AUTRE CHANGEMENT GRAPHIQUE** lors de la mise en place de ces règles.
+Il est interdit de corriger un défaut local en modifiant indépendamment le
+format court, le format long, le mode fenêtré ou le plein écran.
+Si une exception devient nécessaire, demander une validation explicite avant
+de modifier les protections.
+
+### Validation anti-régression obligatoire
+
+1. Pour un même temps et un même état, mesurer les rapports de dimensions
+   **fenêtré → plein écran** du titre, des grands chiffres, des petites
+   secondes, des boutons, des espaces et du bas d’écran : **le rapport doit
+   être identique partout**, égal au coefficient d’échelle commun.
+2. Comparer à résolution égale un tour de départ court et un tour de départ
+   long, en utilisant des **glyphes identiques ou comparables** pour les grands
+   chiffres : taille de police, haut/bas visibles, marge sous l’évènement.
+3. Contrôler les deux passages de mode, la période sous 1h d'un tour ayant
+   démarré à 1h ou plus, et les autres écrans et messages.
+4. Garder des tests permanents dans `checks/test_synced_ui.js`, ainsi que les
+   commentaires de protection près de `updateStage()` et de `fc()`.
+   **Les tests de présence de code ne remplacent pas une vérification visuelle
+   sur Windows natif.** Ne jamais revendiquer celle-ci sans l'avoir effectuée.
+
+---
+
 ## 1. Plein écran strictement homothétique
 
 **« Plein écran homothétique : l'ensemble de l'interface est agrandi avec un
@@ -30,9 +83,10 @@ messages ou les écrans spéciaux.
 ## 2. Le chrono HH:MM:SS doit remplir la largeur utile
 
 **Autre exigence impérative, explicitement réaffirmée le 25 octobre 2026 :**
-lorsqu'il reste **plus d'une heure** (p. ex. `01:03:30`), les grands chiffres
-doivent occuper **presque toute la largeur utile du plein écran**, comme dans
-les versions précédentes de Bridge Timer.
+pour un tour démarré à une heure ou davantage, les grands chiffres `H:MM`
+restent **très grands**, comme ceux du format court. Les secondes `SS` sont
+plus petites (56 %). Ne jamais réduire les grands chiffres à cause de ces
+secondes, ni les étirer indépendamment pour remplir artificiellement l'écran.
 
 **RÉGRESSION HISTORIQUE (25/10/2026) :** le passage en plein écran
 de l'ancienne maquette au rapport de la fenêtre étroite provoquait de grandes
@@ -64,7 +118,7 @@ Au passage sous l'heure (`59:59`, `57:20`) :
 - l'affichage à cinq caractères peut être agrandi par rapport à `HH:MM:SS` ;
 - le haut des chiffres garde une **marge visuelle nette** sous le nom
   d'évènement (p. ex. « Compet ») ;
-- le bas des chiffres ne chevauche jamais la barre de progression ;
+- le bas des chiffres conserve une marge suffisante avec le bandeau inférieur (la barre bleue de progression a été supprimée) ;
 - à temps affiché **identique**, fenêtré et plein écran gardent la même
   homothétie pour tous les éléments, y compris ces chiffres agrandis.
 
@@ -73,11 +127,13 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
 
 ## 4. Vérifications obligatoires avant de proposer un nouvel EXE
 
-1. Fenêtré puis plein écran au **même instant** à `01:03:30` :
-   comparer titre, chrono, barre, commandes, heure, numéro de tour et toutes
-   leurs positions et proportions ; le chrono long conserve une grande largeur.
-2. Refaire la même comparaison à `59:59` et `57:20` : agrandissement correct,
-   marge nette sous le titre, aucune collision avec la barre.
+1. Fenêtré puis plein écran pour **le même état d'un tour démarré à plus
+   d'une heure** (p. ex. `1:03 30`) : comparer titre, grands chiffres,
+   petites secondes, commandes, heure et numéro de tour, ainsi que toutes
+   leurs positions et proportions ; un seul coefficient pour l'ensemble.
+2. Refaire la même comparaison pour un **tour démarré à moins d'une heure**
+   (`59:59`, `57:20`) ; comparer aussi l'alignement des grands chiffres
+   entre formats court et long à une même résolution.
 3. Aller et revenir du plein écran plusieurs fois ; vérifier aussi un
    redimensionnement de fenêtre et plusieurs rapports d'aspect.
 4. Tester les messages temporaires, annonces de donnes, Pause, saut,
@@ -107,8 +163,9 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
 - La scène du timer se calcule toujours sur **1600 × 900** unités (16:9).
   Mode fenêtré et plein écran appliquent exactement **un seul coefficient** à
   tout le timer, sans recalcul des éléments lors du changement de mode.
-- Ouverture Windows d'essai : fenêtre extérieure **960 × 570**, destinée
-  à donner une zone de rendu interne proche de 960 × 540.
+- Taille d'ouverture/minimum actuelle de la fenêtre Windows : **960 × 720**
+  unités logiques ; la maquette interne 16:9 est ajustée uniformément à cette
+  fenêtre.
 - Les boutons d'en-tête ont une largeur suffisante pour « Paramètres » et
   « Quitter plein écran », et la miniature copie le rendu au format 16:9.
 - **Contrôle manuel obligatoire sur Windows :** lisibilité des boutons, ratio
@@ -126,8 +183,9 @@ Ne JAMAIS basculer le style lorsque le compte à rebours passe sous une heure.
   approuvé `MM:SS` en cinq grands caractères, sans modifier l'alignement,
   les polices, les titres, les boutons, le fond ni les autres zones.
 - **Tour initial supérieur ou égal à 3600 secondes :** afficher
-  `H:MM  SS` en deux blocs. `H:MM` légèrement plus petit que l'ancien
-  grand `MM:SS`, puis les deux chiffres des secondes à **56 %** de sa taille,
+  `H:MM  SS` en deux blocs. `H:MM` a **exactement la même taille et la même
+  position verticale que les grands chiffres du format court** ; seuls les
+  deux chiffres des secondes sont à **56 %** de cette taille,
   sur la même ligne et alignés visuellement en bas.
 - Exemple : au début d'un tour de 1 h 54 min 58 s → `1:54  58` ;
   lorsqu'il reste 59 min 59 s → `0:59  59`, sans changement de style.
