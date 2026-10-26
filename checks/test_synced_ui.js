@@ -257,7 +257,7 @@ assert.ok(Math.abs((400*.95)*.98-400*.931)<1e-8,
 for(const token of [
  'const shortLineHeight=.68;',
  "z.lineHeight=shortClock?'.68':'.78';",
- "shortClockOffset=desiredTop-c.offsetTop+75;",
+ "shortClockOffset=desiredTop-c.offsetTop+59;",
  "F=Math.min(620,maxW*100/wideW,(h-435)/.78);",
  'const shortClock=/^\\d{2}:\\d{2}$/.test(c.textContent);'
 ])assert.ok(html.includes(token),'Approved short-clock rendering changed: '+token);
