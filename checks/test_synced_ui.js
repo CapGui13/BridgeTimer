@@ -511,4 +511,18 @@ assert.ok(!html.includes('const font=Math.min(520,available*100/needed,verticalR
      'Missing mandatory agent preflight procedure: '+token);
  }
 }
+
+// Permanent shared band-height contract (26 Oct 2026):
+// 2 virtual-stage pixels freed from BOTH top and bottom, identically
+// in window/fullscreen and short/long. Footer labels centered with one
+// shared rule, no independently hardcoded pixel offsets.
+for (const selector of [
+ '.top{display:grid;grid-template-columns:1fr auto;align-items:center;gap:15px;padding:13px 22px;',
+ '#timer .bottom{height:88px;min-height:88px;padding:0 190px}',
+ '#timer #localTime,#timer #round{top:50%;bottom:auto;transform:translateY(-50%)}'
+]) assert.ok(html.includes(selector),'Uniform two-band layout regression: '+selector);
+assert.ok(!html.includes('#timer .bottom{height:90px;min-height:90px;'),
+ 'Footer cannot silently return to the original 90px band');
+assert.equal((html.match(/#timer #localTime,#timer #round\{top:50%;bottom:auto;transform:translateY\(-50%\)\}/g)||[]).length,1,
+ 'Footer alignment must remain a single shared CSS rule for both labels');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
