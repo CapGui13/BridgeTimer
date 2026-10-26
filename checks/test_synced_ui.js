@@ -195,7 +195,7 @@ assert.ok(html.includes('#timer .progress{visibility:hidden!important;pointer-ev
   'Progress bar must be hidden in every timer state');
 assert.ok(!html.includes('#timer .progress{display:none'),
   'Do not remove bar geometry: short-clock sizing currently measures offsetTop');
-assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+75;'),
+assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+59;'),
   'MM:SS digits must be 75 reference-stage pixels lower, without resizing');
 assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"),
   'HH:MM:SS font sizing must remain untouched');
@@ -267,4 +267,45 @@ for(const [original,expected] of [[7198,'1:59 / 58'],[3600,'1:00 / 00'],[3599,'0
  const hr=Math.floor(original/3600),mi=Math.floor((original%3600)/60),sec=original%60;
  assert.equal(hr+':'+String(mi).padStart(2,'0')+' / '+String(sec).padStart(2,'0'),expected);
 }
+
+/* User contract: under-one-hour START, not current remaining time.
+   Pressing +1 minute or F8 cannot display 1:00:00. Run actual zshift()
+   extracted from production JS, for running/paused/long and jump cases. */
+const zshiftSource = scripts.map(x=>x[1]).join('\n');
+const matchZshift = zshiftSource.match(/function zshift\(x\)\{([\s\S]*?)\}\s*function q48\(\)/);
+assert.ok(matchZshift,'Cannot find production time-adjustment function');
+function applyActualShift({startLong=false,phase='round',running=false,remaining=3590,amount=60,duration=startLong?5400:3000}={}){
+ const now=100000;
+ const state={phase,started:true,longClockAtStart:startLong,roundDuration:duration,
+   running,remaining,endAt:running?now+remaining*1000:null,
+   syncHoldUntil:1,syncDisplayCeiling:5};
+ let renders=0;
+ const context={st:state,_mon:()=>now,_crd:()=>state.roundDuration,render:()=>{renders++},Math};
+ const shift=vm.runInNewContext('(function zshift(x){'+matchZshift[1]+'})',context);
+ shift(amount);
+ assert.equal(renders,1,'Time adjustment must trigger exactly one render');
+ assert.equal(state.syncHoldUntil,0);
+ const display=Math.ceil(state.remaining);
+ return {remaining:state.remaining,display,remainingStartMode:state.longClockAtStart,endAt:state.endAt};
+}
+for(const running of [false,true]){
+ assert.equal(applyActualShift({running}).display,3599,
+  'Short-start +1 min must stop at 59:59, not 1:00:00');
+ assert.equal(applyActualShift({running,remaining:3599,amount:60}).display,3599,
+  'Further +1 min must not exceed the 59:59 cap');
+ assert.equal(applyActualShift({running,remaining:3598,amount:60}).display,3599,
+  'Boundary add must cap to 59:59');
+ assert.equal(applyActualShift({running,remaining:3590,amount:-60}).display,3530,
+  'Minus one minute still works on short starts');
+ assert.equal(applyActualShift({running,startLong:true}).display,3650,
+  'Long-start rounds must remain unrestricted, even below one hour');
+ assert.equal(applyActualShift({running,startLong:true,remaining:600,amount:3600}).display,4200,
+  'Long-start rounds must not switch to short cap after passing 59:59');
+ assert.equal(applyActualShift({running,phase:'break',remaining:3590,amount:60}).display,3650,
+  'Break-state adjustments must not gain a short-round restriction');
+}
+assert.ok(zshiftSource.includes('shortClockOffset=desiredTop-c.offsetTop+59;'),
+ 'Short MM:SS glyphs must be raised 16 reference px; long digits untouched');
+assert.ok(zshiftSource.includes('SF=Math.max(F,SF*.931);'),
+ 'The approved MM:SS font-size must not change');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
