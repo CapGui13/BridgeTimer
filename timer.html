@@ -353,6 +353,9 @@ function fc(){
   // Keep the top of the ink comfortably below the event title.
   const shortLineHeight=.68;
   SF=Math.max(F,Math.min(1100,maxW*100/shortW,room/shortLineHeight));
+  // Short-round MM:SS ONLY: reduce the digits 5% from the last approved 16:9 layout.
+  // Keep the long-start (HH:MM + smaller SS) layout and all other dimensions untouched.
+  SF=Math.max(F,SF*.95);
   const shortHeight=SF*shortLineHeight;
   const desiredTop=Math.min(topLimit+30,bottomLimit-shortHeight);
   // MM:SS ONLY: keep the approved font size; lower its visual position by
