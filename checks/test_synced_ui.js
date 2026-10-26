@@ -246,10 +246,13 @@ for(const required of [
  "const font=Math.min(520,available*100/needed,verticalRoom/.68);",
  'return;'
 ])assert.ok(html.includes(required),'Start-duration-locked long-clock layout is missing: '+required);
-// Only the short-round MM:SS clock is 5% smaller than last build.
-assert.ok(html.includes('SF=Math.max(F,SF*.95);'),
-  'Requested five percent reduction of the short-round clock was removed');
-assert.ok(Math.abs(400*.95-380)<1e-8,'MM:SS font must be 5% smaller before any minimum F clamp');
+// Only the short-round MM:SS clock is further reduced by exactly 2%.
+// Multiplying the previous .95 scaling by .98 gives .931.
+// The long-start HH:MM+SS rendering must remain untouched.
+assert.ok(html.includes('SF=Math.max(F,SF*.931);'),
+  'Requested further 2 percent reduction of MM:SS was removed');
+assert.ok(Math.abs((400*.95)*.98-400*.931)<1e-8,
+  'MM:SS font must be 2% smaller than previous .95 version before minimum F clamp');
 // All other short-clock geometry and long-start styling remain unchanged.
 for(const token of [
  'const shortLineHeight=.68;',
