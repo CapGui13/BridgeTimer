@@ -339,7 +339,7 @@ function fc(){
  const c=$('clock'),z=c.style;
  if(!c.offsetParent)return;
  if(c.classList.contains('longStartClock')){
-  // HH:MM large (slightly smaller than approved MM:SS), SS at 56%.
+  // HH:MM matches the approved MM:SS primary glyph height; SS remains 56%.
   // Cache dimensions to avoid expensive reflow every countdown tick.
   // All measurements are in the immutable 1600×900 canvas.
   const main=c.parentNode,bar=main.querySelector('.progress'),title=$('status');
@@ -356,8 +356,6 @@ function fc(){
    const needed=Math.max(1,probe.scrollWidth);
    probe.remove();
    const titleBottom=title.offsetTop+title.offsetHeight;
-   const topLimit=Math.max(12,titleBottom+44),bottomLimit=bar.offsetTop-18;
-   const verticalRoom=Math.max(1,bottomLimit-topLimit);
    /*
     * CRITICAL VISUAL CONTRACT — long-start primary digits must have the SAME
     * visible height and vertical placement as short-round MM:SS.
