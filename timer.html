@@ -303,6 +303,25 @@ function commitResumeTime(e){e.preventDefault();const raw=$('resumeInput').value
 function q1e(e){e.preventDefault();const v=$("tempMessageInput").value.trim();if(!v)return;s.quickMessage=v;$("quickMessage").value=v;q41(KEY,s);q20();q23();q2f()}let C,F,SF,shortClockOffset=10;
 /* Immutable 16:9 virtual canvas: used in BOTH window and fullscreen.
    Fullscreen enlarges all elements by a single transform. */
+/*
+ * CONTRAT VISUEL PERMANENT (26/10/2026) — À NE PAS CASSER.
+ *
+ * 1) HOMOTHÉTIE FENÊTRÉ ↔ PLEIN ÉCRAN :
+ *    Maquette FIXE 1600×900. Un seul facteur k = min(viewportW/1600,
+ *    viewportH/900) transforme ENSEMBLE titre, chrono, boutons, bandeau,
+ *    messages, marges, espacements, écrans spéciaux, etc.
+ *    Jamais de scaleX / scaleY distincts ni de tailles/positions CSS par mode.
+ *
+ * 2) PARITÉ COURT ↔ LONG :
+ *    Grands chiffres MM:SS (court) et H:MM (long) = MÊME font-size, même
+ *    hauteur visible et même distance du titre d'évènement. Seule exception
+ *    voulue : les secondes SS du format long ont une police à 56 %.
+ *    La durée INITIALE du tour verrouille le format, sans bascule à 59:59.
+ *
+ * Voir UI_LAYOUT_CONTRACT.md et les assertions checks/test_synced_ui.js.
+ * Chaque modification doit préserver SIMULTANÉMENT les deux invariants.
+ * Ne pas retoucher le format court comme effet de bord du format long.
+ */
 function updateStage(){
  const w=1600,h=900;
  const k=Math.min(innerWidth/w,innerHeight/h),root=$('timer');
@@ -335,6 +354,16 @@ updateStage();
    to recenter inside that band. Native Windows fullscreen can change size
    after its initial callback: the layout key and ResizeObserver both respond. */
 let longClockKey="",longClockFont=0,longClockOffset=0;
+/*
+ * GARDE-FOU FONCTIONNEL — mêmes mesures pour les grands chiffres COURT/LONG.
+ * Le calcul du format long DOIT reprendre la référence de largeur du court :
+ * shortReferenceWidth, normalF, shortSF, .931. Les deux branches doivent
+ * aligner réellement les glyphes sous l'évènement, y compris sur Windows
+ * natif (les seules bounding boxes CSS ne suffisent pas). Ne jamais laisser
+ * la taille des petites secondes (56 %) rétrécir les chiffres principaux.
+ * Les différences de rendu ne sont admises que pour H:MM  SS vs MM:SS.
+ * Ne pas retirer ces notes ou les contrôles de régression.
+ */
 function fc(){
  const c=$('clock'),z=c.style;
  if(!c.offsetParent)return;
