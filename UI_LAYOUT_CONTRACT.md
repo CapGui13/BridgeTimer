@@ -32,6 +32,31 @@ contre `H:MM  SS`), et les secondes du format long affichées à **56 %**
 de la taille des chiffres principaux. Ces secondes réduites ne doivent PAS
 entraîner une réduction des grands chiffres ou un déplacement du groupe.
 
+**RÈGLE C — Réglage partagé, source unique de vérité.**
+Tout paramètre visuel commun (position et taille de l'évènement, taille et
+ligne de base des grands chiffres, écart titre/chrono, boutons, alignements,
+espaces et composition générale) doit avoir **une seule valeur de référence**
+dans la maquette et **une seule règle de calcul**. Quand l'utilisateur affine
+un de ces paramètres, **le changement s'applique automatiquement** :
+- au format court et au format long, sans retouche indépendante ;
+- au mode fenêtré et au plein écran, par la seule homothétie uniforme ;
+- aux vues spéciales qui partagent réellement cet élément, sauf exception
+  explicitement demandée.
+
+**Interdit :** recopier un décalage ou une taille en dur dans chaque branche,
+ou corriger successivement les variantes « à l’œil ». Si un réglage commun
+est encore calculé séparément dans le code actuel, le centraliser avant de le
+modifier, puis prouver par les tests que les deux variantes utilisent la même
+référence. Les différences intentionnelles du format long (composition et
+secondes à 56 %) restent des exceptions explicites, jamais des réglages
+concurrents pour les grands chiffres.
+
+**État technique :** certaines formules du moteur `fc()` sont aujourd'hui
+encore distinctes pour les deux formats. Cette règle est donc **une obligation
+d'architecture pour les prochaines modifications**, pas une affirmation que
+tous les paramètres sont déjà centralisés. Ne pas annoncer une synchronisation
+automatique avant de l'avoir démontrée.
+
 **Important :** « même hauteur » signifie **mêmes mesures typographiques et
 même bande visuelle à glyphes comparables**, et non pas artificiellement la
 même boîte englobante pour des chiffres de formes différentes. Vérifier les
