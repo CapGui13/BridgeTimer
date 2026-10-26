@@ -481,7 +481,7 @@ assert.ok(!html.includes('const font=Math.min(520,available*100/needed,verticalR
  for(const clause of [
   'RÈGLE A — Homothétie totale entre fenêtre et plein écran.',
   'RÈGLE B — Parité visuelle des formats court et long.',
-  'La durée INITIALE',
+  'durée initiale du tour',
   '56 %',
   'même distance visible entre le bas du nom de l’évènement'
  ]){
