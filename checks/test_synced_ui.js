@@ -348,4 +348,20 @@ assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"),
  'HH:MM:SS sizing unchanged');
 assert.ok(html.includes('left:545px;right:22px;top:7px;bottom:7px;'),
  'Message input must start further left while preserving footer/header geometry');
+
+// Copy the short MM:SS vertical reference to the long clock ONLY.
+// The event -19px position is already shared with both clock modes;
+// long-mode font size, compact seconds and round-start mode lock stay intact.
+for(const token of [
+ 'const shortLayoutTop=Math.max(12,titleBottom+18);',
+ 'const desiredTop=Math.min(shortLayoutTop+30,bottomLimit-height);',
+ 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop+26;',
+ 'const font=Math.min(520,available*100/needed,verticalRoom/.68);',
+ '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
+ 'shortClockOffset=desiredTop-c.offsetTop+26;',
+ 'SF=Math.max(F,SF*.931);',
+ '#timer.roundReading #status{transform:translateY(-19px)}'
+])assert.ok(html.includes(token),'Clock-mode alignment or frozen typography regressed: '+token);
+assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop;'),
+ 'Long clock has not inherited the short-clock vertical offset');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
