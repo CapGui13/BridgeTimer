@@ -416,4 +416,80 @@ assert.ok(html.includes('#timer.roundReading #status{transform:translateY(-19px)
  'Event title must remain in place');
 assert.ok(html.includes('#timer #clock.longStartClock .clockSeconds{font-size:.56em;'),
  'Long-format small seconds must remain at 56 percent');
+
+// === IMMUTABLE VISUAL CONTRACT — 26 October 2026 ==========================
+// A. One and ONLY one homothetic scale factor is applied to the entire
+//    1600x900 timer stage, independent of fullscreen/windowed UI state.
+// B. Short MM:SS and long H:MM use the SAME primary font-size reference,
+//    vertical ink placement and title gap; only long SS uses .56em.
+// These test the real updateStage() function and guard both fc() branches.
+{
+ const source=script.match(/function updateStage\(\)\{[\s\S]*?\n\}/);
+ assert.ok(source,'Homothetic updateStage function missing');
+ const stageFnSource=source[0];
+ assert.ok(stageFnSource.includes('const w=1600,h=900;'),
+   'Layout reference must remain 1600x900');
+ assert.ok(stageFnSource.includes('Math.min(innerWidth/w,innerHeight/h)'),
+   'Uniform scale factor must be shared on both axes');
+ assert.ok(html.includes('transform:scale(var(--stage-scale));transform-origin:0 0'),
+   'Entire stage must use one transform, not independently scaled UI elements');
+ for(const [viewportW,viewportH] of [[960,540],[960,720],[1280,720],[1650,928],[1920,1080]]){
+   const set = new Map();
+   const sandbox = {
+     innerWidth:viewportW,innerHeight:viewportH,C:'cached',
+     $:name=>{
+       assert.equal(name,'timer');
+       return {style:{setProperty:(key,value)=>set.set(key,value)}};
+     },
+     Math
+   };
+   const update = vm.runInNewContext('('+stageFnSource+')',sandbox);
+   update();
+   const k=Number(set.get('--stage-scale'));
+   const expected=Math.min(viewportW/1600,viewportH/900);
+   assert.ok(Math.abs(k-expected)<1e-12,'Stage must use one factor in every viewport');
+   assert.equal(set.get('--stage-width'),'1600px');
+   assert.equal(set.get('--stage-height'),'900px');
+   assert.ok(Math.abs(parseFloat(set.get('--stage-left'))-(viewportW-1600*k)/2)<1e-8);
+   assert.ok(Math.abs(parseFloat(set.get('--stage-top'))-(viewportH-900*k)/2)<1e-8);
+   for(const reference of [15,42,90,300,480,1100]){
+     const width=reference*k,height=reference*k;
+     assert.ok(Math.abs(width/height-1)<1e-12,
+       'Fonts, margins and buttons cannot have separate horizontal/vertical scaling');
+   }
+   assert.equal(sandbox.C,null,'Resize must invalidate clock sizing cache');
+ }
+}
+for(const requirement of [
+ 'CONTRAT VISUEL PERMANENT (26/10/2026)',
+ 'GARDE-FOU FONCTIONNEL — mêmes mesures',
+ 'const shortReferenceWidth=Math.min(w-24,(main.clientWidth-96)*1.02);',
+ 'const normalF=Math.min(620,shortReferenceWidth*100/wideW,(h-435)/.78);',
+ 'const shortSF=Math.max(normalF,Math.min(1100,shortReferenceWidth*100/shortW,shortRoom/.68));',
+ 'const target=Math.max(normalF,shortSF*.931);',
+ 'SF=Math.max(F,SF*.931);',
+ '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
+ 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-63;',
+ 'shortClockOffset=desiredTop-c.offsetTop+26;',
+ '#timer.roundReading #status{transform:translateY(-19px)}'
+])assert.ok(html.includes(requirement),
+  'HOMOTHETY OR LONG/SHORT VISUAL PARITY REGRESSION: '+requirement);
+assert.ok(!html.includes('const font=Math.min(520,available*100/needed,verticalRoom/.68);'),
+ 'A long-only font cap would shrink primary H:MM compared to short MM:SS');
+{
+ const contract=fs.readFileSync('UI_LAYOUT_CONTRACT.md','utf8');
+ for(const clause of [
+  'RÈGLE A — Homothétie totale entre fenêtre et plein écran.',
+  'RÈGLE B — Parité visuelle des formats court et long.',
+  'La durée INITIALE',
+  '56 %',
+  'même distance visible entre le bas du nom de l’évènement'
+ ]){
+   assert.ok(contract.includes(clause),
+     'Mandatory two-part visual contract accidentally deleted: '+clause);
+ }
+}
+// The numeric 1920x1080 screenshot baseline is a guard for Windows ink
+// alignment, but a native Windows comparison is still needed after UI edits.
+// ========================================================================
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
