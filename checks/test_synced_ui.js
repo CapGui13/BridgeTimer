@@ -165,12 +165,48 @@ assert.ok(!html.includes('function fitGalleryNotice(frame){'),'Never resize thum
    'scale('+(cell.clientWidth/1600)+')',
    'Gallery preview must scale the whole stage uniformly');
 }
+// Screen Tests 'Voir en grand' MUST preserve the same stage geometry as
+// 'Tous': the toolbar is outside the 1600x900 reference canvas and scaled
+// along with it, never a fourth grid row compressing the main area.
+for(const required of [
+ '#timer.spm:not(.spa){grid-template-rows:auto minmax(0,1fr) auto;overflow:visible}',
+ '#timer.spm:not(.spa) #sptb{position:absolute;left:0;right:0;top:-56px;height:56px;',
+ "const singlePreview=!!root.classList?.contains('spm')&&!root.classList?.contains('spa');",
+ 'const k=singlePreview?Math.min(innerWidth/w,innerHeight/(h+previewToolbar)):standardScale;',
+ 'const previewToolbar=56;',
+ 'if(isAll)_rspg();updateStage();',
+ 'false);updateStage();C=null;showSettings(false);'
+])assert.ok(html.includes(required),'Single-preview vs gallery stage mismatch: '+required);
+{
+ const source=scripts.map(x=>x[1]).join('\n');
+ const body=source.match(/function updateStage\(\)\{([\s\S]*?)\n\}/);
+ assert.ok(body,'updateStage not found for Screen Tests mode comparison');
+ for(const [w,h] of [[960,720],[1280,720],[1920,1080],[1650,928]]){
+  for(const mode of ['normal','all','single']){
+   const variables=new Map();
+   const root={
+    classList:{contains:c=>mode!=='normal'&&(c==='spm'||(c==='spa'&&mode==='all'))},
+    style:{setProperty:(k,v)=>variables.set(k,v)}
+   };
+   const sandbox={innerWidth:w,innerHeight:h,$:()=>root,Math,C:3};
+   vm.runInNewContext('(function updateStage(){'+body[1]+'\n})',sandbox)();
+   const preview=mode==='single',factor=Math.min(w/1600,h/(preview?956:900));
+   const y=preview?(h-956*factor)/2+56*factor:(h-900*factor)/2;
+   assert.ok(Math.abs(Number(variables.get('--stage-scale'))-factor)<1e-12,
+     'Single preview must be one uniformly scaled 1600x900 stage');
+   assert.ok(Math.abs(parseFloat(variables.get('--stage-top'))-y)<1e-8,
+     'Full preview stage must begin directly below its outside toolbar');
+   assert.ok(Math.abs(parseFloat(variables.get('--stage-left'))-(w-1600*factor)/2)<1e-8,
+     'No horizontal distortion in single preview');
+  }
+ }
+}
 // EXPERIMENTAL 16:9 LAYOUT — protected by this test, main remains stable.
 // This is a distinct design experiment, NOT a removal of the user's contract.
 for(const required of [
  'function updateStage(){',
  'const w=1600,h=900;',
- 'const k=Math.min(innerWidth/w,innerHeight/h)',
+ 'const standardScale=Math.min(innerWidth/w,innerHeight/h);',
  'root.style.setProperty(\'--stage-scale\',k);',
  'transform:scale(var(--stage-scale));transform-origin:0 0',
  'const vw=1600,vh=900;',
