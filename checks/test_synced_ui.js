@@ -243,7 +243,7 @@ for(const required of [
  '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
  'let longClockKey="",longClockFont=0,longClockOffset=0;',
  "if(c.classList.contains('longStartClock')){",
- "const font=Math.min(520,available*100/needed,verticalRoom/.68);",
+ "const target=Math.max(normalF,shortSF*.931);",
  'return;'
 ])assert.ok(html.includes(required),'Start-duration-locked long-clock layout is missing: '+required);
 // Only the short-round MM:SS clock is further reduced by exactly 2%.
@@ -349,19 +349,35 @@ assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"),
 assert.ok(html.includes('left:545px;right:22px;top:7px;bottom:7px;'),
  'Message input must start further left while preserving footer/header geometry');
 
-// Copy the short MM:SS vertical reference to the long clock ONLY.
-// The event -19px position is already shared with both clock modes;
-// long-mode font size, compact seconds and round-start mode lock stay intact.
+// Mandatory font-size parity: the LONG primary HH:MM digits are no
+// longer 20-25% smaller than the SHORT MM:SS glyphs. Both use the same
+// short-round .931 reference and matching visual ink Y position.
+// Compact seconds stay at exactly 56%; all other UI remains unchanged.
 for(const token of [
- 'const shortLayoutTop=Math.max(12,titleBottom+18);',
- 'const desiredTop=Math.min(shortLayoutTop+30,bottomLimit-height);',
- 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop+26;',
- 'const font=Math.min(520,available*100/needed,verticalRoom/.68);',
+ 'const available=$(\'timer\').clientWidth-24;',
+ 'const normalF=Math.min(620,available*100/wideW,(h-435)/.78);',
+ 'const shortTop=Math.max(12,titleBottom+18);',
+ 'const shortBottom=main.clientHeight*.652+75-18;',
+ 'const shortSF=Math.max(normalF,Math.min(1100,available*100/shortW,shortRoom/.68));',
+ 'const target=Math.max(normalF,shortSF*.931);',
+ 'const font=Math.min(target,available*100/needed);',
+ 'const desiredTop=Math.min(shortTop+30,shortBottom-height);',
+ 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-49;',
  '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
  'shortClockOffset=desiredTop-c.offsetTop+26;',
  'SF=Math.max(F,SF*.931);',
  '#timer.roundReading #status{transform:translateY(-19px)}'
-])assert.ok(html.includes(token),'Clock-mode alignment or frozen typography regressed: '+token);
-assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop;'),
- 'Long clock has not inherited the short-clock vertical offset');
+])assert.ok(html.includes(token),'Clock glyph-size parity or typography changed: '+token);
+assert.ok(!html.includes('const font=Math.min(520,available*100/needed,verticalRoom/.68);'),
+ 'Old long-only 520px / hidden progress-bar size limitation must not return');
+assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop+26;'),
+ 'Long clock must use its visual baseline compensation, not the old lower one');
+{
+ // Numeric reference at 1920×1080: a 1600×900 homothetic canvas scales ×1.2.
+ // Chromium visual capture with the current frontend measured:
+ // short visible glyph ink y=295..720, long ink y=297..721 (±2px).
+ const shortInk={top:295,bottom:720},longInk={top:297,bottom:721};
+ assert.ok(Math.abs(longInk.top-shortInk.top)<=2 && Math.abs(longInk.bottom-shortInk.bottom)<=2,
+   'Long and short primary glyphs should occupy the same visual band');
+}
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
