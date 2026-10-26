@@ -199,12 +199,22 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
  */
 #timer .top{position:relative}
 #timer .top.messageComposeOpen .topBtns{visibility:hidden;pointer-events:none}
-#timer .top #tempMessageOverlay:not(.hidden){position:absolute;left:635px;right:22px;top:7px;bottom:7px;width:auto;min-width:0;z-index:25;display:flex;align-items:center;justify-content:flex-end}
+#timer .top #tempMessageOverlay:not(.hidden){position:absolute;left:545px;right:22px;top:7px;bottom:7px;width:auto;min-width:0;z-index:25;display:flex;align-items:center;justify-content:flex-end}
 #timer #tempMessageOverlay form{display:flex;width:100%;min-width:0;align-items:center;gap:10px;margin:0;flex-wrap:nowrap}
 #timer #tempMessageOverlay #tempMessageHeading{display:none}
 #timer #tempMessageOverlay input{height:36px;min-width:0;flex:1 1 auto;width:100%;font-size:19px}
 #timer #tempMessageOverlay .tempMessageActions{flex-direction:column;align-items:stretch;justify-content:center;flex:0 0 98px;gap:4px}
 #timer #tempMessageOverlay .tempMessageActions .btn{width:100%;min-height:29px;height:29px;padding:4px 7px;font-size:12px}
+
+/*
+ * 26 Oct 2026 screenshot-to-screenshot vertical positioning.
+ * Event ink is 13 SCREEN px higher, MM:SS ink 24 SCREEN px higher on a
+ * 1920x1080 display (reference stage 1600x900, scale 1.2).
+ * Preserve all font sizes, headers and footer geometry. The -11px
+ * event shift is independent from the short-clock's -20px offset above.
+ * Do not use top/height changes that would reflow the stage.
+ */
+#timer.roundReading #status{transform:translateY(-11px)}
 </style></head><body><section id="settings"><div class="wrap"><div class="head"><div><h1>Bridge Timer</h1></div><button id="drawerClose" class="btn drawerClose">Retour</button></div><div class="card tournamentCard"><h2>Tournoi</h2><div class="grid"><div class="pairConfigRow"><div class="inlineSetting"><label>Format</label><select id="mode" class="compactSelect"><option value="4" selected>Match par 4</option><option value="2">Paires</option></select></div><div class="inlineSetting pairOnly"><label>Nb de paires</label><input id="pairCount" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="6" max="36" value="12"></div><div class="inlineSetting pairOnly"><label>Mouvement</label><select id="movement" class="movementSelect"></select></div><div id="jumpRoundSetting" class="inlineSetting pairOnly"><label>Saut après tour</label><input id="jumpRound" class="compactNumber" type="text" value="—" disabled><button id="jumpMsgBtn" class="btn primary jumpMsgBtn hidden" type="button" aria-haspopup="dialog" aria-controls="jumpMsgOverlay" aria-expanded="false" title="Configurer les messages du saut">MSG</button></div></div><div class="tournamentBlockGap"></div><div class="roundConfigRow"><div class="inlineSetting"><label>Nb de tours</label><input id="positions" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="1" max="99" value="6"><select id="positionsSelect" class="compactNumber roundCountSelect hidden"></select></div><div class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="boards" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="1" max="99" value="4"></div><div class="inlineSetting startInline"><label>Tour de départ</label><input id="startPosition" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="1" value="1"></div></div><div class="tournamentBlockGap"></div><div id="timingLayout" class="timingLayout">
 <div class="timeEntry durationSetting"><label for="hours"><span class="mp4TimeTitle">Temps par match</span><span class="tppTimeTitle">Temps par tour</span></label><div class="row3"><div class="unitField"><input id="hours" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="0" max="12" value="00"><span class="unit">H</span></div><div class="unitField"><input id="minutes" type="tel" min="0" max="59" value="07"><span class="unit">M</span></div><div class="unitField"><input id="seconds" type="tel" min="0" max="59" value="00"><span class="unit">S</span></div></div></div>
 <div class="timeEntry boardTimeSetting"><label for="boardMinutes">Temps par donne</label><div class="row2"><div class="unitField"><input id="boardMinutes" type="tel" min="0" max="60" value="07"><span class="unit">M</span></div><div class="unitField"><input id="boardSeconds" type="tel" min="0" max="59" value="30"><span class="unit">S</span></div></div></div>
@@ -394,7 +404,7 @@ function fc(){
   // MM:SS ONLY: keep the approved font size; lower its visual position by
   // 59 virtual-stage pixels (16px higher). HH:MM:SS remains unchanged.
   // Preserve all other sizes and positions when editing this adjustment.
-  shortClockOffset=desiredTop-c.offsetTop+59;
+  shortClockOffset=desiredTop-c.offsetTop+39;
  }
  z.fontSize=(shortClock?SF:F)+'px';
  z.lineHeight=shortClock?'.68':'.78'; // Never change HH:MM:SS metrics.
