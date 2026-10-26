@@ -362,7 +362,7 @@ for(const token of [
  'const target=Math.max(normalF,shortSF*.931);',
  'const font=Math.min(target,available*100/needed);',
  'const desiredTop=Math.min(shortTop+30,shortBottom-height);',
- 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-49;',
+ 'longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;',
  '#timer #clock.longStartClock .clockSeconds{font-size:.56em;',
  'shortClockOffset=desiredTop-c.offsetTop+26;',
  'SF=Math.max(F,SF*.931);',
@@ -380,4 +380,13 @@ assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offset
  assert.ok(Math.abs(longInk.top-shortInk.top)<=2 && Math.abs(longInk.bottom-shortInk.bottom)<=2,
    'Long and short primary glyphs should occupy the same visual band');
 }
+// The user approved long-format glyph SIZE. Adjust VERTICAL position only.
+assert.ok(html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;'),
+ 'Long digits must sit 4 reference pixels higher, with the same font');
+assert.ok(!html.includes('longClockFont=font;longClockOffset=desiredTop-c.offsetTop-49;'),
+ 'Old slightly-too-low long clock offset must not return');
+assert.ok(html.includes('shortClockOffset=desiredTop-c.offsetTop+26;'),
+ 'Short format position must remain untouched');
+assert.ok(html.includes('#timer #clock.longStartClock .clockSeconds{font-size:.56em;'),
+ 'Keep smaller seconds of long format');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
