@@ -308,4 +308,28 @@ assert.ok(zshiftSource.includes('shortClockOffset=desiredTop-c.offsetTop+59;'),
  'Short MM:SS glyphs must be raised 16 reference px; long digits untouched');
 assert.ok(zshiftSource.includes('SF=Math.max(F,SF*.931);'),
  'The approved MM:SS font-size must not change');
+
+/* 26 Oct 2026: opening Message must not reflow the 16:9 header or club.
+   These assertions protect the composer's absolute positioning and prevent
+   the old .messageEditing layout switch from returning. */
+for(const required of [
+ '#timer .top{position:relative}',
+ '#timer .top.messageComposeOpen .topBtns{visibility:hidden;pointer-events:none}',
+ '#timer .top #tempMessageOverlay:not(.hidden){position:absolute;left:635px;right:22px;top:7px;bottom:7px;',
+ '#timer #tempMessageOverlay #tempMessageHeading{display:none}',
+ '#timer #tempMessageOverlay .tempMessageActions{flex-direction:column;',
+ 'id="tempMessageInput" aria-label="Message temporaire"',
+ 'top.classList.add("messageComposeOpen");$("tempMessageOverlay").classList.remove("hidden")',
+ 'top.classList.remove("messageComposeOpen");$("messageBtn").focus()'
+]) assert.ok(html.includes(required),'Temporary-message header layout regression: '+required);
+const allJs = scripts.map(x=>x[1]).join('\n');
+const openEditor = allJs.match(/function q2c\(\)\{([\s\S]*?)\}\s*function q20\(\)/);
+const closeEditor = allJs.match(/function q20\(\)\{([\s\S]*?)\}\s*function resumeEditorOpen\(\)/);
+assert.ok(openEditor&&closeEditor,'Message editor handlers must exist');
+assert.ok(!openEditor[1].includes('style.height')&&!closeEditor[1].includes('style.height'),
+  'Temporary message must NEVER resize the title/header on open or close');
+assert.ok(!openEditor[1].includes('messageEditing')&&!closeEditor[1].includes('messageEditing'),
+  'Temporary message must not activate the old grid-reflow class');
+assert.ok(html.includes("const top=$('timer').querySelector('.top');top.style.height=top.getBoundingClientRect().height+'px';top.classList.add('messageEditing');$('resumeOverlay')"),
+  'Resume-time editor must remain unchanged');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
