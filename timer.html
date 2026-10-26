@@ -388,8 +388,13 @@ function fc(){
    // Measured at 1920x1080: the -53 offset was about 3px too high.
    // Equal-size primary digits: compare actual ink bounds, not element boxes.
    // Keep longClockFont and the 56% seconds unchanged.
-   // After equalizing font size, a -51px baseline matches the short ink bounds.
-   longClockFont=font;longClockOffset=desiredTop-c.offsetTop-51;
+   // Earlier Chromium layout matching proved insufficient on native Windows.
+   // Windows screenshot 1920x1080 on 26 Oct 2026: identical '0' and '5'
+   // glyphs were exactly 14 screen pixels LOWER in long than in short:
+   // long '0' top=273 vs short '0' top=259; long '5' top=279 vs short top=265.
+   // Reference stage 1600x900 scales x1.2 -> move long up 12 stage px.
+   // Keep ALL font sizes, positioning of short timer, and event unchanged.
+   longClockFont=font;longClockOffset=desiredTop-c.offsetTop-63;
   }
   z.fontSize=longClockFont+'px';
   z.lineHeight='.68';
