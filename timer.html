@@ -383,7 +383,11 @@ function fc(){
    const height=font*.68;
    const desiredTop=Math.min(shortTop+30,shortBottom-height);
    // Baseline adjustment for the separate small-seconds inline-flex layout.
-   longClockFont=font;longClockOffset=desiredTop-c.offsetTop-53;
+   // Align the long primary glyphs to the short reference ink band.
+   // Measured at 1920x1080: the -53 offset was about 3px too high.
+   // The -50 baseline matches the short primary glyphs to within 1-2px.
+   // Keep longClockFont and the 56% seconds unchanged.
+   longClockFont=font;longClockOffset=desiredTop-c.offsetTop-50;
   }
   z.fontSize=longClockFont+'px';
   z.lineHeight='.68';
