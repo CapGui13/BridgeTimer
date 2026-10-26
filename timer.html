@@ -357,8 +357,12 @@ function fc(){
    const verticalRoom=Math.max(1,bottomLimit-topLimit);
    const font=Math.min(520,available*100/needed,verticalRoom/.68);
    const height=font*.68;
-   const desiredTop=Math.max(topLimit,Math.min(topLimit+16,bottomLimit-height));
-   longClockFont=font;longClockOffset=desiredTop-c.offsetTop;
+   // Same vertical alignment as the validated short MM:SS layout:
+   // titleBottom + 18px margin + 30px target + 26px clock adjustment.
+   // Keep the long clock's font calculation and 56% seconds untouched.
+   const shortLayoutTop=Math.max(12,titleBottom+18);
+   const desiredTop=Math.min(shortLayoutTop+30,bottomLimit-height);
+   longClockFont=font;longClockOffset=desiredTop-c.offsetTop+26;
   }
   z.fontSize=longClockFont+'px';
   z.lineHeight='.68';
