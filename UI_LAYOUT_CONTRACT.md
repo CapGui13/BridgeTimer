@@ -63,13 +63,13 @@ automatique avant de l'avoir démontrée.
    « jouer ») et pré-alerte de saut partagent **la même boîte `#msg`**,
    les mêmes positions, dimensions, police, couleur, relief et adaptation
    automatique à la longueur du texte (`q38()`).
-2. **Transitions :** le **temps entre deux tours** doit désormais avoir
+2. **Transitions :** les bandeaux permanents haut (club, boutons) et bas (heure, tour, contrôles) restent visibles pendant les transitions. Le panneau commun `#jumpSplash` ne recouvre que `.main`. Le **temps entre deux tours** doit désormais avoir
    **EXACTEMENT le même design que le saut effectif de table**, réutilisant
    **le même écran `#jumpSplash`**, le même titre en haut, le message central,
    le décompte et sa barre, ainsi que le même ajustement `q40()`.
    Aucune règle CSS ou coordonnée parallèle ne doit être créée.
    Seuls le texte, le titre et la durée changent : entre-tours =
-   « CHANGEMENT DE TOUR » / « CHANGEZ DE TABLE » (ou message temporaire actif),
+   « CHANGEMENT DE TOUR » / « Changez de table » (ou message temporaire actif),
    avec les secondes restantes et « secondes pour le changement ».
    Le saut conserve ses textes configurables.
 
@@ -252,7 +252,7 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
 - La scène du timer se calcule toujours sur **1600 × 900** unités (16:9).
   Mode fenêtré et plein écran appliquent exactement **un seul coefficient** à
   tout le timer, sans recalcul des éléments lors du changement de mode.
-- Taille d'ouverture/minimum actuelle de la fenêtre Windows : **960 × 720**
+- Taille d'ouverture/minimum actuelle de la fenêtre Windows : **960 × 570** (environ 960 × 540 de surface WebView utile)
   unités logiques ; la maquette interne 16:9 est ajustée uniformément à cette
   fenêtre.
 - Les boutons d'en-tête ont une largeur suffisante pour « Paramètres » et
