@@ -1057,10 +1057,9 @@ assert.ok(html.includes('background:var(--panel)!important;\n backdrop-filter:no
 /* Windowed only: slim Settings title band must inherit actual timer top band.
    Never alter the fullscreen title band, permanent footer, or timer stage. */
 for(const rule of [
- 'body:not(.fs) #settings .wrap{padding-top:0}',
- 'height:var(--settings-window-top-height,42px);',
- 'font-size:var(--settings-window-title-font-size,21px);',
- 'line-height:var(--settings-window-title-height,26px);',
+ 'body:not(.fs) #settings .wrap{padding-top:var(--settings-window-top-height,42px)}',
+ 'height:var(--settings-top-height,82px)',
+ 'font-size:40px;line-height:var(--settings-title-height,55px);',
  'root.style.setProperty("--settings-window-title-height",title.getBoundingClientRect().height+"px");',
  'root.style.setProperty("--settings-window-top-height",bar.getBoundingClientRect().height+"px");',
  'docRoot.style.setProperty(\'--settings-window-top-height\',(82*k)+\'px\');',
