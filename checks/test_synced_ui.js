@@ -703,7 +703,7 @@ assert.ok(!html.includes('Prochain tour :'),'Never reintroduce the next-round li
 for(const id of [
  'betweenMsgBtn','betweenMsgOverlay','betweenMsgForm','betweenMsgCancel',
  'betweenMsgConfirm','betweenSplashTitleSetting','betweenSplashBodySetting',
- 'betweenCountdownLabel'
+ 'betweenMsgSeconds','betweenCountdownLabel'
 ])assert.equal(counts.get(id),1,'Missing/duplicate CHGT customization ID '+id);
 for(const token of [
  'id="betweenField" class="unitField hidden"><input id="between" type="tel" min="0" max="99" value="00"><span class="unit">S</span></div><button id="betweenMsgBtn"',
@@ -714,6 +714,13 @@ for(const token of [
  'id="betweenSplashTitleSetting"',
  'id="betweenSplashBodySetting"',
  'id="betweenCountdownLabel"',
+ 'id="betweenMsgSeconds" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="0" max="99" value="00"',
+ 'for="betweenMsgSeconds">Nb secondes entre tours',
+ 'class="jumpMsgTimeRow"><div class="jumpMsgTimeCol"><label for="betweenMsgSeconds"',
+ '.jumpMsgTimeCol #jumpCountdownLabel,.jumpMsgTimeCol #betweenCountdownLabel{width:100%;height:36px}',
+ 'const betweenMsgFieldIds=["betweenSplashTitleSetting","betweenSplashBodySetting","betweenMsgSeconds","betweenCountdownLabel"];',
+ ' $("betweenMsgSeconds").value=String(clamp(Number($("between").value)||0,0,99)).padStart(2,"0");',
+ ' $("between").value=String(seconds).padStart(2,"0");',
  'function syncBetweenMsgButton(){',
  'syncBetweenMsgButton();render()};',
  'const eligible=$("mode").value==="2"&&(debugActive()||Number($("between").value)>=1);',
@@ -779,5 +786,72 @@ for(const token of [
  assert.equal(jump.title,'ATTENTION');
  assert.equal(jump.text,'Saut');
  assert.equal(jump.label,'Saut secondes');
+}
+
+// CHGT seconds editor must be on the LEFT of countdown label, using precisely
+// the same CSS grid as MSG. There is no stale explanatory sentence.
+assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours ».'),
+ 'Remove the misleading read-only CHGT duration explanation');
+{
+ const area=html.slice(html.indexOf('id="betweenMsgOverlay"'),html.indexOf('</section><section id="timer"'));
+ assert.ok(area.indexOf('id="betweenMsgSeconds"')<area.indexOf('id="betweenCountdownLabel"'),
+  'Seconds editor must appear left of countdown label inside CHGT');
+ assert.equal((area.match(/class="jumpMsgTimeRow"/g)||[]).length,1,
+  'CHGT must reuse the MSG two-column time + countdown layout once');
+}
+{
+ const src=scripts.map(x=>x[1]).join('\n');
+ const open=src.match(/function openBetweenMsgDialog\(\)\{([\s\S]*?)\n\}\s*function closeBetweenMsgDialog/);
+ const confirm=src.match(/function confirmBetweenMsgDialog\(\)\{([\s\S]*?)\n\}\s*let jumpMsgSnapshot/);
+ const close=src.match(/function closeBetweenMsgDialog\(confirmed=false\)\{([\s\S]*?)\n\}\s*function confirmBetweenMsgDialog/);
+ assert.ok(open&&confirm&&close,'CHGT open/confirm/cancel handlers missing');
+ // Mock the actual production routines, including their transactional
+ // boundary. Merely typing in the modal must never alter the main setting.
+ function simulate(initial,choice,accept){
+  let main=String(initial).padStart(2,'0');
+  const dom={
+   between:{value:main},
+   betweenMsgSeconds:{value:'00'},
+   betweenMsgBtn:{classList:{contains:()=>false},setAttribute:()=>{},focus:()=>{}},
+   betweenMsgOverlay:{classList:{contains:()=>false,add:()=>{},remove:()=>{}}},
+   betweenSplashTitleSetting:{value:'CHANGEMENT DE TOUR',focus:()=>{}},
+   betweenSplashBodySetting:{value:'CHANGEZ DE TABLE'},
+   betweenCountdownLabel:{value:'secondes pour le changement'},
+   settings:{classList:{contains:()=>false}}
+  };
+  let snap=null,readCount=0,savedBetween=null,closeArgs=[];
+  const ids=['betweenSplashTitleSetting','betweenSplashBodySetting','betweenMsgSeconds','betweenCountdownLabel'];
+  let scope={
+   $:key=>dom[key],betweenMsgFieldIds:ids,
+   betweenMsgIsOpen:()=>true,betweenMsgSnapshot:snap,
+   q43:()=>{},clearTimeout:()=>{},autosaveTimer:null,save:()=>{},
+   clamp:(n,min,max)=>Math.max(min,Math.min(max,n)),Number,String,Object,
+   closeBetweenMsgDialog:flag=>{closeArgs.push(flag)},
+   read:()=>{readCount++;savedBetween=Number(dom.between.value)},q41:()=>{},KEY:'test',s:{},
+   render:()=>{}
+  };
+  const run=(code)=>vm.runInNewContext('(function(){'+code+'\n})',scope)();
+  run(open[1]);
+  assert.equal(dom.betweenMsgSeconds.value,main,'Opening CHGT must copy current main seconds');
+  dom.betweenMsgSeconds.value=String(choice);
+  assert.equal(dom.between.value,main,'Editing CHGT must not prematurely change main parameters');
+  if(accept){
+   run(confirm[1]);
+   assert.equal(dom.between.value,String(Math.max(0,Math.min(99,Number(choice)||0))).padStart(2,'0'),
+    'Valider must immediately synchronize main seconds');
+   assert.equal(savedBetween,Number(dom.between.value),'Valider must persist canonical s.between');
+   assert.equal(readCount,1,'Valider must persist once');
+   assert.deepEqual(closeArgs,[true],'Valider must close transaction as confirmed');
+  }else{
+   // Cancel must leave main parameters unchanged and restore form snapshot.
+   scope.betweenMsgSnapshot=Object.fromEntries(ids.map(id=>[id,id==='betweenMsgSeconds'?main:dom[id].value]));
+   run(close[1]);
+   assert.equal(dom.between.value,main,'Annuler must not change main seconds');
+   assert.equal(dom.betweenMsgSeconds.value,main,'Annuler must restore CHGT seconds');
+  }
+ }
+ for(const value of [0,1,7,45,99,105])simulate(30,value,true);
+ simulate(0,52,false);
+ simulate(27,0,false);
 }
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
