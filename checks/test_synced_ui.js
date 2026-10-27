@@ -699,7 +699,7 @@ assert.ok(!html.includes('Prochain tour :'),'Never reintroduce the next-round li
 /* CHGT customization — separate persisted content, SAME jump dialog style.
  * The CHGT button is placed just after the time-between-rounds field.
  * Visibility derives strictly from current seconds and Paires format.
- * Zero -> hidden; any positive second -> visible. No other layout touched. */
+ * Normal 00 -> hidden; Debug + Paires -> visible even at 00. */
 for(const id of [
  'betweenMsgBtn','betweenMsgOverlay','betweenMsgForm','betweenMsgCancel',
  'betweenMsgConfirm','betweenSplashTitleSetting','betweenSplashBodySetting',
@@ -715,7 +715,8 @@ for(const token of [
  'id="betweenSplashBodySetting"',
  'id="betweenCountdownLabel"',
  'function syncBetweenMsgButton(){',
- 'const eligible=$("mode").value==="2"&&Number($("between").value)>=1;',
+ 'syncBetweenMsgButton();render()};',
+ 'const eligible=$("mode").value==="2"&&(debugActive()||Number($("between").value)>=1);',
  '$("betweenMsgBtn").classList.toggle("hidden",!eligible);',
  '$("between").addEventListener("input",syncBetweenMsgButton)',
  '$("between").addEventListener("change",syncBetweenMsgButton)',
@@ -739,18 +740,24 @@ for(const token of [
  const src=scripts.map(x=>x[1]).join('\n');
  const found=src.match(/function syncBetweenMsgButton\(\)\{([\s\S]*?)\n\}/);
  assert.ok(found,'CHGT eligibility function not found');
- function verify(mode,seconds){
+ function verify(mode,seconds,debug=false){
   let hidden=true,disabled=true;
   const btn={classList:{toggle:(name,value)=>{if(name==='hidden')hidden=value}},set disabled(v){disabled=v}};
   const dom={mode:{value:mode},between:{value:String(seconds)},betweenMsgBtn:btn};
-  const context={$:id=>dom[id],Number,closeBetweenMsgDialog:()=>{}};
+  const context={$:id=>dom[id],Number,debugActive:()=>debug,closeBetweenMsgDialog:()=>{}};
   vm.runInNewContext('(function syncBetweenMsgButton(){'+found[1]+'\n})',context)();
   return {hidden,disabled};
  }
+ // Standard mode: 00 hidden, 01+ visible in Paires only.
  assert.deepEqual(verify('2',0),{hidden:true,disabled:true});
  assert.deepEqual(verify('2',1),{hidden:false,disabled:false});
  assert.deepEqual(verify('2',99),{hidden:false,disabled:false});
  assert.deepEqual(verify('4',1),{hidden:true,disabled:true});
+ // Debug must override zero-second gating, but NEVER the Paires mode.
+ assert.deepEqual(verify('2',0,true),{hidden:false,disabled:false});
+ assert.deepEqual(verify('2',1,true),{hidden:false,disabled:false});
+ assert.deepEqual(verify('4',0,true),{hidden:true,disabled:true});
+ assert.deepEqual(verify('4',1,true),{hidden:true,disabled:true});
 }
 {
  const src=scripts.map(x=>x[1]).join('\n');
