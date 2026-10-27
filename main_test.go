@@ -25,3 +25,25 @@ func TestViewSwitchPreservesNativeGeometry(t *testing.T) {
  if setNativeView(0,"timer",1) {t.Fatal("stale view request must be rejected")}
  if setNativeView(0,"unknown",3) {t.Fatal("unknown view must be rejected")}
 }
+
+func TestNativeWindowCloseAlwaysPromptsUnlessPreviouslyApproved(t *testing.T) {
+ oldConfirm:=nativeCloseConfirmation
+ oldApproved:=closeApproved.Load()
+ oldProc:=originalWndProc
+ defer func(){
+   nativeCloseConfirmation=oldConfirm
+   closeApproved.Store(oldApproved)
+   originalWndProc=oldProc
+ }()
+ originalWndProc=0
+ count:=0
+ nativeCloseConfirmation=func(hwnd uintptr) bool { count++;return false }
+ closeApproved.Store(false)
+ darkTitleWndProc(0,wmClose,0,0)
+ if count!=1||closeApproved.Load(){t.Fatalf("Cancel X must preserve window and prompt once: calls=%d",count)}
+ nativeCloseConfirmation=func(hwnd uintptr) bool { count++;return true }
+ darkTitleWndProc(0,wmClose,0,0)
+ if count!=2||!closeApproved.Load(){t.Fatalf("Yes X must approve closing: calls=%d",count)}
+ darkTitleWndProc(0,wmClose,0,0)
+ if count!=2{t.Fatal("Already confirmed app quit must not prompt twice")}
+}
