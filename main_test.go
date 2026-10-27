@@ -27,23 +27,25 @@ func TestViewSwitchPreservesNativeGeometry(t *testing.T) {
 }
 
 func TestNativeWindowCloseAlwaysPromptsUnlessPreviouslyApproved(t *testing.T) {
- oldConfirm:=nativeCloseConfirmation
+ oldRequest:=nativeCloseRequestHandler
  oldApproved:=closeApproved.Load()
  oldProc:=originalWndProc
  defer func(){
-   nativeCloseConfirmation=oldConfirm
+   nativeCloseRequestHandler=oldRequest
    closeApproved.Store(oldApproved)
    originalWndProc=oldProc
  }()
  originalWndProc=0
  count:=0
- nativeCloseConfirmation=func(hwnd uintptr) bool { count++;return false }
+ nativeCloseRequestHandler=func(){count++}
  closeApproved.Store(false)
  darkTitleWndProc(0,wmClose,0,0)
- if count!=1||closeApproved.Load(){t.Fatalf("Cancel X must preserve window and prompt once: calls=%d",count)}
- nativeCloseConfirmation=func(hwnd uintptr) bool { count++;return true }
+ if count!=1||closeApproved.Load(){t.Fatalf("X must request the HTML dialog, not close: calls=%d",count)}
+ // Clicking No leaves closeApproved=false. Repeated X can reopen dialog.
  darkTitleWndProc(0,wmClose,0,0)
- if count!=2||!closeApproved.Load(){t.Fatalf("Yes X must approve closing: calls=%d",count)}
+ if count!=2||closeApproved.Load(){t.Fatalf("Canceled X must not approve close: calls=%d",count)}
+ // HTML Yes invokes nativeExit, which approves close and posts WM_CLOSE.
+ closeApproved.Store(true)
  darkTitleWndProc(0,wmClose,0,0)
- if count!=2{t.Fatal("Already confirmed app quit must not prompt twice")}
+ if count!=2{t.Fatal("Approved HTML quit must not reopen dialog")}
 }
