@@ -82,10 +82,18 @@ CHGT visible et utilisable même avec `00` seconde pour permettre les réglages
 et essais. Le passage Debug activé/désactivé rafraîchit le bouton immédiatement.
 En Match par 4, CHGT reste masqué, y compris lorsque Debug est activé.
 Le bouton ouvre un dialogue du **même modèle graphique que MSG pour le saut**
-(titre, texte central, texte du décompte ; Annuler et Valider), mais les
-valeurs sont **indépendantes** de celles du saut. La durée se règle toujours
-dans « Temps entre tours » et ne doit pas être dupliquée.
-Ces textes sont enregistrés avec les paramètres et utilisés par
+(titre, texte central, puis **deux colonnes sur la même ligne : durée en secondes
+à gauche, texte du décompte à droite**, et Annuler / Valider).
+Les valeurs sont **indépendantes** de celles du saut. La durée peut être
+modifiée soit dans « Temps entre tours », soit dans la fenêtre CHGT :
+**c'est une seule donnée `between`**, synchronisée de manière
+bidirectionnelle lors de l'ouverture et de la validation de CHGT.
+L'édition dans CHGT est transactionnelle : **Annuler ne modifie pas
+les paramètres**, Valider met immédiatement à jour la case de temps dans
+les paramètres et enregistre la valeur. La phrase « Durée : réglée par… »
+n'apparaît plus. Le bouton conserve la règle de visibilité précédente,
+notamment son affichage à `00` seconde en mode Paires + Debug.
+Ces réglages sont enregistrés avec les paramètres et utilisés par
 `transitionSplashModel`. Le design de l'écran final demeure partagé
 entre saut et entre-tours ; aucune variante graphique de CHGT n'est permise.
 
