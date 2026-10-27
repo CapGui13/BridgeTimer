@@ -105,19 +105,35 @@ def main():
                 # as the existing timer band, without changing timer geometry.
                 timerHeader=page.evaluate("""() => {
                   const e=document.querySelector("#timer .top"),r=e.getBoundingClientRect();
-                  return {height:r.height, title:e.querySelector("#club").getBoundingClientRect().height};
+                  const box=sel=>{const p=document.querySelector(sel).getBoundingClientRect();
+                    return {x:p.x,y:p.y,w:p.width,h:p.height};};
+                  return {height:r.height,title:e.querySelector("#club").getBoundingClientRect().height,
+                    band:box("#timer .top"),settings:box("#settingsBtn"),exit:box("#fsBtn")};
                 }""")
                 page.evaluate("showSettings()")
                 settingsHeader=page.evaluate("""() => {
                   const e=document.querySelector("#settings .wrap>.head");
                   const r=e.getBoundingClientRect(),c=getComputedStyle(e);
                   const h=e.querySelector("h1").getBoundingClientRect();
-                  return {height:r.height,title:h.height,paddingTop:parseFloat(c.paddingTop),
-                    parentPaddingTop:parseFloat(getComputedStyle(document.querySelector("#settings .wrap")).paddingTop)};
+                  const box=sel=>{const p=document.querySelector(sel).getBoundingClientRect();
+                    return {x:p.x,y:p.y,w:p.width,h:p.height};};
+                  return {height:r.height,title:h.height,
+                    parentPaddingTop:parseFloat(getComputedStyle(document.querySelector("#settings .wrap")).paddingTop),
+                    band:box("#settings .wrap>.head"),settings:box("#drawerClose"),exit:box("#settingsFullscreenBtn"),
+                    exitVisible:getComputedStyle(document.getElementById("settingsFullscreenBtn")).display!=="none",
+                    exitLabel:document.getElementById("settingsFullscreenBtn").textContent,
+                    isWired:document.getElementById("settingsFullscreenBtn").onclick===fs,
+                    closeLabel:document.getElementById("drawerClose").textContent};
                 }""")
                 assert abs(timerHeader["height"]-settingsHeader["height"])<=1.1, f"Windowed Settings header too tall: {width}x{height} {mode} {timerHeader} / {settingsHeader}"
                 assert abs(timerHeader["title"]-settingsHeader["title"])<=4, f"Windowed title sizes diverged: {timerHeader} / {settingsHeader}"
-                assert settingsHeader["paddingTop"]==0 and settingsHeader["parentPaddingTop"]==0, "Extra windowed title padding restored"
+                assert abs(settingsHeader["parentPaddingTop"]-settingsHeader["height"])<1.1, "Settings content must start below the fixed title band"
+                for key in ("band","settings","exit"):
+                    for metric in ("x","y","w","h"):
+                        delta=abs(timerHeader[key][metric]-settingsHeader[key][metric])
+                        assert delta<=1.1, f"Windowed Settings button not aligned: {width}x{height} {mode} {key}.{metric}: {delta:.2f}"
+                assert settingsHeader["exitVisible"] and settingsHeader["exitLabel"]=="Plein écran" and settingsHeader["isWired"], "Missing working fullscreen button in windowed Settings"
+                assert settingsHeader["closeLabel"]=="Retour au timer", "Wrong windowed return button label"
                 page.evaluate("showTimer()")
                 afterWindowedSettings=measure(page)
                 equal(before,afterWindowedSettings,f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round",))
