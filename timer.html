@@ -354,7 +354,7 @@ body:not(.fs) #settings .wrap>.head{
 body:not(.fs) #settings .wrap>.head h1{
  margin:0;
  font-size:var(--settings-window-title-font-size,21px);
- line-height:1.12;
+ line-height:var(--settings-window-title-height,26px);
  font-weight:950;
  white-space:nowrap;
 }
@@ -558,6 +558,7 @@ function cacheSettingsHeaderGeometry(){
  // Windowed settings inherits the ACTUAL visible timer header height;
  // removing the old .wrap top padding avoids a second empty title band.
  root.style.setProperty("--settings-window-top-height",bar.getBoundingClientRect().height+"px");
+ root.style.setProperty("--settings-window-title-height",title.getBoundingClientRect().height+"px");
  root.style.setProperty("--settings-window-title-font-size",(parseFloat(getComputedStyle(title).fontSize)*scale)+"px");
  const sourceHeaderButton=$("settingsBtn");
  if(sourceHeaderButton)root.style.setProperty("--settings-window-button-font-size",(parseFloat(getComputedStyle(sourceHeaderButton).fontSize)*scale)+"px");
@@ -655,6 +656,7 @@ function updateStage(){
   // as the timer. This is only a fallback until the actual timer is measured.
   docRoot.style.setProperty('--settings-window-top-height',(82*k)+'px');
   docRoot.style.setProperty('--settings-window-title-font-size',(40*k)+'px');
+  docRoot.style.setProperty('--settings-window-title-height',(53*k)+'px');
   docRoot.style.setProperty('--settings-window-button-font-size',(18*k)+'px');
   docRoot.style.setProperty('--settings-stage-bottom',Math.max(0,innerHeight-(innerHeight-h*k)/2-h*k)+'px');
  }
