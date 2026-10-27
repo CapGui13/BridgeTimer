@@ -474,3 +474,26 @@ de fenêtre. Ni la position de l'heure ou du tour, ni leur taille, ni les dimens
 de la barre ne changent. Le contrôle dans Edge doit vérifier l'écart entre
 les deux espaces (≤1.1 pixel projeté) dans les 2 formats, y compris les numéros
 de tour à un et deux chiffres, le mode plein écran et les transitions.
+
+
+## 27 octobre 2026 — stabilité de tous les boutons + proportions identiques
+
+Un bouton invisible ne doit **jamais retirer sa place du groupe** : réserver
+cinq positions fixes en fin de paramètres (Lancer/Timer 104, Arrêter 136,
+Reset param. 154, Debug 106, Écrans tests 162), avec les mêmes intervalles
+dans les deux états. Arrêter reste invisible et non cliquable au lancement,
+mais son emplacement de 136 unités est toujours réservé ; l'espace avant
+Reset param. reste 13 unités supplémentaires. Le groupe entier reste centré,
+ainsi aucun bouton ne se déplace quand Lancer devient Timer ou quand Arrêter
+apparaît. Le pied de page, la miniature et Quitter ne changent pas.
+
+Le Timer est un seul stage 1600 × 900 redimensionné par homothétie. Les
+anciennes règles CSS adaptatives pour des fenêtres larges de moins de
+850 pixels ne doivent plus diminuer les polices ou espacements du TIMER.
+La barre haute utilise 18px virtuels pour ses boutons, la barre basse 21px
+virtuels, quels que soient la résolution et le mode plein écran. La taille
+apparente change **uniquement** par le coefficient de projection 16:9.
+
+Le test sous Edge compare les coordonnées **normalisées** du même timer
+fenêtré, en plein écran et de retour en fenêtre, et vérifie les cinq
+emplacements des paramètres avant/après démarrage, dans les deux formats.
