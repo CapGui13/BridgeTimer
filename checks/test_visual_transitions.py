@@ -183,6 +183,69 @@ def test_exit_and_live_settings(browser):
     assert defaults["boards"]==8 and defaults["hours"]*3600+defaults["minutes"]*60+defaults["seconds"]==8*defaults["perBoard"], f"Default start duration changed: {defaults}"
     page.close()
 
+
+def test_settings_window_resize(browser):
+    """Reproduce user bug: native window resized in ONE axis or BOTH."""
+    page=browser.new_page(viewport={"width":812,"height":456})
+    page.set_content(html,wait_until="domcontentloaded")
+    changes=[
+      (812,456), # initial 16:9
+      (812,646), # screenshot: vertical ONLY, header previously floated
+      (1040,646), # wider and taller
+      (1210,646), # horizontal ONLY, letterboxed timer
+      (1210,840), # vertical ONLY again
+      (960,540), # reduce both
+      (960,720), # separate axis
+      (812,456), # full round trip
+    ]
+    for width,height in changes:
+        page.set_viewport_size({"width":width,"height":height})
+        page.wait_for_function("""() => {
+          const s=Number(document.documentElement.style.getPropertyValue('--settings-window-scale'));
+          return Math.abs(s*1600-innerWidth)<.01;
+        }""")
+        metrics=page.evaluate("""() => {
+          const rect=q=>{const b=document.querySelector(q).getBoundingClientRect();
+            return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,w:b.width,h:b.height}};
+          const pad=parseFloat(getComputedStyle(document.querySelector('#settings .wrap')).paddingTop);
+          return {head:rect('#settings .wrap>.head'),footer:rect('#settings .actions'),
+            heading:rect('#settings .wrap>.head h1'),
+            form:rect('#settings .panel'),
+            pad,scale:Number(document.documentElement.style.getPropertyValue('--settings-window-scale')),
+            vw:innerWidth,vh:innerHeight};
+        }""")
+        head,footer=metrics["head"],metrics["footer"]
+        for metric in ("x","y"):
+            assert abs(head[metric])<1.1, f"{width}x{height}: title band detached: {metrics}"
+        assert abs(head["right"]-width)<1.1, f"{width}x{height}: header must fill native width: {metrics}"
+        assert abs(footer["x"])<1.1 and abs(footer["right"]-width)<1.1, f"{width}x{height}: footer detached horizontally: {metrics}"
+        assert abs(footer["bottom"]-height)<1.1, f"{width}x{height}: footer detached vertically: {metrics}"
+        assert abs(metrics["pad"]-head["h"])<1.1, f"{width}x{height}: reserved heading space differs: {metrics}"
+        # Ensure neither bar moves when scrolling settings between resizes.
+        page.evaluate("window.scrollTo(0,450)")
+        scrolled=page.evaluate("""() => {
+          const r=q=>{const p=document.querySelector(q).getBoundingClientRect();
+            return [p.x,p.y,p.right,p.bottom]};
+          return {head:r('#settings .wrap>.head'),footer:r('#settings .actions')};
+        }""")
+        for name in ("head","footer"):
+            original=[metrics[name][x] for x in ("x","y","right","bottom")]
+            assert all(abs(a-b)<1.1 for a,b in zip(original,scrolled[name])), f"{width}x{height}: {name} moved during scroll"
+        page.evaluate("window.scrollTo(0,0)")
+    # A resize while LIVE must preserve timer state upon return.
+    page.evaluate("""() => {
+      st.started=true;st.running=true;st.phase='round';st.remaining=151.4;
+      st.endAt=performance.now()+151400;s.mode='2';s.between=12;
+      showSettings();window.__snapshot={remaining:st.remaining,endAt:st.endAt,phase:st.phase};
+    }""")
+    page.set_viewport_size({"width":1090,"height":650})
+    page.wait_for_function("""() => Math.abs(Number(document.documentElement.style.getPropertyValue('--settings-window-scale'))*1600-innerWidth)<.01""")
+    page.evaluate("showTimer()")
+    unchanged=page.evaluate("""() => window.__snapshot.remaining===st.remaining &&
+      window.__snapshot.endAt===st.endAt && window.__snapshot.phase===st.phase""")
+    assert unchanged,"Resizing and returning from Settings unexpectedly modified timer"
+    page.close()
+
 def main():
     errors=[]
     # Prior tests toggled .fs without changing browser viewport. That never
@@ -196,6 +259,7 @@ def main():
             path=shutil.which("chromium") or shutil.which("chromium-browser")
             browser=pw.chromium.launch(executable_path=path,headless=True,args=["--no-sandbox"])
         test_exit_and_live_settings(browser)
+        test_settings_window_resize(browser)
         for width,height in viewports:
             page=browser.new_page(viewport={"width":width,"height":height})
             page.on("pageerror",lambda err: errors.append(str(err)))
@@ -225,12 +289,12 @@ def main():
             }"""), "Startup shows an inactive Retour button"
             firstFooter=page.evaluate("""() => {
               const r=document.querySelector("#settings .actions").getBoundingClientRect();
-              const t=document.getElementById("timer"),k=Number(t.style.getPropertyValue("--stage-scale"))||1;
-              return {h:r.height,expected:88*k,actual:r.bottom,viewport:innerHeight,
-                stageBottom:parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--settings-stage-bottom"))||0};
+              return {h:r.height,expected:88*innerWidth/1600,actual:r.bottom,
+                x:r.x,right:r.right,viewport:innerHeight,width:innerWidth};
             }""")
             assert abs(firstFooter["h"]-firstFooter["expected"])<=1.1, f"Startup footer must match timer's virtual 88px height: {firstFooter}"
-            assert abs(firstFooter["actual"]-(firstFooter["viewport"]-firstFooter["stageBottom"]))<=1.1, "Settings footer does not align with bottom of the homothetic timer stage"
+            assert abs(firstFooter["actual"]-firstFooter["viewport"])<=1.1, "Settings footer detaches from bottom on non-16:9 window"
+            assert abs(firstFooter["x"])<=1.1 and abs(firstFooter["right"]-firstFooter["width"])<=1.1, "Settings footer must fill full window width"
             # In the real 16:9 settings viewport, fields must scroll BEHIND
             # an opaque, fixed action bar without moving the bar itself.
             initial=page.evaluate("""() => {
@@ -336,10 +400,17 @@ def main():
                 assert abs(timerHeader["height"]-settingsHeader["height"])<=1.1, f"Windowed Settings header too tall: {width}x{height} {mode} {timerHeader} / {settingsHeader}"
                 assert abs(timerHeader["title"]-settingsHeader["title"])<=4, f"Windowed title sizes diverged: {timerHeader} / {settingsHeader}"
                 assert abs(settingsHeader["parentPaddingTop"]-settingsHeader["height"])<1.1, "Settings content must start below the fixed title band"
+                # On a 16:9 window the two screens match exactly; in a
+                # taller window the Settings header MUST remain at y=0
+                # while the timer is intentionally letterboxed/centered.
                 for key in ("band","settings","exit"):
-                    for metric in ("x","y","w","h"):
+                    for metric in ("x","w","h"):
                         delta=abs(timerHeader[key][metric]-settingsHeader[key][metric])
-                        assert delta<=1.1, f"Windowed Settings button not aligned: {width}x{height} {mode} {key}.{metric}: {delta:.2f}"
+                        assert delta<=1.1, f"Windowed Settings button geometry differs: {width}x{height} {mode} {key}.{metric}: {delta:.2f}"
+                    expected_y=timerHeader[key]["y"]-timerHeader["band"]["y"]
+                    assert abs(settingsHeader[key]["y"]-expected_y)<=1.1, f"Settings header not top-anchored: {key} {settingsHeader[key]} vs {expected_y}"
+                assert abs(settingsHeader["band"]["y"])<=1.1 and abs(settingsHeader["band"]["x"])<=1.1, "Settings header must touch top-left viewport edges"
+                assert abs(settingsHeader["band"]["w"]-width)<=1.1, "Settings header detached from full window width"
                 assert settingsHeader["exitVisible"] and settingsHeader["exitLabel"]=="Plein écran" and settingsHeader["isWired"], "Missing working fullscreen button in windowed Settings"
                 assert settingsHeader["closeLabel"]=="Retour au timer" and settingsHeader["returnVisibility"]=="visible", "Live windowed return button must be visible"
 
@@ -374,13 +445,13 @@ def main():
                     return {x:r.x,y:r.y,w:r.width,h:r.height};};
                   // Timer hidden; its previous projected geometry matches
                   // the stage scale and 88px virtual footer height.
-                  const t=document.getElementById("timer"),k=Number(t.style.getPropertyValue("--stage-scale"))||1;
+                  const k=innerWidth/1600;
                   return {height:88*k,buttonHeight:Number(document.documentElement.style.getPropertyValue("--settings-bottom-button-height").replace("px",""))*k};
                 }""")
                 assert abs(settingsHeader["footer"]["h"]-timerFooter["height"])<=1.1, f"Windowed live Settings footer must be same height as timer: {width}x{height} {mode}"
                 assert abs(settingsHeader["footerButton"]["h"]-timerFooter["buttonHeight"])<=1.1, "Windowed settings buttons must match timer button height"
-                stageBottom=page.evaluate("""() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--settings-stage-bottom"))||0""")
-                assert abs(settingsHeader["footer"]["y"]+settingsHeader["footer"]["h"]-(height-stageBottom))<=1.1, "Windowed settings footer must align with timer stage bottom"
+                assert abs(settingsHeader["footer"]["y"]+settingsHeader["footer"]["h"]-height)<=1.1, "Settings footer must be pinned to bottom of RESIZED viewport"
+                assert abs(settingsHeader["footer"]["x"])<=1.1 and abs(settingsHeader["footer"]["w"]-width)<=1.1, "Settings footer must fill width without centering offsets"
                 page.evaluate("showTimer()")
                 page.evaluate("showSettings()")
                 assert_stable_settings_slots(initial_slots,settings_button_slots(page),
