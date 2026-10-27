@@ -73,6 +73,18 @@ automatique avant de l'avoir démontrée.
    avec les secondes restantes et « secondes pour le changement ».
    Le saut conserve ses textes configurables.
 
+**RÈGLE E — Bouton CHGT (27/10/2026).**
+Dans les paramètres de Paires, le bouton **CHGT** est à droite du champ
+« Temps entre tours ». Il apparaît **si et seulement si** la durée de
+l'entre-tours est au moins **1 seconde** (à `00`, aucun bouton).
+Le bouton ouvre un dialogue du **même modèle graphique que MSG pour le saut**
+(titre, texte central, texte du décompte ; Annuler et Valider), mais les
+valeurs sont **indépendantes** de celles du saut. La durée se règle toujours
+dans « Temps entre tours » et ne doit pas être dupliquée.
+Ces textes sont enregistrés avec les paramètres et utilisés par
+`transitionSplashModel`. Le design de l'écran final demeure partagé
+entre saut et entre-tours ; aucune variante graphique de CHGT n'est permise.
+
 Toutes ces annonces suivent la même homothétie fenêtré/plein écran.
 **Changement de tour :** la ligne « Prochain tour : X » est définitivement
 supprimée. PAUSE et fin de séance restent distincts et inchangés.
