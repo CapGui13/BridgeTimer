@@ -998,20 +998,17 @@ assert.ok(html.includes('tm.classList.remove("spa","spm");')&&html.includes('tm.
  'Gallery captures must isolate and restore preview mode classes');
 assert.ok(html.includes('$("timer").classList.remove("spm","spa");'),
  'Returning from screen tests must restore the standard stage classes');
-// Native client aspect is calibrated ONCE at startup; settings and timer
-// must not change the window height on each navigation.
-assert.ok(nativeSource.includes('func timerWindowOuterHeight('),'Missing native frame/client aspect fix');
-assert.ok(nativeSource.includes('getClientRect = user32.NewProc("GetClientRect")'),'Native geometry must use real client dimensions');
+// User-defined 812x612 is the native opening and minimum; the timer's
+// internal 16:9 projection never modifies native outer dimensions.
+assert.ok(!nativeSource.includes('func timerWindowOuterHeight('),'Obsolete 16:9 outer-window calibration returned');
 assert.ok(nativeSource.includes('w.Bind("nativeSetView"'),'Missing JS/native screen-mode binding');
-assert.ok(nativeSource.includes('case wmActivate:')&&nativeSource.includes('if msg == wmGetMinMaxInfo'),'Timer-specific native minimum not installed');
-assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),
- 'Both views should share one native 16:9 client area');
-assert.ok(html.includes('if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer")'),
- 'Native window must be corrected after leaving fullscreen');
-assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,
- 'Timer must preserve native geometry on view change and phase change');
-assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,2,
- 'Settings must normalize native client ratio on startup and share geometry on view changes');
+assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),'Native min must equal opening size');
+assert.ok(nativeSource.includes('timerViewActive.Store(true)'),'View switch must remain active without window resize');
+assert.ok(!nativeSource.includes('if msg == wmGetMinMaxInfo'),'Aspect-ratio minimum override would break requested min');
+assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),'Both views should have equal native dimensions');
+assert.ok(html.includes('if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer")'),'Synchronize native mode after fullscreen');
+assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,'Timer must not change geometry on phase transitions');
+assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,2,'Settings and Timer share the native dimensions');
 // Fullscreen settings header shares the immutable timer stage geometry.
 // The native window remains untouched by these CSS-only fullscreen changes.
 for(const required of [
