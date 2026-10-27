@@ -256,10 +256,16 @@ assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // The caption height is compensated using the actual Win32 client rectangle.
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
-assert.ok(/defaultWindowWidth\s*=\s*960/.test(nativeSource),'Opening window must be 960 logical px wide to match approved screenshot at Windows DPI');
-assert.ok(/defaultWindowHeight\s*=\s*570/.test(nativeSource),'Both windowed screens must start in the same 960x570 native frame');
+assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Restored opening/minimum window must be 812 pixels wide');
+assert.ok(/defaultWindowHeight\s*=\s*612/.test(nativeSource),'Restored opening/minimum window must be 612 pixels tall');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
+assert.ok(nativeSource.includes('if !confirmNativeClose(hwnd) { return 0 }'),
+  'Native X / Alt+F4 must visibly confirm instead of silently consuming WM_CLOSE');
+assert.ok(nativeSource.includes('closeApproved.Store(true)'),
+  'An approved HTML quit must bypass the second native confirmation');
+assert.ok(!nativeSource.includes('nativeClientCalibrated=true'),
+  'Native view switching must not secretly shrink startup height to 16:9');
 // MM:SS: larger and lower with a conditional progress gap; HH:MM:SS unchanged.
 for(const token of [
  "bar.style.top=shortClock?'calc(65.2% + 75px)':'';",
