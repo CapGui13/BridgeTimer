@@ -80,6 +80,9 @@ si la durée de l'entre-tours atteint **1 seconde** (à `00`, bouton masqué).
 **Exception explicite Debug :** en mode **Paires**, activer Debug rend
 CHGT visible et utilisable même avec `00` seconde pour permettre les réglages
 et essais. Le passage Debug activé/désactivé rafraîchit le bouton immédiatement.
+**Lorsqu'on bascule Match par 4 ↔ Paires sous Debug, CHGT doit également
+changer de visibilité pendant le même événement, avant le prochain rendu,
+sans attendre l'enregistrement automatique ni un délai de 450 ms.**
 En Match par 4, CHGT reste masqué, y compris lorsque Debug est activé.
 Le bouton ouvre un dialogue du **même modèle graphique que MSG pour le saut**
 (titre, texte central, puis **deux colonnes sur la même ligne : durée en secondes
