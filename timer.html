@@ -486,6 +486,10 @@ body:not(.fs):not(.settingsLive) #settings .actions .settingsActionButtons > #st
  display:inline-flex!important;visibility:hidden!important;
  opacity:0!important;pointer-events:none!important;
 }
+/* The live code reports a 50px timer-footer button: force this SAME
+   inherited variable before and after a session, including fullscreen,
+   instead of using the original startup fallback of 51px. */
+#settings .actions { --settings-bottom-button-height:50px!important; }
 /* Keep the footer buttons' initial height identical to their live height.
    Prior default 51px changed to measured 50px on entering the timer, which
    visibly moved the entire settings button row in 1920x1080. */
