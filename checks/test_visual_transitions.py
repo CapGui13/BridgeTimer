@@ -88,7 +88,11 @@ def assert_same_stage_geometry(a,b,label,cross_viewport=False):
                 dimensions=("y","h","font")
                 if sel=="#localTime":
                     dimensions=("x","y","h","font")
-            if sel=="#timer .controls":
+            if sel in {"#timer .controls","#minus","#pause","#plus","#next","#resetRound"}:
+                # These buttons FOLLOW the midpoint between two dynamic
+                # text labels; x may drift by a few pixels when the real
+                # time/round strings have different intrinsic widths.
+                # Their y, width, height and typography must remain equal.
                 dimensions=("y","w","h","font")
         for dimension in dimensions:
             delta=abs(a[sel][dimension]-b[sel][dimension])
