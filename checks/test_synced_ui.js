@@ -809,21 +809,26 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
  // boundary. Merely typing in the modal must never alter the main setting.
  function simulate(initial,choice,accept){
   let main=String(initial).padStart(2,'0');
+  let modalOpen=false;
   const dom={
    between:{value:main},
    betweenMsgSeconds:{value:'00'},
    betweenMsgBtn:{classList:{contains:()=>false},setAttribute:()=>{},focus:()=>{}},
-   betweenMsgOverlay:{classList:{contains:()=>false,add:()=>{},remove:()=>{}}},
+   betweenMsgOverlay:{classList:{
+    contains:name=>name==='hidden'?!modalOpen:false,
+    add:name=>{if(name==='hidden')modalOpen=false},
+    remove:name=>{if(name==='hidden')modalOpen=true}
+   }},
    betweenSplashTitleSetting:{value:'CHANGEMENT DE TOUR',focus:()=>{}},
    betweenSplashBodySetting:{value:'CHANGEZ DE TABLE'},
    betweenCountdownLabel:{value:'secondes pour le changement'},
    settings:{classList:{contains:()=>false}}
   };
-  let snap=null,readCount=0,savedBetween=null,closeArgs=[];
+  let readCount=0,savedBetween=null,closeArgs=[];
   const ids=['betweenSplashTitleSetting','betweenSplashBodySetting','betweenMsgSeconds','betweenCountdownLabel'];
   let scope={
    $:key=>dom[key],betweenMsgFieldIds:ids,
-   betweenMsgIsOpen:()=>true,betweenMsgSnapshot:snap,
+   betweenMsgIsOpen:()=>modalOpen,betweenMsgSnapshot:null,
    q43:()=>{},clearTimeout:()=>{},autosaveTimer:null,save:()=>{},
    clamp:(n,min,max)=>Math.max(min,Math.min(max,n)),Number,String,Object,
    closeBetweenMsgDialog:flag=>{closeArgs.push(flag)},
@@ -844,7 +849,7 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
    assert.deepEqual(closeArgs,[true],'Valider must close transaction as confirmed');
   }else{
    // Cancel must leave main parameters unchanged and restore form snapshot.
-   scope.betweenMsgSnapshot=Object.fromEntries(ids.map(id=>[id,id==='betweenMsgSeconds'?main:dom[id].value]));
+   assert.ok(scope.betweenMsgSnapshot,'Open must snapshot all CHGT fields');
    run(close[1]);
    assert.equal(dom.between.value,main,'Annuler must not change main seconds');
    assert.equal(dom.betweenMsgSeconds.value,main,'Annuler must restore CHGT seconds');
