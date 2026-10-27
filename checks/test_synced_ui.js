@@ -866,7 +866,7 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
 // without relying on the 450ms autosave timer.
 {
  const src=scripts.map(x=>x[1]).join('\n');
- const wrapper=src.match(/function q7\(fn\)\{[^\n]*\}/);
+ const wrapper=src.match(/function q7\(fn\)\{([\s\S]*?)\}function _adu\(/);
  const sync=src.match(/function syncBetweenMsgButton\(\)\{([\s\S]*?)\n\}/);
  assert.ok(wrapper&&sync,'Missing Debug format wrapper / CHGT sync function');
  assert.ok(wrapper[0].includes('finally{document.body.classList.add("debugMode");_adu();syncBetweenMsgButton()}'),
@@ -890,7 +890,7 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
    '(function syncBetweenMsgButton(){'+sync[1]+'\n})',context);
   const realSync=context.syncBetweenMsgButton;
   context.syncBetweenMsgButton=()=>{syncCount++;return realSync()};
-  const q7=vm.runInNewContext('('+wrapper[0]+')',context);
+  const q7=vm.runInNewContext('(function q7(fn){'+wrapper[1]+'})',context);
   // Simulate _upu/read's immediate eligibility calculation WHILE Debug is
   // suspended by q7: even at zero it temporarily hides CHGT.
   q7(()=>{mode.value=newMode;context.syncBetweenMsgButton()});
