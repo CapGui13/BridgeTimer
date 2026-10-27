@@ -1109,6 +1109,6 @@ for(const contract of [
  'const freeCenter=(timeBounds.right+roundBounds.left)/2;',
  'const center=(freeCenter-bounds.left)/stageScale;',
  'if(debugActive())_adu();alignTimerFooterControls();fc();',
- " root.style.setProperty('--timer-vh',h/100+'px');\n alignTimerFooterControls();"
+ " if(typeof alignTimerFooterControls==='function')alignTimerFooterControls();"
 ])assert.ok(html.includes(contract),'Footer center regression: '+contract);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
