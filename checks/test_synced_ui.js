@@ -909,4 +909,60 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
   hidden:true,disabled:true,syncCount:1,debugRestoreCount:0
  },'Without Debug, zero seconds still correctly hides CHGT');
 }
+
+// Transition message color, user rule: the shared Saut de table and
+// Changement de tour title AND central text are RED by default, customizable
+// independently of the blue progress/accent and green ordinary notices.
+{
+ const newColor='transitionMessageColor';
+ assert.equal(counts.get(newColor),1,'Transition message color input must be unique');
+ for(const token of [
+  '<span>Messages de changement et saut</span><input id="transitionMessageColor" type="color" value="#ef4444"',
+  '--transition-message-color:#ef4444',
+  'color:var(--transition-message-color);pointer-events:none}',
+  '#jumpSplash .jumpSplashTitle{',
+  '#jumpSplash .jumpSplashText{',
+  '#jumpSplashBar{height:100%;width:100%;background:var(--accent)',
+  'color:var(--message-color)',
+  'messageColor:"#22c55e",transitionMessageColor:"#ef4444"',
+  'root.setProperty("--transition-message-color",s.transitionMessageColor||def.transitionMessageColor);',
+  'transitionMessageColor:$("transitionMessageColor").value',
+  's.transitionMessageColor=p.transitionMessageColor||def.transitionMessageColor;',
+  's.transitionMessageColor=def.transitionMessageColor;',
+  'const colorSettingIds=["accent","background","menu","text","messageColor","transitionMessageColor"];',
+  'transitionMessageColor:s.transitionMessageColor};',
+  'transitionMessageColor:def.transitionMessageColor};',
+  '!x.transitionMessageColor||/^#[0-9a-f]{6}$/i.test(x.transitionMessageColor)',
+  '"messageColor","transitionMessageColor"].includes(key)'
+ ])assert.ok(html.includes(token),'Transition message color regression: '+token);
+ assert.ok(!html.includes('#jumpSplash .jumpSplashText{color:var(--accent)'),
+  'Transition message body must not use the accent color');
+ assert.ok(!html.includes('#jumpSplash .jumpSplashTitle{color:var(--accent)'),
+  'Transition title must not use accent color');
+ const script=scripts.map(x=>x[1]).join('\n');
+ const sanitize=script.match(/function q6\(x\)\{([\s\S]*?)\}function q2a\(/);
+ assert.ok(sanitize,'Persistent settings sanitizer q6 must exist');
+ const def={accent:'#0ea5e9',messageColor:'#22c55e',transitionMessageColor:'#ef4444'};
+ const clean=vm.runInNewContext('(function q6(x){'+sanitize[1]+'})',{
+  def,Number,Object,Math,q26:x=>!!x&&typeof x==='object'&&!Array.isArray(x)
+ });
+ const valid=clean({transitionMessageColor:'#Cc4455'});
+ assert.equal(valid.transitionMessageColor,'#Cc4455','Chosen transition color must be preserved');
+ assert.equal(clean({transitionMessageColor:'red'}).transitionMessageColor,undefined,
+  'Malformed transition color must not be persisted');
+ assert.equal(clean({messageColor:'#22c55e',accent:'#0ea5e9',transitionMessageColor:'#ff1234'}).messageColor,
+  '#22c55e','Old message colors are still independent');
+ const validation=script.match(/function q2a\(x\)\{(.*?)\}const def=/);
+ assert.ok(validation,'Saved Custom color validator q2a must exist');
+ const q2a=vm.runInNewContext('(function q2a(x){'+validation[1]+'})',{
+  q26:x=>!!x&&typeof x==='object'&&!Array.isArray(x)
+ });
+ const preset={accent:'#0ea5e9',background:'#0f172a',menu:'#111827',text:'#f8fafc'};
+ assert.equal(q2a({...preset,transitionMessageColor:'#aa0000'}),true,
+  'Custom color themes must accept independent transition colors');
+ assert.equal(q2a({...preset,transitionMessageColor:'bad'}),false,
+  'Custom color themes must reject invalid transition colors');
+ assert.equal(q2a(preset),true,
+  'Previously saved themes without new field remain compatible');
+}
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
