@@ -397,20 +397,27 @@ def main():
                     returnVisibility:getComputedStyle(document.getElementById("drawerClose")).visibility,
                     footer:box("#settings .actions"),footerButton:box("#fresh")};
                 }""")
-                assert abs(timerHeader["height"]-settingsHeader["height"])<=1.1, f"Windowed Settings header too tall: {width}x{height} {mode} {timerHeader} / {settingsHeader}"
-                assert abs(timerHeader["title"]-settingsHeader["title"])<=4, f"Windowed title sizes diverged: {timerHeader} / {settingsHeader}"
-                assert abs(settingsHeader["parentPaddingTop"]-settingsHeader["height"])<1.1, "Settings content must start below the fixed title band"
-                # On a 16:9 window the two screens match exactly; in a
-                # taller window the Settings header MUST remain at y=0
-                # while the timer is intentionally letterboxed/centered.
-                for key in ("band","settings","exit"):
-                    for metric in ("x","w","h"):
-                        delta=abs(timerHeader[key][metric]-settingsHeader[key][metric])
-                        assert delta<=1.1, f"Windowed Settings button geometry differs: {width}x{height} {mode} {key}.{metric}: {delta:.2f}"
-                    expected_y=timerHeader[key]["y"]-timerHeader["band"]["y"]
-                    assert abs(settingsHeader[key]["y"]-expected_y)<=1.1, f"Settings header not top-anchored: {key} {settingsHeader[key]} vs {expected_y}"
-                assert abs(settingsHeader["band"]["y"])<=1.1 and abs(settingsHeader["band"]["x"])<=1.1, "Settings header must touch top-left viewport edges"
-                assert abs(settingsHeader["band"]["w"]-width)<=1.1, "Settings header detached from full window width"
+                # Timer uses min(width/1600,height/900) and may be
+                # letterboxed by a few pixels even near 16:9. Settings uses
+                # width/1600 and must fit the ENTIRE native window width.
+                stage_scale=min(width/1600,height/900)
+                settings_scale=width/1600
+                ratio=settings_scale/stage_scale
+                assert abs(timerHeader["height"]*ratio-settingsHeader["height"])<=1.1, f"Windowed Settings header height drift: {width}x{height} {mode}"
+                assert abs(timerHeader["title"]*ratio-settingsHeader["title"])<=4, f"Windowed title font sizing drift: {width}x{height}"
+                assert abs(settingsHeader["parentPaddingTop"]-settingsHeader["height"])<1.1, "Settings content must start below fixed title band"
+                assert abs(settingsHeader["band"]["y"])<=1.1 and abs(settingsHeader["band"]["x"])<=1.1, "Settings header must touch native top-left"
+                assert abs(settingsHeader["band"]["w"]-width)<=1.1, "Settings header must fill native width"
+                for key in ("settings","exit"):
+                    for metric in ("x","y","w","h"):
+                        if metric=="x":
+                            expected=(timerHeader[key]["x"]-timerHeader["band"]["x"])*ratio
+                        elif metric=="y":
+                            expected=(timerHeader[key]["y"]-timerHeader["band"]["y"])*ratio
+                        else:
+                            expected=timerHeader[key][metric]*ratio
+                        delta=abs(expected-settingsHeader[key][metric])
+                        assert delta<=1.1, f"Windowed Settings button mismatched scaled timer geometry: {width}x{height} {mode} {key}.{metric}: {delta:.2f} (wanted {expected})"
                 assert settingsHeader["exitVisible"] and settingsHeader["exitLabel"]=="Plein écran" and settingsHeader["isWired"], "Missing working fullscreen button in windowed Settings"
                 assert settingsHeader["closeLabel"]=="Retour au timer" and settingsHeader["returnVisibility"]=="visible", "Live windowed return button must be visible"
 
