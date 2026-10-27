@@ -112,7 +112,9 @@ def main():
                     return {x:r.x,y:r.y,w:r.width,h:r.height};};
                   return {
                     band:b("#timer .top"),title:b("#club"),
-                    settings:b("#settingsBtn"),exit:b("#fsBtn")
+                    settings:b("#settingsBtn"),exit:b("#fsBtn"),
+                    footer:b("#timer .bottom"),footerButton:b("#pause"),
+                    footerFont:getComputedStyle(document.getElementById("pause")).fontSize
                   }
                 }""")
                 page.evaluate("showSettings()")
@@ -122,6 +124,9 @@ def main():
                   return {
                     band:b("#settings .wrap>.head"),title:b("#settings .head h1"),
                     settings:b("#drawerClose"),exit:b("#settingsFullscreenBtn"),
+                    footer:b("#settings .actions"),footerButton:b("#fresh"),
+                    footerFont:getComputedStyle(document.getElementById("fresh")).fontSize,
+                    footerQuit:b("#quitAppBtn"),
                     mini:b("#miniTimer"),viewport:{h:innerHeight},
                     miniInBody:document.getElementById("miniTimer").parentElement===document.body,
                     exitWired:document.getElementById("settingsFullscreenBtn").onclick===fs,
@@ -129,10 +134,13 @@ def main():
                     visible:getComputedStyle(document.getElementById("settingsFullscreenBtn")).display!=="none"
                   }
                 }""")
-                for key in ["band","settings","exit"]:
+                for key in ["band","settings","exit","footer"]:
                     for metric in ["x","y","w","h"]:
                         diff=abs(rects[key][metric]-rects2[key][metric])
                         assert diff<=1.1, f"Fullscreen header misaligned: {width}x{height} {mode} {key}.{metric} diff {diff:.2f}"
+                assert abs(rects["footerButton"]["h"]-rects2["footerButton"]["h"])<=1.1, "Fullscreen settings footer buttons differ from timer buttons"
+                assert rects["footerFont"]==rects2["footerFont"], "Settings footer buttons use another font size"
+                assert abs(rects2["footerQuit"]["h"]-rects["footerButton"]["h"])<=1.1, "Quit button size differs from timer buttons"
                 assert abs(rects["title"]["h"]-rects2["title"]["h"])<=1.1, "Settings heading font doesn't match club font"
                 assert rects2["closeText"]=="Timer" and rects2["visible"] and rects2["exitWired"], "Settings fullscreen header buttons misconfigured"
                 assert rects2["miniInBody"], "Miniature still inside the footer"
@@ -157,6 +165,49 @@ def main():
                 # re-entering settings. The footer label's TEXT width can
                 # then change, but its right edge and baseline must not move.
                 equal(before,afterSettings,f"{width}x{height}, {mode}, settings return",exclusions=("#round",))
+
+                # Live settings: lock both duration groups, but never the
+                # board-number display checkbox. PAIRS keep between-rounds
+                # editable. Debug unlocks both groups. Saving changes must
+                # not relaunch the current countdown or active break.
+                page.evaluate("showSettings()")
+                liveFields=page.evaluate("""() => {
+                  const byId=id=>document.getElementById(id).disabled;
+                  return {
+                    allTimes:["hours","minutes","seconds","boardMinutes","boardSeconds"].map(byId),
+                    between:byId("between"),boardNotice:byId("boardProgressNotice"),
+                    greyed:[...document.querySelectorAll(".timeEntry.liveTimingLocked")].length
+                  };
+                }""")
+                assert all(liveFields["allTimes"]) and liveFields["greyed"]==2, "Both duration settings must lock during a live session"
+                assert not liveFields["boardNotice"], "Board-number checkbox must remain clickable while running"
+                assert liveFields["between"]==(mode=="4"), "Inter-round duration lock differs from mode"
+                if mode=="2":
+                    page.evaluate("""() => {document.getElementById("between").value="45";apply()}""")
+                    assert page.evaluate("s.between===45 && st.roundBetween===45 && st.remaining===128"), "Normal PAIRS interval edit unexpectedly restarted the round"
+                    page.evaluate("showSettings()")
+                page.evaluate("""() => {document.body.classList.add("debugMode");_adu();qc(true)}""")
+                debugFields=page.evaluate("""() => ["hours","minutes","seconds","boardMinutes","boardSeconds","between","boardProgressNotice"].every(id=>!document.getElementById(id).disabled)""")
+                assert debugFields, "Debug must unlock all duration fields and checkbox"
+                page.evaluate("""() => {
+                  document.getElementById("hours").value="00";
+                  document.getElementById("minutes").value="13";
+                  document.getElementById("seconds").value="00";
+                  document.getElementById("boardMinutes").value="05";
+                  read();
+                  apply();
+                }""")
+                afterDebug=page.evaluate("""() => ({
+                  remaining:st.remaining, duration:st.roundDuration,
+                  configured:s.minutes, configuredBoard:s.boardMinutes,
+                  endAt:st.endAt, phase:st.phase
+                })""")
+                assert afterDebug["remaining"]==128 and afterDebug["duration"]==3600 and afterDebug["configured"]==13 and afterDebug["configuredBoard"]==5, f"Debug caused hidden restart: {afterDebug}"
+                page.evaluate("""() => {document.body.classList.remove("debugMode");showSettings()}""")
+                liveRestored=page.evaluate("document.getElementById('minutes').disabled&&document.getElementById('boardMinutes').disabled")
+                assert liveRestored, "Disabling Debug must restore the live duration locks"
+                page.evaluate("showTimer()")
+
                 oldRound,newRound=before["#round"],afterSettings["#round"]
                 assert abs((oldRound[0]+oldRound[2])-(newRound[0]+newRound[2]))<0.1, "Round label right anchor moved"
                 assert oldRound[1]==newRound[1] and oldRound[3:]==newRound[3:], "Round label baseline or typography moved"
