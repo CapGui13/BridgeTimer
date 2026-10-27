@@ -436,3 +436,23 @@ homonyme du Timer. En plein écran, le texte de sortie existant reste
 et l'espace réservé n'a pas été ajouté deux fois. Tests de coordonnées
 pour sept tailles de fenêtre et les deux modes de tournoi. Aucun autre
 panneau ne doit être retouché.
+
+
+## Retour initial et barre inférieure fenêtrée (27/10/2026)
+
+- Au démarrage de l'application, **aucune séance n'a commencé** :
+  masquer (visibilité et interaction) le bouton « Retour au timer »
+  de la page Paramètres, tout en **réservant son emplacement** afin de
+  ne pas déplacer le bouton « Plein écran » à droite.
+- Dès qu'un timer a commencé, « Retour au timer » devient visible
+  dans les paramètres. Si la séance est arrêtée, il disparaît.
+- Le pied de page Paramètres en mode fenêtré reprend la hauteur physique
+  exacte des **88 unités virtuelles** du pied de page Timer, multipliées
+  par le même coefficient 16:9. Cela s'applique à l'ouverture,
+  pendant un tournoi, Match ou Paires, et après des transitions.
+- La miniature en cours reste un objet indépendant, superposé depuis
+  l'angle inférieur gauche. **Aucune min-height historique** ne peut
+  augmenter la hauteur de la barre pour loger cette miniature.
+- Boutons de pied de page : même hauteur virtuelle et même taille de
+  police que ceux du timer. Barre opaque ; pas de modification de la
+  présentation plein écran ni des commandes du chronomètre.
