@@ -156,8 +156,9 @@ var (
 	stateFileMu sync.Mutex
 	// Prevent duplicate native confirmation after an approved HTML Quitter.
 	closeApproved atomic.Bool
-	// Replaceable only in Win32 unit tests to verify X/Alt+F4 without UI.
-	nativeCloseConfirmation = confirmNativeClose
+	// Native X / Alt+F4 delivers the SAME HTML confirmation as Quitter.
+	// Set before subclassing the HWND; replaceable in Windows unit tests.
+	nativeCloseRequestHandler = func() {}
 )
 
 func showStartupError(message string) {
@@ -327,17 +328,6 @@ func applyDarkTitleBar(hwnd uintptr) {
 	setWindowPos.Call(hwnd, 0, 0, 0, 0, 0, swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
 }
 
-// Native title-bar X and Alt+F4 confirmation. Does not call WebView/COM
-// from WndProc; no JS event loop or asynchronous polling is required.
-func confirmNativeClose(hwnd uintptr) bool {
- body, _ := syscall.UTF16PtrFromString("Voulez-vous vraiment quitter Bridge Timer ?\n\nLe tournoi en cours sera interrompu.")
- title, _ := syscall.UTF16PtrFromString("Bridge Timer — Confirmer la fermeture")
- response, _, _ := messageBoxW.Call(hwnd, uintptr(unsafe.Pointer(body)), uintptr(unsafe.Pointer(title)), 0x00000024) // MB_YESNO | MB_ICONQUESTION
- return response == 6 // IDYES
-}
-
-
-
 /*
  * Stable single-view native window geometry.
  * Timer AND Settings share exactly one 16:9 CLIENT rectangle, so switching
@@ -362,15 +352,13 @@ func setNativeView(hwnd uintptr, requested string, serial int64) bool {
 }
 
 func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
-	// Window-close requests must ALWAYS cause a visible response.
-	// Previously WM_CLOSE was silently swallowed while WebView JS was expected
-	// to poll a flag; when that bridge was unavailable, clicking X did nothing.
-	// Use a synchronous native Yes/No prompt instead. The internal Quitter
-	// button still uses its own HTML dialog and calls nativeExit only after
-	// confirmation, setting closeApproved to avoid a second prompt.
+	// X and Alt+F4 trigger the existing HTML confirmation, exactly like Quitter.
+	// Dispatch is asynchronous: never call WebView COM directly from WndProc.
+	// A cancel leaves the window and the timer untouched. A confirmed HTML
+	// exit calls nativeExit, sets closeApproved and posts a second WM_CLOSE.
 	if msg == wmClose && !closeApproved.Load() {
-		if !nativeCloseConfirmation(hwnd) { return 0 }
-		closeApproved.Store(true)
+		nativeCloseRequestHandler()
+		return 0
 	}
 	// Leave WM_GETMINMAXINFO to WebView2/HINT_MIN (812 x 612). The old
 	// custom 16:9 track-height rule could override the requested minimum.
@@ -676,9 +664,16 @@ func main() {
 
 	hwnd := uintptr(w.Window())
 	applyDarkTitleBar(hwnd)
+	nativeCloseRequestHandler = func() {
+		w.Dispatch(func() {
+			w.Eval(`if(typeof q34==="function"){q34()}else{
+			window.addEventListener("DOMContentLoaded",function(){if(typeof q34==="function")q34()},{once:true})
+			}`)
+		})
+	}
 	installDarkTitleHook(hwnd)
-	// Compatibility shim for existing HTML; title-bar close requests
-	// now show their own synchronous native confirmation in WM_CLOSE.
+	// Compatibility binding retained for existing HTML. WM_CLOSE directly
+	// requests the identical on-page confirmation; no native popup.
 	if err := w.Bind("nativeConsumeCloseRequest", func() bool { return false }); err != nil {
 		log.Printf("close request legacy bind: %v", err)
 	}
