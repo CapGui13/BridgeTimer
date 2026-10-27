@@ -52,12 +52,14 @@ const (
 	wmShowWindow = 0x0018
 	wmClose = 0x0010
 	wmThemeChanged = 0x031A
+	wmGetMinMaxInfo = 0x0024
 	wmAppDarkTitle = 0x8061
 	waInactive = 0
 )
 
 type point struct{ X, Y int32 }
 type rect struct{ Left, Top, Right, Bottom int32 }
+type minMaxInfo struct { PtReserved, PtMaxSize, PtMaxPosition, PtMinTrackSize, PtMaxTrackSize point }
 type windowPlacement struct {
 	Length uint32
 	Flags uint32
@@ -121,6 +123,8 @@ var (
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 	setProcessDPIAware = user32.NewProc("SetProcessDPIAware")
 	getWindowRect = user32.NewProc("GetWindowRect")
+	getClientRect = user32.NewProc("GetClientRect")
+	isZoomed = user32.NewProc("IsZoomed")
 	createMutexW = kernel32.NewProc("CreateMutexW")
 	closeHandle = kernel32.NewProc("CloseHandle")
 	setThreadExecutionState = kernel32.NewProc("SetThreadExecutionState")
@@ -129,6 +133,13 @@ var (
 
 	fullscreenMu sync.Mutex
 	fullscreen bool
+	// Settings keeps its original native height. Timer needs a 16:9 CLIENT
+	// area; resizing the native window is the only way to avoid letterboxing
+	// without distorting the same 1600x900 timer layout.
+	timerViewActive atomic.Bool
+	viewRequestSerial int64
+	settingsWindowRect rect
+	settingsWindowRectValid bool
 	savedStyle uintptr
 	savedPlace windowPlacement
 
@@ -323,6 +334,97 @@ func confirmUnresponsiveExit(hwnd uintptr) bool {
 	return response == 6 // IDYES
 }
 
+
+/*
+ * Stable two-view native window geometry (27 October 2026).
+ * - Settings opens and remains at 960x720. Never shrink it.
+ * - Timer keeps the SAME 1600x900 HTML design, but its *native client
+ *   rectangle* becomes 16:9 by adjusting outer WINDOW height, not CSS.
+ * - Preserve the outer-window width and vertical center; retain an exact
+ *   snapshot of the previous settings rectangle for the return trip.
+ * - Native fullscreen is left completely to toggleNativeFullscreen.
+ * - Calls carry a serial so a late asynchronous WebView2 response cannot
+ *   revert a more recent view selection.
+ */
+func timerWindowOuterHeight(outerHeight, clientWidth, clientHeight int32) int32 {
+	if outerHeight <= 0 || clientWidth <= 0 || clientHeight <= 0 {
+		return outerHeight
+	}
+	targetClientHeight := (clientWidth*9 + 8)/16 // nearest integer at 16:9
+	nonClientHeight := outerHeight - clientHeight
+	return targetClientHeight + nonClientHeight
+}
+
+func setNativeView(hwnd uintptr, requested string, serial int64) bool {
+	if requested != "timer" && requested != "settings" {
+		return false
+	}
+	fullscreenMu.Lock()
+	defer fullscreenMu.Unlock()
+	if serial <= viewRequestSerial {
+		return false
+	}
+	viewRequestSerial = serial
+	timer := requested == "timer"
+	previous := timerViewActive.Load()
+	timerViewActive.Store(timer)
+	if fullscreen {
+		// The original pre-fullscreen dimensions are saved in savedPlace;
+		// JS repeats this request after leaving fullscreen.
+		return true
+	}
+	zoomed, _, _ := isZoomed.Call(hwnd)
+	if zoomed != 0 {
+		return true
+	}
+	var windowRect, clientRect rect
+	okWindow, _, _ := getWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&windowRect)))
+	okClient, _, _ := getClientRect.Call(hwnd, uintptr(unsafe.Pointer(&clientRect)))
+	if okWindow == 0 || okClient == 0 {
+		return false
+	}
+	oldWidth := windowRect.Right - windowRect.Left
+	oldHeight := windowRect.Bottom - windowRect.Top
+	target := windowRect
+	if timer {
+		if !previous || !settingsWindowRectValid {
+			settingsWindowRect = windowRect
+			settingsWindowRectValid = true
+		}
+		targetHeight := timerWindowOuterHeight(oldHeight,
+			clientRect.Right-clientRect.Left,
+			clientRect.Bottom-clientRect.Top)
+		if targetHeight < 200 || targetHeight > 10000 {
+			return false
+		}
+		target.Top = windowRect.Top + (oldHeight-targetHeight)/2
+		target.Bottom = target.Top + targetHeight
+	} else if settingsWindowRectValid {
+		target = settingsWindowRect
+		// Retain the user's current horizontal position if they moved
+		// the timer window. The settings size itself is restored exactly.
+		target.Left = windowRect.Left
+		target.Right = windowRect.Left + (settingsWindowRect.Right-settingsWindowRect.Left)
+		targetHeight := settingsWindowRect.Bottom-settingsWindowRect.Top
+		target.Top = windowRect.Top + (oldHeight-targetHeight)/2
+		target.Bottom = target.Top + targetHeight
+	} else {
+		return true
+	}
+	newWidth := target.Right - target.Left
+	newHeight := target.Bottom - target.Top
+	if newWidth == oldWidth && newHeight == oldHeight {
+		return true
+	}
+	ok, _, _ := setWindowPos.Call(hwnd, 0,
+		uintptr(target.Left),uintptr(target.Top),uintptr(newWidth),uintptr(newHeight),
+		swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
+	if ok != 0 {
+		log.Printf("native view %s: %dx%d -> %dx%d",requested,oldWidth,oldHeight,newWidth,newHeight)
+	}
+	return ok != 0
+}
+
 func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 	// The native X / Alt+F4 must not destroy the WebView before the HTML
 	// confirmation. Never invoke COM/WebView code from this Windows callback.
@@ -343,6 +445,30 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 			return 0
 		}
 		closeApproved.Store(true)
+	}
+	if msg == wmGetMinMaxInfo {
+		// WebView2's initial HintMin is 960x720 for the settings screen.
+		// While showing the timer, the minimum permitted native height
+		// follows the 16:9 client width instead of retaining the 720 hint.
+		var result uintptr
+		if originalWndProc != 0 {
+			result, _, _ = callWindowProcW.Call(originalWndProc, hwnd, msg, wp, lp)
+		}
+		if timerViewActive.Load() && lp != 0 {
+			mm := (*minMaxInfo)(unsafe.Pointer(lp))
+			var wr, cr rect
+			ow, _, _ := getWindowRect.Call(hwnd,uintptr(unsafe.Pointer(&wr)))
+			oc, _, _ := getClientRect.Call(hwnd,uintptr(unsafe.Pointer(&cr)))
+			if ow != 0 && oc != 0 {
+				frameW := (wr.Right-wr.Left)-(cr.Right-cr.Left)
+				frameH := (wr.Bottom-wr.Top)-(cr.Bottom-cr.Top)
+				minClientW := mm.PtMinTrackSize.X-frameW
+				if minClientW > 0 {
+					mm.PtMinTrackSize.Y = (minClientW*9+8)/16+frameH
+				}
+			}
+		}
+		return result
 	}
 	switch msg {
 	case wmActivate:
@@ -637,6 +763,8 @@ func main() {
 		showStartupError("Bridge Timer ne peut pas initialiser Microsoft Edge WebView2.\n\nVérifie que le runtime WebView2 est installé sur Windows.")
 		return
 	}
+	// The settings opening size is the 960x720 minimum; the native wndproc
+	// dynamically relaxes only the timer height to preserve 16:9 client geometry.
 	// The native opening size is also the minimum resizable size.
 	// The window may still be enlarged or maximized normally.
 	w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)
@@ -663,6 +791,11 @@ func main() {
 		return posted != 0
 	}); err != nil {
 		log.Printf("exit bind: %v", err)
+	}
+	if err := w.Bind("nativeSetView", func(mode string, serial int64) bool {
+		return setNativeView(hwnd,mode,serial)
+	}); err != nil {
+		log.Printf("native view bind: %v", err)
 	}
 	if err := w.Bind("nativeFullscreen", func() bool {
 		return toggleNativeFullscreen(hwnd)
