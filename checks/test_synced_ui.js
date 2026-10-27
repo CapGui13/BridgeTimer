@@ -637,7 +637,7 @@ assert.ok(html.includes('$( "submsg" )')===false ||
    return lines*size*1.08;
   }});
   const timer={clientWidth:1600,classList:{contains:c=>c===kind}};
-  const sandbox={ $:id=>id==='msg'?e:timer,Math };
+  const sandbox={ $:id=>id==='msg'?e:timer,Math,lrf:'' };
   vm.runInNewContext('(function q38(){'+found[1]+'\n})',sandbox)();
   return {font:e.style.fontSize,whitespace:e.style.whiteSpace};
  }
