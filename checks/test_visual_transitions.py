@@ -52,6 +52,7 @@ def main():
             }"""), "Settings temporary-message field did not select all content on click"
             page.evaluate("""() => {
               document.getElementById("quickMessage").value="";
+              document.activeElement.blur();
             }""")
             page.evaluate("""() => {
               window.__viewCalls=[];
