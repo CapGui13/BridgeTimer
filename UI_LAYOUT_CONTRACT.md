@@ -319,3 +319,21 @@ bandes vides. Le **correctif natif**, pas une modification CSS, préserve :
 Ne jamais corriger le letterboxing en réduisant le format de **toute**
 l'application ou en déformant la maquette. Ne jamais modifier la géométrie
 native en fonction du changement de tour, du saut, du chrono ou d'un thème.
+
+
+## Touche M et champ du message temporaire (27/10/2026)
+
+- Lorsqu'un message temporaire est effectivement **visible** pendant un tour ou
+  un changement de tour, un premier appui bref sur **M** le masque immédiatement.
+  Le message enregistré n'est ni supprimé ni modifié, et aucun formulaire ne
+  doit apparaître à cet appui.
+- Seul un **deuxième appui distinct** sur M ouvre le formulaire de message, déjà
+  prérempli avec le texte enregistré. L'auto-répétition de touche n'ouvre pas
+  de formulaire accidentellement. Le bouton « Message » adopte le même geste.
+- Si aucun message temporaire n'est affiché, M ouvre directement le formulaire
+  (comportement antérieur). Si le formulaire est ouvert, le bouton Message le
+  referme comme auparavant.
+- Dans les paramètres, le clic ou l'entrée dans le champ « Message temporaire »
+  sélectionne immédiatement l'intégralité du texte existant pour remplacement.
+- Toute cette logique est indépendante des modes d'écran et de la géométrie
+  des bandeaux. Préserver les contrôles visuels précédents.
