@@ -29,6 +29,20 @@ def equal(before, after, context, exclusions=()):
 def phase(page, p):
     page.evaluate("p=>{st.phase=p;st.remaining=10;st.breakDuration=30;render()}",p)
 
+def check_footer_balance(page, scenario):
+    """The side gaps measured FROM the fixed labels must match to <= 1.1 px."""
+    d=page.evaluate("""() => {
+      const rect=id=>document.querySelector(id).getBoundingClientRect();
+      const time=rect('#localTime'),round=rect('#round'),buttons=rect('#timer .controls');
+      const scale=Number(document.querySelector('#timer').style.getPropertyValue('--stage-scale'))||1;
+      return {left:buttons.left-time.right,right:round.left-buttons.right,
+        gap:round.left-time.right,buttonsWidth:buttons.width,
+        centerDelta:(buttons.left+buttons.right-time.right-round.left)/2,
+        scale};
+    }""")
+    assert abs(d["left"]-d["right"])<=1.1, f"{scenario}: unbalanced footer gaps: {d}"
+    assert d["left"]>3 and d["right"]>3, f"{scenario}: buttons overlap permanent labels: {d}"
+
 def main():
     errors=[]
     with sync_playwright() as pw:
@@ -114,6 +128,13 @@ def main():
                     document.getElementById('settings').classList.add('hidden');
                     document.getElementById('timer').classList.remove('hidden');render();
                 }""", mode)
+                check_footer_balance(page, f"{width}x{height}, {mode}, initial")
+                # Test a 2-digit round number: the changing round label width
+                # must automatically recenter buttons within the FREE span.
+                page.evaluate("""() => {st.pos=12;s.positions=18;render()}""")
+                check_footer_balance(page, f"{width}x{height}, {mode}, 12/18")
+                page.evaluate("""() => {st.pos=2;s.positions=6;render()}""")
+                check_footer_balance(page, f"{width}x{height}, {mode}, 2/6")
                 before=measure(page)
                 # Windowed settings header must have the SAME computed height
                 # as the existing timer band, without changing timer geometry.
@@ -191,7 +212,8 @@ def main():
                 assert abs(settingsHeader["footer"]["y"]+settingsHeader["footer"]["h"]-(height-stageBottom))<=1.1, "Windowed settings footer must align with timer stage bottom"
                 page.evaluate("showTimer()")
                 afterWindowedSettings=measure(page)
-                equal(before,afterWindowedSettings,f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round",))
+                equal(before,afterWindowedSettings,f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round","#timer .controls"))
+                check_footer_balance(page, f"{width}x{height}, {mode}, return from Settings")
                 # In PAIRS, settings may legitimately re-evaluate the number of rounds.
                 # Check that its right anchor stays fixed, then use the NEW
                 # text width as baseline for all later phase comparisons.
@@ -222,7 +244,8 @@ def main():
                 phaseNativeCount=page.evaluate("window.__viewCalls.length")
                 for p in phases:
                     phase(page,p)
-                    equal(before,measure(page),f"{width}x{height}, {mode}, {p}")
+                    equal(before,measure(page),f"{width}x{height}, {mode}, {p}",exclusions=("#timer .controls",))
+                    check_footer_balance(page, f"{width}x{height}, {mode}, phase {p}")
                     if p in ("break","jump"):
                         col=page.evaluate("getComputedStyle(document.getElementById('timer')).backgroundColor")
                         assert col==background, "Transition recolored permanent bands"
@@ -234,10 +257,13 @@ def main():
                 assert page.evaluate("window.__viewCalls.length")==beforeNative, "Entering fullscreen changed native window"
                 page.evaluate("q25(false)")
                 assert page.evaluate("window.__viewCalls.at(-1).mode")=="timer", "Leaving fullscreen lost timer mode"
-                equal(before,measure(page),f"{width}x{height}, {mode}, fullscreen toggle")
+                equal(before,measure(page),f"{width}x{height}, {mode}, fullscreen toggle",exclusions=("#timer .controls",))
+                check_footer_balance(page, f"{width}x{height}, {mode}, fullscreen toggle")
+
                 # Fullscreen settings must share the EXACT 1600x900
                 # timer header geometry, despite using distinct content.
                 page.evaluate("q25(true)")
+                check_footer_balance(page, f"{width}x{height}, {mode}, real fullscreen")
                 rects=page.evaluate("""() => {
                   const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
                     return {x:r.x,y:r.y,w:r.width,h:r.height};};
@@ -279,6 +305,7 @@ def main():
                 assert rects2["miniInBody"], "Miniature still inside the footer"
                 assert abs(rects2["mini"]["x"])<0.1 and abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["viewport"]["h"])<0.1, "Miniature not pinned to bottom-left corner"
                 page.evaluate("showTimer()")
+                check_footer_balance(page, f"{width}x{height}, {mode}, return from fullscreen Settings")
                 actual=page.evaluate("""() => {
                   const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
                     return {x:r.x,y:r.y,w:r.width,h:r.height};};
@@ -293,11 +320,12 @@ def main():
                 calls=page.evaluate("window.__viewCalls.slice(-2)")
                 assert [c["mode"] for c in calls]==["settings","timer"], f"Incorrect native mode changes: {calls}"
                 assert calls[0]["serial"]<calls[1]["serial"], "Native mode requests not ordered"
+                check_footer_balance(page, f"{width}x{height}, {mode}, final settings return")
                 afterSettings=measure(page)
                 # The PAIRS format may recalculate the number of tours on
                 # re-entering settings. The footer label's TEXT width can
                 # then change, but its right edge and baseline must not move.
-                equal(before,afterSettings,f"{width}x{height}, {mode}, settings return",exclusions=("#round",))
+                equal(before,afterSettings,f"{width}x{height}, {mode}, settings return",exclusions=("#round","#timer .controls"))
 
                 # Start this independent scenario from a clean active round:
                 # earlier phase tests intentionally set 10 seconds and ended.
