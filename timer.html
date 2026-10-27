@@ -498,10 +498,12 @@ function updateStage(){
  root.style.setProperty('--stage-top',(singlePreview?(innerHeight-(h+previewToolbar)*k)/2+previewToolbar*k:(innerHeight-h*k)/2)+'px');
  root.style.setProperty('--stage-scale',k);
  // Share exactly the stage origin/scale with the full-screen settings header.
- const docRoot=document.documentElement;
- docRoot.style.setProperty('--settings-stage-left',root.style.getPropertyValue('--stage-left'));
- docRoot.style.setProperty('--settings-stage-top',root.style.getPropertyValue('--stage-top'));
- docRoot.style.setProperty('--settings-stage-scale',k);
+ const docRoot=typeof document==="undefined"?null:document.documentElement;
+ if(docRoot){
+  docRoot.style.setProperty('--settings-stage-left',root.style.getPropertyValue('--stage-left'));
+  docRoot.style.setProperty('--settings-stage-top',root.style.getPropertyValue('--stage-top'));
+  docRoot.style.setProperty('--settings-stage-scale',k);
+ }
  root.style.setProperty('--timer-vw',w/100+'px');
  root.style.setProperty('--timer-vh',h/100+'px');
  C=null;
