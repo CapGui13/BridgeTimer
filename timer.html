@@ -338,6 +338,31 @@ body.fs.settingsLive #settings .actions{
  backdrop-filter:none!important;
  -webkit-backdrop-filter:none!important;
 }
+
+/* 27/10/2026 — Windowed settings title band follows the slim timer header.
+   Scope STRICTLY to the non-fullscreen settings: fullscreen's exact 1600x900
+   synchronization, native 16:9 window, timer and footer are unchanged. */
+body:not(.fs) #settings .wrap{padding-top:0}
+body:not(.fs) #settings .wrap>.head{
+ box-sizing:border-box;
+ height:var(--settings-window-top-height,42px);
+ min-height:0;
+ padding:0 12px;
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ border-bottom:1px solid var(--line);
+}
+body:not(.fs) #settings .wrap>.head h1{
+ margin:0;
+ font-size:var(--settings-window-title-font-size,21px);
+ line-height:1.12;
+ font-weight:950;
+ white-space:nowrap;
+}
+body:not(.fs) #settings .wrap>.head .settingsHeaderActions{display:flex;align-items:center}
+body:not(.fs) #settings .wrap>.head #drawerClose{
+ font-size:clamp(11px,var(--settings-window-button-font-size,12px),14px);
+ padding:5px 10px;line-height:1.25;white-space:nowrap;
+}
 </style></head><body><section id="settings"><div class="wrap"><div class="head"><div><h1>Bridge Timer</h1></div><div class="settingsHeaderActions"><button id="drawerClose" class="btn drawerClose">Retour</button><button id="settingsFullscreenBtn" class="btn" type="button">Quitter plein écran</button></div></div><div class="card tournamentCard"><h2>Tournoi</h2><div class="grid"><div class="pairConfigRow"><div class="inlineSetting"><label>Format</label><select id="mode" class="compactSelect"><option value="4" selected>Match par 4</option><option value="2">Paires</option></select></div><div class="inlineSetting pairOnly"><label>Nb de paires</label><input id="pairCount" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="6" max="36" value="12"></div><div class="inlineSetting pairOnly"><label>Mouvement</label><select id="movement" class="movementSelect"></select></div><div id="jumpRoundSetting" class="inlineSetting pairOnly"><label>Saut après tour</label><input id="jumpRound" class="compactNumber" type="text" value="—" disabled><button id="jumpMsgBtn" class="btn primary jumpMsgBtn hidden" type="button" aria-haspopup="dialog" aria-controls="jumpMsgOverlay" aria-expanded="false" title="Configurer les messages du saut">MSG</button></div></div><div class="tournamentBlockGap"></div><div class="roundConfigRow"><div class="inlineSetting"><label>Nb de tours</label><input id="positions" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="1" max="99" value="6"><select id="positionsSelect" class="compactNumber roundCountSelect hidden"></select></div><div class="inlineSetting boardsInline"><label>Donnes par tour</label><input id="boards" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="1" max="99" value="4"></div><div class="inlineSetting startInline"><label>Tour de départ</label><input id="startPosition" class="compactNumber" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="1" value="1"></div></div><div class="tournamentBlockGap"></div><div id="timingLayout" class="timingLayout">
 <div class="timeEntry durationSetting"><label for="hours"><span class="mp4TimeTitle">Temps par match</span><span class="tppTimeTitle">Temps par tour</span></label><div class="row3"><div class="unitField"><input id="hours" type="text" inputmode="numeric" data-numeric="int" pattern="[0-9]*" maxlength="2" min="0" max="12" value="00"><span class="unit">H</span></div><div class="unitField"><input id="minutes" type="tel" min="0" max="59" value="07"><span class="unit">M</span></div><div class="unitField"><input id="seconds" type="tel" min="0" max="59" value="00"><span class="unit">S</span></div></div></div>
 <div class="timeEntry boardTimeSetting"><label for="boardMinutes">Temps par donne</label><div class="row2"><div class="unitField"><input id="boardMinutes" type="tel" min="0" max="60" value="07"><span class="unit">M</span></div><div class="unitField"><input id="boardSeconds" type="tel" min="0" max="59" value="30"><span class="unit">S</span></div></div></div>
@@ -530,6 +555,12 @@ function cacheSettingsHeaderGeometry(){
  const scale=Number(t.style.getPropertyValue("--stage-scale"))||1;
  const root=document.documentElement;
  root.style.setProperty("--settings-top-height",(bar.getBoundingClientRect().height/scale)+"px");
+ // Windowed settings inherits the ACTUAL visible timer header height;
+ // removing the old .wrap top padding avoids a second empty title band.
+ root.style.setProperty("--settings-window-top-height",bar.getBoundingClientRect().height+"px");
+ root.style.setProperty("--settings-window-title-font-size",(parseFloat(getComputedStyle(title).fontSize)*scale)+"px");
+ const sourceHeaderButton=$("settingsBtn");
+ if(sourceHeaderButton)root.style.setProperty("--settings-window-button-font-size",(parseFloat(getComputedStyle(sourceHeaderButton).fontSize)*scale)+"px");
  root.style.setProperty("--settings-title-height",(title.getBoundingClientRect().height/scale)+"px");
  const footer=t.querySelector(".bottom"),control=t.querySelector(".controls .btn");
  if(footer&&control&&footer.getClientRects().length&&control.getClientRects().length){
@@ -620,6 +651,11 @@ function updateStage(){
   docRoot.style.setProperty('--settings-stage-left',root.style.getPropertyValue('--stage-left'));
   docRoot.style.setProperty('--settings-stage-top',root.style.getPropertyValue('--stage-top'));
   docRoot.style.setProperty('--settings-stage-scale',k);
+  // Windowed settings title band follows the same homothetic header size
+  // as the timer. This is only a fallback until the actual timer is measured.
+  docRoot.style.setProperty('--settings-window-top-height',(82*k)+'px');
+  docRoot.style.setProperty('--settings-window-title-font-size',(40*k)+'px');
+  docRoot.style.setProperty('--settings-window-button-font-size',(18*k)+'px');
   docRoot.style.setProperty('--settings-stage-bottom',Math.max(0,innerHeight-(innerHeight-h*k)/2-h*k)+'px');
  }
  root.style.setProperty('--timer-vw',w/100+'px');
