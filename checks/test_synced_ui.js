@@ -1078,4 +1078,19 @@ for(const required of [
  '$("settingsFullscreenBtn").textContent=on?"Quitter plein écran":"Plein écran";',
  '$("settingsFullscreenBtn").onclick=fs;'
 ]) assert.ok(html.includes(required),'Windowed Settings header button alignment: '+required);
+// Startup return is never displayed without a session; leave its slot
+// reserved so the Plein écran button stays at exactly the same x-coordinate.
+for(const token of [
+ 'body:not(.settingsLive) #settings .wrap>.head #drawerClose{',
+ 'visibility:hidden!important;pointer-events:none!important;',
+ 'body:not(.fs).settingsLive #settings .actions{',
+ 'height:var(--settings-bottom-height,88px)!important;',
+ 'min-height:var(--settings-bottom-height,88px)!important;',
+ 'max-height:var(--settings-bottom-height,88px)!important;',
+ 'transform:scale(var(--settings-stage-scale,.5))!important;',
+ 'body:not(.fs).settingsLive #settings .actions .settingsActionButtons{',
+ 'body:not(.fs) #settings .actions #quitAppBtn,',
+])assert.ok(html.includes(token),'Startup return/footer regression: '+token);
+assert.ok(html.includes('<button id="drawerClose" class="btn drawerClose">Retour au timer</button>'),
+ 'Startup return must not have legacy ambiguous Retour text');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
