@@ -36,6 +36,8 @@ jobs:
         run: |
           go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.7.0
           goversioninfo -o resource_windows_amd64.syso versioninfo.json
+      - name: Windows native geometry unit tests
+        run: go test ./...
       - name: Vet
         run: go vet ./...
       - name: Build
