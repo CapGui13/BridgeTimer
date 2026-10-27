@@ -1101,4 +1101,14 @@ for(const token of [
  'padding-left:18px!important;padding-right:18px!important;',
  'margin-right:13px!important;'
 ])assert.ok(html.includes(token),'Stop button sizing/gap regression: '+token);
+// In both MP4/TPP, footer buttons must be centered between the hour's
+// right edge and the round label's left edge (not at width/2 of stage).
+for(const contract of [
+ '#timer .controls{position:absolute;left:var(--footer-controls-center,50%);',
+ 'function alignTimerFooterControls(){',
+ 'const freeCenter=(timeBounds.right+roundBounds.left)/2;',
+ 'const center=(freeCenter-bounds.left)/stageScale;',
+ 'if(debugActive())_adu();alignTimerFooterControls();fc();',
+ " root.style.setProperty('--timer-vh',h/100+'px');\n alignTimerFooterControls();"
+])assert.ok(html.includes(contract),'Footer center regression: '+contract);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
