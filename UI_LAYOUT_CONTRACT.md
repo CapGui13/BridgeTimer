@@ -517,3 +517,29 @@ Désormais, un rendu fenêtré 812×456 et les autres tailles sont comparés
 au **rendu séparé** de référence 1600×900, en normalisant leurs coordonnées
 par le facteur de scale. Cela protège les dimensions de tous les éléments
 et les polices du Timer, notamment l'heure et le numéro de tour.
+
+
+## 27/10/2026 — Audit corrections 1 et 2 (point 3 laissé inchangé)
+
+1. **Quitter / croix Windows / Alt+F4 / Échap en dehors du plein écran :**
+   ouvrir le dialogue existant `exitConfirmOverlay`, sans fermer ni modifier
+   le timer avant une confirmation explicite. **Non** ou **Échap** ferme le
+   dialogue uniquement, en conservant la séance et le temps restant.
+   La demande Win32 passe par `nativeConsumeCloseRequest` et la même
+   fonction `q34()`. `q46()` refuse toute fermeture si le dialogue n'est
+   pas ouvert. Le mécanisme de secours Win32 après 12 secondes, qui exige
+   lui aussi une réponse explicite de l'utilisateur, n'est pas modifié.
+2. **Temps entre tours en Paires :** synchroniser `s.between` et
+   `st.roundBetween` lors de *tout* retour depuis les paramètres vers
+   le timer actif (bouton Retour, bouton Timer du bas, touche F9,
+   Échap, miniature). Enregistrer les réglages avant le retour.
+   Ne jamais modifier `st.remaining`, `st.endAt`, `st.roundDuration`,
+   `st.breakDuration`, `st.phase` ou `st.running` : la valeur mise à
+   jour est utilisée pour les **prochains** changements de tour.
+3. **Comportement des durées au redémarrage :** inchangé à la demande
+   expresse de l'utilisateur. Le calcul standard `8 × temps par donne`
+   reste la source des durées du nouveau tournoi.
+
+Tests navigateur dédiés : annulation/confirmation fermeture, demande
+Win32 simulée, cinq chemins de retour, conservation exacte des champs
+chronométriques, et règle standard des huit donnes au lancement.
