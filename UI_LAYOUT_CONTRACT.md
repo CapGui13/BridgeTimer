@@ -497,3 +497,23 @@ apparente change **uniquement** par le coefficient de projection 16:9.
 Le test sous Edge compare les coordonnées **normalisées** du même timer
 fenêtré, en plein écran et de retour en fenêtre, et vérifie les cinq
 emplacements des paramètres avant/après démarrage, dans les deux formats.
+
+
+## 27/10 — Cause racine des différences visibles fenêtré/plein écran
+
+Les anciennes CSS `@media(max-width:980px)` et
+`@media(max-width:760px)` forçaient l'heure du pied de page à
+20/18 unités de police et le « TOUR x sur y » à 20/18 unités, avec
+marges de 14 au lieu de 22. Comme le stage Timer entier est déjà
+réduit homothétiquement de 1600×900 vers 812×456, ces règles réduisaient
+une **seconde fois** les deux libellés en mode fenêtré : ils devenaient
+minuscules par rapport aux boutons et au plein écran. L'override ciblé
+`#timer #localTime` et `#timer #round` rétablit les tailles virtuelles
+uniques et les positions gauche/droite à 22 unités.
+
+Les tests précédents `q25(true)` dans la même fenêtre ne pouvaient pas
+repérer l'erreur car ils ne changeaient pas la *largeur réelle* du viewport.
+Désormais, un rendu fenêtré 812×456 et les autres tailles sont comparés
+au **rendu séparé** de référence 1600×900, en normalisant leurs coordonnées
+par le facteur de scale. Cela protège les dimensions de tous les éléments
+et les polices du Timer, notamment l'heure et le numéro de tour.
