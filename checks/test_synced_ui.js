@@ -15,7 +15,7 @@ assert.ok(mainStart>=0&&footerStart>mainStart,'Timer pane/footer structure missi
 const mainPane=html.slice(mainStart,footerStart);
 assert.ok(mainPane.includes('<div id="jumpSplash"')&&mainPane.includes('id="jumpSplashBar"'),
  'Saut and CHGT must use one overlay INSIDE .main, never cover top/bottom bands');
-const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map(x=>x[1]);
+const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
 const counts = new Map(); for(const id of ids) counts.set(id,(counts.get(id)||0)+1);
 for(const id of ['settings','timer','clock','status','pauseOverlay','pause','round','sps','spg','miniTimer','tempMessageInput','messageBtn','quitAppBtn'])
   assert.equal(counts.get(id),1,`Missing/duplicate production UI element: ${id}`);
