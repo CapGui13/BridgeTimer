@@ -988,4 +988,18 @@ assert.ok(html.includes('tm.classList.remove("spa","spm");')&&html.includes('tm.
  'Gallery captures must isolate and restore preview mode classes');
 assert.ok(html.includes('$("timer").classList.remove("spm","spa");'),
  'Returning from screen tests must restore the standard stage classes');
+// Windows frame-vs-client size must be adapted on entry to the timer,
+// not by shrinking the native SETTINGS opening size.
+assert.ok(nativeSource.includes('func timerWindowOuterHeight('),'Missing native frame/client aspect fix');
+assert.ok(nativeSource.includes('getClientRect = user32.NewProc("GetClientRect")'),'Native geometry must use real client dimensions');
+assert.ok(nativeSource.includes('w.Bind("nativeSetView"'),'Missing JS/native screen-mode binding');
+assert.ok(nativeSource.includes('case wmActivate:')&&nativeSource.includes('if msg == wmGetMinMaxInfo'),'Timer-specific native minimum not installed');
+assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),
+ 'Both views must request their distinct native dimensions');
+assert.ok(html.includes('if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer")'),
+ 'Native window must be corrected after leaving fullscreen');
+assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,
+ 'Timer native resize must occur on view change, never on a phase change');
+assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,1,
+ 'Settings native restoration must occur on view change');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
