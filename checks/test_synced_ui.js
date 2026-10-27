@@ -260,7 +260,7 @@ assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Restored opening/mi
 assert.ok(/defaultWindowHeight\s*=\s*612/.test(nativeSource),'Restored opening/minimum window must be 612 pixels tall');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
-assert.ok(nativeSource.includes('if !confirmNativeClose(hwnd) { return 0 }'),
+assert.ok(nativeSource.includes('if !nativeCloseConfirmation(hwnd) { return 0 }'),
   'Native X / Alt+F4 must visibly confirm instead of silently consuming WM_CLOSE');
 assert.ok(nativeSource.includes('closeApproved.Store(true)'),
   'An approved HTML quit must bypass the second native confirmation');
