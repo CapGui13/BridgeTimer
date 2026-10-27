@@ -156,6 +156,8 @@ var (
 	stateFileMu sync.Mutex
 	// Prevent duplicate native confirmation after an approved HTML Quitter.
 	closeApproved atomic.Bool
+	// Replaceable only in Win32 unit tests to verify X/Alt+F4 without UI.
+	nativeCloseConfirmation = confirmNativeClose
 )
 
 func showStartupError(message string) {
@@ -367,7 +369,7 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 	// button still uses its own HTML dialog and calls nativeExit only after
 	// confirmation, setting closeApproved to avoid a second prompt.
 	if msg == wmClose && !closeApproved.Load() {
-		if !confirmNativeClose(hwnd) { return 0 }
+		if !nativeCloseConfirmation(hwnd) { return 0 }
 		closeApproved.Store(true)
 	}
 	// Leave WM_GETMINMAXINFO to WebView2/HINT_MIN (812 x 612). The old
