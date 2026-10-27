@@ -2,6 +2,12 @@ package main
 
 import "testing"
 
+func TestDefaultWindowSameRatioOnBothScreens(t *testing.T) {
+ if defaultWindowWidth!=960 || defaultWindowHeight!=570 {
+  t.Fatalf("Settings and Timer must share one 16:9 native default: got %dx%d",defaultWindowWidth,defaultWindowHeight)
+ }
+}
+
 func TestTimerWindowOuterHeight(t *testing.T) {
 	tests := []struct {
 		name string
