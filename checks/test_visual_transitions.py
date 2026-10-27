@@ -43,6 +43,45 @@ def check_footer_balance(page, scenario):
     assert abs(d["left"]-d["right"])<=1.1, f"{scenario}: unbalanced footer gaps: {d}"
     assert d["left"]>3 and d["right"]>3, f"{scenario}: buttons overlap permanent labels: {d}"
 
+
+FIXED_BUTTON_IDS = ["fresh","stopTimer","defaults","debugBtn","spb"]
+
+def settings_button_slots(page):
+    return page.evaluate("""ids => Object.fromEntries(ids.map(id => {
+      const b=document.getElementById(id),r=b.getBoundingClientRect(),s=getComputedStyle(b);
+      return [id,{x:r.x,y:r.y,w:r.width,h:r.height,display:s.display,visible:s.visibility}];
+    }))""", FIXED_BUTTON_IDS)
+
+def assert_stable_settings_slots(a,b,label):
+    for id in FIXED_BUTTON_IDS:
+        for dimension in ("x","y","w","h"):
+            delta=abs(a[id][dimension]-b[id][dimension])
+            assert delta<=1.1, f"{label}: {id}.{dimension} shifted by {delta:.2f}: {a[id]} -> {b[id]}"
+
+def stage_visual_geometry(page):
+    """Normalized 1600x900 stage geometry, independent of viewport and fullscreen."""
+    selectors=[
+      "#timer .top","#timer .bottom","#status","#clock","#club",
+      "#localTime","#round","#timer .controls","#minus","#pause",
+      "#plus","#next","#resetRound","#settingsBtn","#fsBtn"
+    ]
+    return page.evaluate("""selectors => {
+      const t=document.getElementById("timer"),stage=t.getBoundingClientRect();
+      const k=Number(t.style.getPropertyValue("--stage-scale"))||1;
+      return Object.fromEntries(selectors.map(q=>{
+        const el=document.querySelector(q),r=el.getBoundingClientRect(),c=getComputedStyle(el);
+        return [q,{x:(r.x-stage.x)/k,y:(r.y-stage.y)/k,
+          w:r.width/k,h:r.height/k,font:parseFloat(c.fontSize),padding:c.padding}];
+      }));
+    }""",selectors)
+
+def assert_same_stage_geometry(a,b,label):
+    for sel in a:
+        for dimension in ("x","y","w","h","font"):
+            delta=abs(a[sel][dimension]-b[sel][dimension])
+            assert delta<=1.1, f"{label}: {sel}.{dimension} changed by {delta:.2f}: {a[sel]} -> {b[sel]}"
+        assert a[sel]["padding"]==b[sel]["padding"], f"{label}: {sel} padding changed: {a[sel]} -> {b[sel]}"
+
 def main():
     errors=[]
     with sync_playwright() as pw:
@@ -68,6 +107,10 @@ def main():
                   return parts.length===3||(parts.length===4&&Number(parts[3])===1);
                 }""")
             assert solid_settings_footer(), "Windowed Settings footer must be fully opaque"
+            initial_slots=settings_button_slots(page)
+            for id in FIXED_BUTTON_IDS:
+                assert initial_slots[id]["display"]!="none" and initial_slots[id]["w"]>5, f"Slot absent at startup: {id}={initial_slots[id]}"
+            assert initial_slots["stopTimer"]["visible"]=="hidden", "Arrêter must be invisible but RESERVE its slot at startup"
             # Nothing exists to return to until the first session is launched.
             assert page.evaluate("""() => {
               const b=document.getElementById("drawerClose"),s=getComputedStyle(b);
@@ -129,6 +172,15 @@ def main():
                     document.getElementById('timer').classList.remove('hidden');render();
                 }""", mode)
                 check_footer_balance(page, f"{width}x{height}, {mode}, initial")
+                before_mode=stage_visual_geometry(page)
+                page.evaluate("q25(true)")
+                in_fullscreen=stage_visual_geometry(page)
+                assert_same_stage_geometry(before_mode,in_fullscreen,
+                    f"{width}x{height}, {mode}, virtual 1600x900 fullscreen vs windowed")
+                page.evaluate("q25(false)")
+                after_fullscreen=stage_visual_geometry(page)
+                assert_same_stage_geometry(before_mode,after_fullscreen,
+                    f"{width}x{height}, {mode}, virtual 1600x900 round-trip")
                 # Test a 2-digit round number: the changing round label width
                 # must automatically recenter buttons within the FREE span.
                 page.evaluate("""() => {st.pos=12;s.positions=18;render()}""")
@@ -146,6 +198,10 @@ def main():
                     band:box("#timer .top"),settings:box("#settingsBtn"),exit:box("#fsBtn")};
                 }""")
                 page.evaluate("showSettings()")
+                live_slots=settings_button_slots(page)
+                assert_stable_settings_slots(initial_slots,live_slots,
+                    f"{width}x{height} {mode} Lancer -> Timer, Arrêter appears")
+                assert live_slots["stopTimer"]["visible"]=="visible", "Arrêter should be visible in a live session"
                 settingsHeader=page.evaluate("""() => {
                   const e=document.querySelector("#settings .wrap>.head");
                   const r=e.getBoundingClientRect(),c=getComputedStyle(e);
@@ -210,6 +266,10 @@ def main():
                 assert abs(settingsHeader["footerButton"]["h"]-timerFooter["buttonHeight"])<=1.1, "Windowed settings buttons must match timer button height"
                 stageBottom=page.evaluate("""() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--settings-stage-bottom"))||0""")
                 assert abs(settingsHeader["footer"]["y"]+settingsHeader["footer"]["h"]-(height-stageBottom))<=1.1, "Windowed settings footer must align with timer stage bottom"
+                page.evaluate("showTimer()")
+                page.evaluate("showSettings()")
+                assert_stable_settings_slots(initial_slots,settings_button_slots(page),
+                    f"{width}x{height} {mode} settings return")
                 page.evaluate("showTimer()")
                 afterWindowedSettings=measure(page)
                 equal(before,afterWindowedSettings,f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round","#timer .controls"))
