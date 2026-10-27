@@ -1062,7 +1062,7 @@ for(const rule of [
  'font-size:40px;line-height:var(--settings-title-height,55px);',
  'root.style.setProperty("--settings-window-title-height",title.getBoundingClientRect().height+"px");',
  'root.style.setProperty("--settings-window-top-height",bar.getBoundingClientRect().height+"px");',
- 'docRoot.style.setProperty(\'--settings-window-top-height\',(82*k)+\'px\');',
+ 'docRoot.style.setProperty(\'--settings-window-top-height\',(82*settingsWindowScale)+\'px\');',
 ])assert.ok(html.includes(rule),'Windowed title band regression: '+rule);
 
 /* Windowed Settings must mirror the last two actual timer-header buttons,
@@ -1150,4 +1150,16 @@ assert.ok(html.includes('st.roundBetween=Math.max(0,Number(s.between)||0);'),'Up
 assert.ok(!html.includes('function q34(){if(exitClosing)return;q46()}'),'Old unconfirmed exit must be absent');
 // The 8-board session startup defaults (audit point 3) are intentionally unchanged.
 assert.ok(html.includes('const per=Math.max(0,(+s.boardMinutes||0)*60+(+s.boardSeconds||0)),total=Math.min(43200,8*per);'),'Startup recalculation deliberately preserved');
+
+// Prevent letterbox-stage offsets from pulling windowed Settings bars away
+// from the native client top/bottom during independent X/Y resizing.
+for(const rule of [
+ "docRoot.style.setProperty('--settings-window-scale',settingsWindowScale);",
+ "body:not(.fs) #settings .wrap>.head {",
+ "left:0!important;",
+ "top:0!important;",
+ "transform:scale(var(--settings-window-scale,.5))!important;",
+ "body:not(.fs).settingsLive #settings .actions {",
+ "bottom:0!important;"
+]) assert.ok(html.includes(rule),'Settings independent window resize regression: '+rule);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
