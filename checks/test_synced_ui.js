@@ -1065,4 +1065,18 @@ for(const rule of [
  'root.style.setProperty("--settings-window-top-height",bar.getBoundingClientRect().height+"px");',
  'docRoot.style.setProperty(\'--settings-window-top-height\',(82*k)+\'px\');',
 ])assert.ok(html.includes(rule),'Windowed title band regression: '+rule);
+
+/* Windowed Settings must mirror the last two actual timer-header buttons,
+   including fullscreen access, regardless of the center column width. */
+for(const required of [
+ 'body:not(.fs) #settings .wrap>.head{',
+ 'width:1600px;height:var(--settings-top-height,82px)',
+ 'transform:scale(var(--settings-stage-scale,.5))',
+ 'body:not(.fs) #settings .wrap>.head #drawerClose{',
+ 'width:168px;min-width:168px;',
+ 'body:not(.fs) #settings .wrap>.head #settingsFullscreenBtn{',
+ 'display:inline-flex;width:246px;min-width:246px;',
+ '$("settingsFullscreenBtn").textContent=on?"Quitter plein écran":"Plein écran";',
+ '$("settingsFullscreenBtn").onclick=fs;'
+]) assert.ok(html.includes(required),'Windowed Settings header button alignment: '+required);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
