@@ -54,6 +54,19 @@ def main():
                   return parts.length===3||(parts.length===4&&Number(parts[3])===1);
                 }""")
             assert solid_settings_footer(), "Windowed Settings footer must be fully opaque"
+            # Nothing exists to return to until the first session is launched.
+            assert page.evaluate("""() => {
+              const b=document.getElementById("drawerClose"),s=getComputedStyle(b);
+              return !document.body.classList.contains("settingsLive") &&
+                s.visibility==="hidden"&&s.pointerEvents==="none";
+            }"""), "Startup shows an inactive Retour button"
+            firstFooter=page.evaluate("""() => {
+              const r=document.querySelector("#settings .actions").getBoundingClientRect();
+              const t=document.getElementById("timer"),k=Number(t.style.getPropertyValue("--stage-scale"))||1;
+              return {h:r.height,expected:88*k,actual:r.bottom,viewport:innerHeight};
+            }""")
+            assert abs(firstFooter["h"]-firstFooter["expected"])<=1.1, f"Startup footer must match timer's virtual 88px height: {firstFooter}"
+            assert abs(firstFooter["actual"]-firstFooter["viewport"])<=1.1, "Settings footer is not anchored to bottom"
             # In the real 16:9 settings viewport, fields must scroll BEHIND
             # an opaque, fixed action bar without moving the bar itself.
             initial=page.evaluate("""() => {
@@ -123,7 +136,9 @@ def main():
                     exitVisible:getComputedStyle(document.getElementById("settingsFullscreenBtn")).display!=="none",
                     exitLabel:document.getElementById("settingsFullscreenBtn").textContent,
                     isWired:document.getElementById("settingsFullscreenBtn").onclick===fs,
-                    closeLabel:document.getElementById("drawerClose").textContent};
+                    closeLabel:document.getElementById("drawerClose").textContent,
+                    returnVisibility:getComputedStyle(document.getElementById("drawerClose")).visibility,
+                    footer:box("#settings .actions"),footerButton:box("#fresh")};
                 }""")
                 assert abs(timerHeader["height"]-settingsHeader["height"])<=1.1, f"Windowed Settings header too tall: {width}x{height} {mode} {timerHeader} / {settingsHeader}"
                 assert abs(timerHeader["title"]-settingsHeader["title"])<=4, f"Windowed title sizes diverged: {timerHeader} / {settingsHeader}"
@@ -133,7 +148,18 @@ def main():
                         delta=abs(timerHeader[key][metric]-settingsHeader[key][metric])
                         assert delta<=1.1, f"Windowed Settings button not aligned: {width}x{height} {mode} {key}.{metric}: {delta:.2f}"
                 assert settingsHeader["exitVisible"] and settingsHeader["exitLabel"]=="Plein écran" and settingsHeader["isWired"], "Missing working fullscreen button in windowed Settings"
-                assert settingsHeader["closeLabel"]=="Retour au timer", "Wrong windowed return button label"
+                assert settingsHeader["closeLabel"]=="Retour au timer" and settingsHeader["returnVisibility"]=="visible", "Live windowed return button must be visible"
+                timerFooter=page.evaluate("""() => {
+                  const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
+                    return {x:r.x,y:r.y,w:r.width,h:r.height};};
+                  // Timer hidden; its previous projected geometry matches
+                  // the stage scale and 88px virtual footer height.
+                  const t=document.getElementById("timer"),k=Number(t.style.getPropertyValue("--stage-scale"))||1;
+                  return {height:88*k,buttonHeight:Number(document.documentElement.style.getPropertyValue("--settings-bottom-button-height").replace("px",""))*k};
+                }""")
+                assert abs(settingsHeader["footer"]["h"]-timerFooter["height"])<=1.1, f"Windowed live Settings footer must be same height as timer: {width}x{height} {mode}"
+                assert abs(settingsHeader["footerButton"]["h"]-timerFooter["buttonHeight"])<=1.1, "Windowed settings buttons must match timer button height"
+                assert abs(settingsHeader["footer"]["y"]+settingsHeader["footer"]["h"]-height)<=1.1, "Windowed settings footer must align with bottom viewport"
                 page.evaluate("showTimer()")
                 afterWindowedSettings=measure(page)
                 equal(before,afterWindowedSettings,f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round",))
