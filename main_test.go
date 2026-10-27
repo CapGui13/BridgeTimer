@@ -2,34 +2,26 @@ package main
 
 import "testing"
 
-func TestDefaultWindowSameRatioOnBothScreens(t *testing.T) {
- if defaultWindowWidth!=960 || defaultWindowHeight!=570 {
-  t.Fatalf("Settings and Timer must share one 16:9 native default: got %dx%d",defaultWindowWidth,defaultWindowHeight)
+func TestOpeningAndMinimumWindowDimensions(t *testing.T) {
+ if defaultWindowWidth!=812 || defaultWindowHeight!=612 {
+  t.Fatalf("BridgeTimer must open at its original minimum 812x612, got %dx%d",defaultWindowWidth,defaultWindowHeight)
+ }
+ x,y,w,h,saved:=startupWindowGeometry()
+ if x!=0 || y!=0 || w!=812 || h!=612 || saved {
+  t.Fatalf("startup geometry must be centered at 812x612: %+v",[]any{x,y,w,h,saved})
  }
 }
 
-func TestTimerWindowOuterHeight(t *testing.T) {
-	tests := []struct {
-		name string
-		outerH int32
-		clientW int32
-		clientH int32
-		want int32
-	}{
-		{"settings 960x720, 30px frame",720,960,690,570},
-		{"user screenshot 812x612, 26px frame",612,812,586,483},
-		{"already 16x9 client",570,960,540,570},
-		{"large native window",1000,1600,970,930},
-		{"invalid",720,0,690,720},
-	}
-	for _,tc:=range tests {
-		t.Run(tc.name,func(t *testing.T) {
-			got:=timerWindowOuterHeight(tc.outerH,tc.clientW,tc.clientH)
-			if got!=tc.want {t.Fatalf("got %d, want %d",got,tc.want)}
-			clientAfter:=got-(tc.outerH-tc.clientH)
-			if tc.clientW>0 && tc.clientH>0 && clientAfter<=0 {
-				t.Fatalf("invalid resulting client height %d",clientAfter)
-			}
-		})
-	}
+func TestViewSwitchPreservesNativeGeometry(t *testing.T) {
+ // No native Win32 resize should be attempted when switching views.
+ // A zero HWND is intentionally passed: it is safe only while the
+ // view-switch implementation never calls SetWindowPos/GetWindowRect.
+ originalSerial:=viewRequestSerial
+ originalActive:=timerViewActive.Load()
+ defer func(){viewRequestSerial=originalSerial;timerViewActive.Store(originalActive)}()
+ viewRequestSerial=0
+ if !setNativeView(0,"settings",1) {t.Fatal("settings view was rejected")}
+ if !setNativeView(0,"timer",2) {t.Fatal("timer view was rejected")}
+ if setNativeView(0,"timer",1) {t.Fatal("stale view request must be rejected")}
+ if setNativeView(0,"unknown",3) {t.Fatal("unknown view must be rejected")}
 }
