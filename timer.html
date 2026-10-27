@@ -865,7 +865,10 @@ function updateStage(){
   docRoot.style.setProperty('--settings-window-title-font-size',(40*k)+'px');
   docRoot.style.setProperty('--settings-window-title-height',(53*k)+'px');
   docRoot.style.setProperty('--settings-window-button-font-size',(18*k)+'px');
-  docRoot.style.setProperty('--settings-stage-bottom',Math.max(0,innerHeight-(innerHeight-h*k)/2-h*k)+'px');
+  // Fullscreen Settings footer must follow the same actual, variable-height
+  // timer stage. The old 900px reference-height calculation left a gap
+  // after expanding the stage to eliminate letterbox strips.
+  docRoot.style.setProperty('--settings-stage-bottom',singlePreview?Math.max(0,innerHeight-((innerHeight-(h+previewToolbar)*k)/2+previewToolbar*k+h*k))+'px':'0px');
  }
  root.style.setProperty('--timer-vw',w/100+'px');
  root.style.setProperty('--timer-vh',h/100+'px');
