@@ -119,7 +119,15 @@ def main():
                 assert abs(timerHeader["title"]-settingsHeader["title"])<=4, f"Windowed title sizes diverged: {timerHeader} / {settingsHeader}"
                 assert settingsHeader["paddingTop"]==0 and settingsHeader["parentPaddingTop"]==0, "Extra windowed title padding restored"
                 page.evaluate("showTimer()")
-                equal(before,measure(page),f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round",))
+                afterWindowedSettings=measure(page)
+                equal(before,afterWindowedSettings,f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round",))
+                # In PAIRS, settings may legitimately re-evaluate the number of rounds.
+                # Check that its right anchor stays fixed, then use the NEW
+                # text width as baseline for all later phase comparisons.
+                oldRound,newRound=before["#round"],afterWindowedSettings["#round"]
+                assert abs((oldRound[0]+oldRound[2])-(newRound[0]+newRound[2]))<.1, "Round label anchor changed after settings"
+                assert oldRound[1]==newRound[1] and oldRound[3:]==newRound[3:], "Round footer typography changed after settings"
+                before=afterWindowedSettings
                 # Pressing M while a message is actually displayed must HIDE it
                 # without opening the form or erasing the saved text. A second
                 # real key press alone opens the prefilled composer.
