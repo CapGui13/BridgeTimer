@@ -365,3 +365,27 @@ des paramètres en mode fenêtré.
 - Test graphique Windows obligatoire : mêmes x/y/largeur/hauteur pour
   les en-têtes et les deux boutons en plein écran, miniature à (0, bas),
   et retour au timer et au mode fenêtré sans dérive.
+
+
+## Paramètres en tournoi démarré et pied de page plein écran (27/10/2026)
+
+- Mode Match par 4 : les champs **Temps par match** (H, M, S)
+  et **Temps par donne** (M, S) sont désactivés/grisés une fois le
+  tournoi lancé ; le bouton « Affichage n° donne en cours » reste
+  utilisable indépendamment de la cohérence des durées. Les minutes
+  supplémentaires se donnent depuis le timer.
+- Mode Paires : mêmes deux groupes de durée grisés (le premier est
+  « Temps par tour »), mais **Temps entre tours** reste modifiable
+  lorsque la séance est démarrée. L'affichage du numéro de donne reste
+  activable.
+- **Debug** réactive tous ces réglages immédiatement.
+- Les changements d'une durée de tour/match ou de donne effectués sous Debug
+  et enregistrés **ne doivent jamais réinitialiser** le tour en cours, le
+  décompte restant, l'horloge de fin native, la phase courante ni un changement
+  de tour en cours. Les nouveaux paramètres entrent en vigueur au départ du
+  **prochain tour**. Le temps entre tours s'applique aux prochaines pauses.
+- Le pied de page **Paramètres en plein écran** reprend les dimensions exactes
+  du pied de page 1600×900 du Timer, le même facteur de zoom, la taille
+  typographique de ses boutons et leur hauteur. La miniature reste
+  indépendante et au-dessus. Les paramètres en mode fenêtré et le timer
+  restent inchangés.
