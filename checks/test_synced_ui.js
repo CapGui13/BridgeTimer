@@ -1137,4 +1137,17 @@ for(const token of [
  'left:22px!important;',
  'right:22px!important;'
 ])assert.ok(html.includes(token),'Footer hour/round virtual scale regression: '+token);
+
+// Exit requires an explicit confirmation whether triggered by Quitter, Esc,
+// or the existing native WM_CLOSE -> nativeConsumeCloseRequest queue.
+assert.ok(html.includes('function q34(){\n if(exitClosing||q1d())return;'),'Quitter must present modal and be idempotent');
+assert.ok(html.includes('$("exitConfirmOverlay").classList.remove("hidden");'),'Exit modal must be visible');
+assert.ok(html.includes('async function q46(){if(exitClosing||!q1d())return;'),'Exit must not be callable without explicit confirmation');
+assert.ok(html.includes('if(e.key==="Escape"){e.preventDefault();e.stopPropagation();if(!e.repeat)q21();return}'),'Escape must cancel exit confirmation');
+assert.ok(html.includes('function commitLiveSettingsOnReturn(){'),'All return paths must sync current settings');
+assert.ok(html.includes('commitLiveSettingsOnReturn();document.body.classList.remove("dockMode"'),'Return-to-timer must commit before switching view');
+assert.ok(html.includes('st.roundBetween=Math.max(0,Number(s.between)||0);'),'Upcoming interval must be refreshed');
+assert.ok(!html.includes('function q34(){if(exitClosing)return;q46()}'),'Old unconfirmed exit must be absent');
+// The 8-board session startup defaults (audit point 3) are intentionally unchanged.
+assert.ok(html.includes('const per=Math.max(0,(+s.boardMinutes||0)*60+(+s.boardSeconds||0)),total=Math.min(43200,8*per);'),'Startup recalculation deliberately preserved');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
