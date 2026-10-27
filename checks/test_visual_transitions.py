@@ -12,7 +12,7 @@ assert marker in html
 html = html.replace(marker, '</style><script>const bridgeAuditStorage={data:{},getItem(k){return this.data[k]??null},setItem(k,v){this.data[k]=v},removeItem(k){delete this.data[k]}};</script></head><body>', 1)
 sels = ["#timer", "#timer>.top", "#timer .bottom", "#timer .identity",
         "#timer .topBtns", "#timer .controls", "#localTime", "#round", "#club"]
-viewports = [(812,500),(960,720),(1280,720),(1600,900),(1920,1080)]
+viewports = [(812,456),(812,500),(960,540),(960,720),(1280,720),(1600,900),(1920,1080)]
 phases = ["round","break","round","jump","round","roundEnd","round","ended","round"]
 
 def measure(page):
@@ -54,6 +54,27 @@ def main():
                   return parts.length===3||(parts.length===4&&Number(parts[3])===1);
                 }""")
             assert solid_settings_footer(), "Windowed Settings footer must be fully opaque"
+            # In the real 16:9 settings viewport, fields must scroll BEHIND
+            # an opaque, fixed action bar without moving the bar itself.
+            initial=page.evaluate("""() => {
+              const r=document.querySelector("#settings .actions").getBoundingClientRect();
+              return [r.x,r.y,r.width,r.height,document.documentElement.scrollHeight];
+            }""")
+            page.evaluate("window.scrollTo(0,700)")
+            afterScroll=page.evaluate("""() => {
+              const r=document.querySelector("#settings .actions").getBoundingClientRect();
+              const children=[...document.querySelector(".settingsActionButtons").children];
+              return {
+                frame:[r.x,r.y,r.width,r.height],
+                order:children.map(x=>x.id)
+              };
+            }""")
+            assert all(abs(initial[i]-afterScroll["frame"][i])<0.1 for i in range(4)), "Windowed footer moved when settings scrolled"
+            assert initial[4]>height, "Settings became non-scrollable in the shorter 16:9 viewport"
+            assert afterScroll["order"].index("fresh")<afterScroll["order"].index("stopTimer"), "Timer button must be before Arrêter"
+            assert solid_settings_footer(), "Scrolling introduced transparent footer"
+            page.evaluate("window.scrollTo(0,0)")
+
             # Input in settings selects its existing content even on a click.
             field=page.locator("#quickMessage")
             field.fill("Texte déjà enregistré")
@@ -249,7 +270,7 @@ def main():
             page.close()
         browser.close()
     assert not errors, f"JavaScript runtime errors: {errors}"
-    print("Browser visual regression OK: 5 viewport sizes, both modes, 9 phases, fullscreen and preview returns")
+    print("Browser visual regression OK: 7 viewport sizes, both modes, 9 phases, fullscreen and preview returns")
 
 if __name__=="__main__":
     main()
