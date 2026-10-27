@@ -150,6 +150,33 @@ def main():
                         assert delta<=1.1, f"Windowed Settings button not aligned: {width}x{height} {mode} {key}.{metric}: {delta:.2f}"
                 assert settingsHeader["exitVisible"] and settingsHeader["exitLabel"]=="Plein écran" and settingsHeader["isWired"], "Missing working fullscreen button in windowed Settings"
                 assert settingsHeader["closeLabel"]=="Retour au timer" and settingsHeader["returnVisibility"]=="visible", "Live windowed return button must be visible"
+
+                # "Arrêter" must fit WITHOUT clipping; its gap before Reset
+                # must exceed the ordinary gap without moving Quitter.
+                def verify_stop_button():
+                    buttons=page.evaluate("""() => {
+                      const r=id=>{const b=document.getElementById(id),p=b.getBoundingClientRect();
+                        return {x:p.x,right:p.right,w:p.width,y:p.y,h:p.height};};
+                      const b=document.getElementById("stopTimer"),txt=document.createRange();
+                      txt.selectNodeContents(b);
+                      const textRect=txt.getBoundingClientRect();
+                      return {
+                        fresh:r("fresh"),stop:r("stopTimer"),reset:r("defaults"),
+                        quit:r("quitAppBtn"),text:{x:textRect.x,right:textRect.right},
+                        visible:getComputedStyle(b).visibility,
+                        label:b.textContent.trim()
+                      };
+                    }""")
+                    assert buttons["visible"]=="visible", "Stop button hidden while timer running"
+                    assert buttons["label"]=="Arrêter", "Stop button label changed"
+                    assert buttons["text"]["x"]-buttons["stop"]["x"]>=5, f"Stop label touches left edge: {buttons}"
+                    assert buttons["stop"]["right"]-buttons["text"]["right"]>=5, f"Arrêter clipped on right edge: {buttons}"
+                    normalGap=buttons["stop"]["x"]-buttons["fresh"]["right"]
+                    largerGap=buttons["reset"]["x"]-buttons["stop"]["right"]
+                    assert largerGap>=normalGap+3, f"Missing extra gap after Arrêter: {buttons}"
+                    assert buttons["reset"]["right"]<buttons["quit"]["x"], f"Central group overlaps Quitter: {buttons}"
+                verify_stop_button()
+
                 timerFooter=page.evaluate("""() => {
                   const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
                     return {x:r.x,y:r.y,w:r.width,h:r.height};};
@@ -246,6 +273,7 @@ def main():
                 assert abs(rects["footerButton"]["h"]-rects2["footerButton"]["h"])<=1.1, "Fullscreen settings footer buttons differ from timer buttons"
                 assert rects["footerFont"]==rects2["footerFont"], "Settings footer buttons use another font size"
                 assert abs(rects2["footerQuit"]["h"]-rects["footerButton"]["h"])<=1.1, "Quit button size differs from timer buttons"
+                verify_stop_button()
                 assert abs(rects["title"]["h"]-rects2["title"]["h"])<=1.1, "Settings heading font doesn't match club font"
                 assert rects2["closeText"]=="Timer" and rects2["visible"] and rects2["exitWired"], "Settings fullscreen header buttons misconfigured"
                 assert rects2["miniInBody"], "Miniature still inside the footer"
