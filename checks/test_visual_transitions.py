@@ -42,6 +42,18 @@ def main():
             page.on("pageerror",lambda err: errors.append(str(err)))
             page.set_content(html,wait_until="domcontentloaded")
             assert page.evaluate("typeof render")=="function", "Timer failed to initialize"
+            # Fixed footer is opaque even when tournament controls scroll
+            # underneath in the 16:9 settings-window geometry.
+            def solid_settings_footer():
+                return page.evaluate("""() => {
+                  const el=document.querySelector("#settings .actions");
+                  const b=getComputedStyle(el).backgroundColor;
+                  const match=b.match(/^rgba?\\(([^)]+)\\)$/);
+                  if(!match)return false;
+                  const parts=match[1].split(",").map(v=>v.trim());
+                  return parts.length===3||(parts.length===4&&Number(parts[3])===1);
+                }""")
+            assert solid_settings_footer(), "Windowed Settings footer must be fully opaque"
             # Input in settings selects its existing content even on a click.
             field=page.locator("#quickMessage")
             field.fill("Texte déjà enregistré")
@@ -118,6 +130,7 @@ def main():
                   }
                 }""")
                 page.evaluate("showSettings()")
+                assert solid_settings_footer(), "Fullscreen Settings footer must be fully opaque"
                 rects2=page.evaluate("""() => {
                   const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
                     return {x:r.x,y:r.y,w:r.width,h:r.height};};
