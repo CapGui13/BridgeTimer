@@ -100,6 +100,23 @@ Ces réglages sont enregistrés avec les paramètres et utilisés par
 `transitionSplashModel`. Le design de l'écran final demeure partagé
 entre saut et entre-tours ; aucune variante graphique de CHGT n'est permise.
 
+**RÈGLE F — Couleur indépendante des messages de transition (27/10/2026).**
+Dans « Personnalisation des couleurs », proposer une ligne distincte
+**« Messages de changement et saut »**, avec un sélecteur de couleur
+**rouge `#ef4444` par défaut** (le même rouge que l'alerte).
+Ce réglage unique `transitionMessageColor` s'applique **aux titres et
+aux messages centraux du même écran `#jumpSplash`** dans les deux cas :
+« Saut de table » et « Temps entre tours / Changement de tour ».
+Il est indépendant de `accent` (la barre de décompte reste bleue si la
+couleur principale est bleue) et de `messageColor` (les messages verts
+ordinaires restent inchangés). Les textes du décompte restent en
+`--text`, sans changement de couleur ni de dimension.
+La couleur doit être persistée, restaurée avec Annuler, intégrée aux
+thèmes personnalisés et remise au rouge lors d'OG Colors. Les anciens
+paramètres sans ce champ migrent sans perte et obtiennent le rouge par
+défaut. **Aucune duplication entre les écrans** : une seule variable CSS
+`--transition-message-color` pilote les deux.
+
 Toutes ces annonces suivent la même homothétie fenêtré/plein écran.
 **Changement de tour :** la ligne « Prochain tour : X » est définitivement
 supprimée. PAUSE et fin de séance restent distincts et inchangés.
