@@ -695,4 +695,81 @@ assert.ok(!html.includes('Prochain tour :'),'Never reintroduce the next-round li
  assert.equal(fn({phase:'round',started:true,remaining:55},settings).visible,false);
 }
 // =======================================================================
+
+/* CHGT customization — separate persisted content, SAME jump dialog style.
+ * The CHGT button is placed just after the time-between-rounds field.
+ * Visibility derives strictly from current seconds and Paires format.
+ * Zero -> hidden; any positive second -> visible. No other layout touched. */
+for(const id of [
+ 'betweenMsgBtn','betweenMsgOverlay','betweenMsgForm','betweenMsgCancel',
+ 'betweenMsgConfirm','betweenSplashTitleSetting','betweenSplashBodySetting',
+ 'betweenCountdownLabel'
+])assert.equal(counts.get(id),1,'Missing/duplicate CHGT customization ID '+id);
+for(const token of [
+ 'id="betweenField" class="unitField hidden"><input id="between" type="tel" min="0" max="99" value="00"><span class="unit">S</span></div><button id="betweenMsgBtn"',
+ 'title="Personnaliser le changement de tour">CHGT</button>',
+ 'id="betweenMsgOverlay" class="jumpMsgOverlay hidden"',
+ 'id="betweenMsgForm"',
+ 'id="betweenSplashTitleSetting"',
+ 'id="betweenSplashBodySetting"',
+ 'id="betweenCountdownLabel"',
+ 'function syncBetweenMsgButton(){',
+ 'const eligible=$("mode").value==="2"&&Number($("between").value)>=1;',
+ '$("betweenMsgBtn").classList.toggle("hidden",!eligible);',
+ '$("between").addEventListener("input",syncBetweenMsgButton)',
+ '$("between").addEventListener("change",syncBetweenMsgButton)',
+ 'function openBetweenMsgDialog(){',
+ 'function closeBetweenMsgDialog(confirmed=false){',
+ 'function confirmBetweenMsgDialog(){',
+ '$("betweenMsgBtn").onclick=openBetweenMsgDialog;',
+ '$("betweenMsgForm").onsubmit=e=>{e.preventDefault();confirmBetweenMsgDialog()}',
+ 'if(!confirmed&&betweenMsgSnapshot)for(const id of betweenMsgFieldIds)',
+ 'betweenSplashTitleSetting:$("betweenSplashTitleSetting").value',
+ 'betweenSplashBodySetting:$("betweenSplashBodySetting").value',
+ 'betweenCountdownLabel:$("betweenCountdownLabel").value',
+ 'title:between?(settings.betweenSplashTitleSetting??"CHANGEMENT DE TOUR")',
+ 'text:between?(temporaryBreakText||(settings.betweenSplashBodySetting??"CHANGEZ DE TABLE"))',
+ 'label:between?(settings.betweenCountdownLabel??"secondes pour le changement")',
+ 'el.closest("#jumpMsgForm,#betweenMsgForm")'
+])assert.ok(html.includes(token),'CHGT regression: '+token);
+{
+ // Execute the production visibility function for 0, 1 and 99 seconds
+ // in Paires and MP4 without any DOM browser dependencies.
+ const src=scripts.map(x=>x[1]).join('\n');
+ const found=src.match(/function syncBetweenMsgButton\(\)\{([\s\S]*?)\n\}/);
+ assert.ok(found,'CHGT eligibility function not found');
+ function verify(mode,seconds){
+  let hidden=true,disabled=true;
+  const btn={classList:{toggle:(name,value)=>{if(name==='hidden')hidden=value}},set disabled(v){disabled=v}};
+  const dom={mode:{value:mode},between:{value:String(seconds)},betweenMsgBtn:btn};
+  const context={$:id=>dom[id],Number,closeBetweenMsgDialog:()=>{}};
+  vm.runInNewContext('(function syncBetweenMsgButton(){'+found[1]+'\n})',context)();
+  return {hidden,disabled};
+ }
+ assert.deepEqual(verify('2',0),{hidden:true,disabled:true});
+ assert.deepEqual(verify('2',1),{hidden:false,disabled:false});
+ assert.deepEqual(verify('2',99),{hidden:false,disabled:false});
+ assert.deepEqual(verify('4',1),{hidden:true,disabled:true});
+}
+{
+ const src=scripts.map(x=>x[1]).join('\n');
+ const f=src.match(/function transitionSplashModel\(state,settings,temporaryBreakText=""\)\{([\s\S]*?)\n\}/);
+ assert.ok(f,'Missing shared transition design data model');
+ const model=vm.runInNewContext('(function transitionSplashModel(state,settings,temporaryBreakText=""){'+f[1]+'\n})',{
+  clamp:(v,a,b)=>Math.max(a,Math.min(v,b)),Math,Number
+ });
+ const settings={jumpSplashTitleSetting:'ATTENTION',jumpSplashBodySetting:'Saut',
+  jumpCountdownLabel:'Saut secondes',jumpDisplaySecs:15,between:30,
+  betweenSplashTitleSetting:'Tour suivant',betweenSplashBodySetting:'On change de table',
+  betweenCountdownLabel:'secondes restantes'};
+ const customized=model({phase:'break',started:true,remaining:10,breakDuration:30},settings);
+ assert.equal(customized.title,'Tour suivant');
+ assert.equal(customized.text,'On change de table');
+ assert.equal(customized.label,'secondes restantes');
+ assert.equal(customized.seconds,10);
+ const jump=model({phase:'jump',started:true,remaining:10},settings);
+ assert.equal(jump.title,'ATTENTION');
+ assert.equal(jump.text,'Saut');
+ assert.equal(jump.label,'Saut secondes');
+}
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
