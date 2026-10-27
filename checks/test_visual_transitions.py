@@ -12,7 +12,7 @@ assert marker in html
 html = html.replace(marker, '</style><script>const bridgeAuditStorage={data:{},getItem(k){return this.data[k]??null},setItem(k,v){this.data[k]=v},removeItem(k){delete this.data[k]}};</script></head><body>', 1)
 sels = ["#timer", "#timer>.top", "#timer .bottom", "#timer .identity",
         "#timer .topBtns", "#timer .controls", "#localTime", "#round", "#club"]
-viewports = [(812,456),(812,500),(960,540),(960,720),(1280,720),(1600,900),(1920,1080)]
+viewports = [(1600,900),(812,456),(812,500),(960,540),(960,720),(1280,720),(1920,1080)]
 phases = ["round","break","round","jump","round","roundEnd","round","ended","round"]
 
 def measure(page):
@@ -84,6 +84,10 @@ def assert_same_stage_geometry(a,b,label):
 
 def main():
     errors=[]
+    # Prior tests toggled .fs without changing browser viewport. That never
+    # exposed window-width media queries. Reference the REAL 1600x900
+    # window and compare against independently loaded smaller viewports.
+    reference_by_mode={}
     with sync_playwright() as pw:
         if os.name=="nt":
             browser=pw.chromium.launch(channel="msedge",headless=True)
@@ -173,6 +177,14 @@ def main():
                 }""", mode)
                 check_footer_balance(page, f"{width}x{height}, {mode}, initial")
                 before_mode=stage_visual_geometry(page)
+                if (width,height)==(1600,900):
+                    reference_by_mode[mode]=before_mode
+                else:
+                    assert mode in reference_by_mode, f"Reference stage missing for {mode}"
+                    assert_same_stage_geometry(
+                        reference_by_mode[mode],before_mode,
+                        f"{width}x{height} windowed vs actual 1600x900 reference {mode}"
+                    )
                 page.evaluate("q25(true)")
                 in_fullscreen=stage_visual_geometry(page)
                 assert_same_stage_geometry(before_mode,in_fullscreen,
