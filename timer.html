@@ -191,7 +191,9 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
    including short/long clocks and window/fullscreen. Do not offset them
    independently to compensate for new band heights. */
 #timer #localTime,#timer #round{top:50%;bottom:auto;transform:translateY(-50%)}
-#timer .controls{position:absolute;left:50%;bottom:21px;width:max-content;transform:translateX(-50%);margin:0;z-index:8;gap:9px}
+/* Dynamic center of FREE space between right side of clock and left
+   side of round label, not center of total 1600px stage. */
+#timer .controls{position:absolute;left:var(--footer-controls-center,50%);bottom:21px;width:max-content;transform:translateX(-50%);margin:0;z-index:8;gap:9px}
 #timer .controls .btn{font-size:21px;padding:10px 14px}
 /* The same footer geometry for round/break/jump: fixed slots prevent the
    +/- 1 min -> +/- 15 s label change from shifting the entire button row. */
@@ -742,6 +744,7 @@ function updateStage(){
  }
  root.style.setProperty('--timer-vw',w/100+'px');
  root.style.setProperty('--timer-vh',h/100+'px');
+ alignTimerFooterControls();
  C=null;
 }
 updateStage();
@@ -939,7 +942,29 @@ function transitionSplashModel(state,settings,temporaryBreakText=""){
  };
 }
 let lsf="";function q40(){const parent=$("jumpSplash"),el=$("jumpSplashText");if(!parent.classList.contains("on")){lsf="";el.style.fontSize="";return}const key=el.textContent+"|"+el.clientWidth+"|"+el.clientHeight;if(key===lsf)return;lsf=key;const max=Math.min(112,Math.max(30,Math.floor(el.clientWidth*.075))),min=20;let lo=min,hi=max;for(let i=0;i<10&&lo<hi;i++){const mid=Math.ceil((lo+hi)/2);el.style.fontSize=mid+"px";if(el.scrollHeight<=el.clientHeight+2&&el.scrollWidth<=el.clientWidth+2)lo=mid;else hi=mid-1}
-el.style.fontSize=lo+"px";}function q42(){theme();_usd();let t=$("timer");t.classList.remove("warning","dangerState","breakState","endState","roundEndState","pairEndState");t.classList.toggle("roundReading",st.phase==="round");$("msg").classList.remove("roundMessageJump","roundMessageTemporary");$("submsg").classList.remove("jumpUpcoming");$("alert").className="";$("alert").textContent="";const drm=st.syncHoldUntil&&_mon()<st.syncHoldUntil?Math.min(st.remaining,st.syncDisplayCeiling):st.remaining,ctx=fmt(drm),cel=$("clock");
+el.style.fontSize=lo+"px";}/* Stable footer centering in MP4 and TPP.
+ * Measure BOTH permanent labels after the text for this phase has been
+ * rendered. The free span is [localTime.right, round.left], regardless of
+ * whether the tour number is 1, 9, 10, etc. Divide by the single stage
+ * scale so the result stays in reference-stage CSS pixels, not viewport px.
+ * Never move or resize the labels, timer or fixed-height footer.
+ */
+function alignTimerFooterControls(){
+ const timer=$("timer");
+ if(!timer||timer.classList.contains("hidden"))return;
+ const bar=timer.querySelector(".bottom"),clock=$("localTime"),round=$("round"),controls=bar?.querySelector(".controls");
+ if(!controls||!bar.getClientRects().length||!clock.getClientRects().length||!round.getClientRects().length)return;
+ const stageScale=Number(timer.style.getPropertyValue("--stage-scale"))||1;
+ const bounds=bar.getBoundingClientRect(),timeBounds=clock.getBoundingClientRect(),roundBounds=round.getBoundingClientRect();
+ const freeCenter=(timeBounds.right+roundBounds.left)/2;
+ if(!Number.isFinite(freeCenter))return;
+ const center=(freeCenter-bounds.left)/stageScale;
+ if(!Number.isFinite(center))return;
+ const next=center.toFixed(3)+"px";
+ if(timer.style.getPropertyValue("--footer-controls-center")!==next)
+  timer.style.setProperty("--footer-controls-center",next);
+}
+function q42(){theme();_usd();let t=$("timer");t.classList.remove("warning","dangerState","breakState","endState","roundEndState","pairEndState");t.classList.toggle("roundReading",st.phase==="round");$("msg").classList.remove("roundMessageJump","roundMessageTemporary");$("submsg").classList.remove("jumpUpcoming");$("alert").className="";$("alert").textContent="";const drm=st.syncHoldUntil&&_mon()<st.syncHoldUntil?Math.min(st.remaining,st.syncDisplayCeiling):st.remaining,ctx=fmt(drm),cel=$("clock");
 // Contract: choose once at the START of the round. Do not switch layouts
 // when remaining time crosses 1:00:00. Short-round MM:SS stays unchanged.
 const longStarted=st.phase==="round"&&(st.started?(st.longClockAtStart??(_crd()>=3600)):(q4e()>=3600));
@@ -961,7 +986,7 @@ $("jumpSplashCountdownLabel").textContent=transition.label;
 $("jumpSplashSeconds").textContent=transition.seconds;
 $("jumpSplashBar").style.width=transition.percent+"%";$("bar").style.width=(total?clamp(st.remaining/total*100,0,100):0)+"%";const paused=st.started&&!st.running&&st.phase!=="ended"&&st.phase!=="roundEnd"&&!$("timer").classList.contains("hidden");$("pauseOverlay").classList.toggle("on",paused);const finished=st.phase==="roundEnd"||st.phase==="ended";
 $("finishOverlay").classList.toggle("on",finished);$("finishBig").textContent=st.phase==="ended"?"FIN DE LA SÉANCE":"FIN DU TOUR";
-$("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+(s.resumeTime||"--:--");const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd&&!isJump;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();fc();q38();q40();syncFaithfulMini()}
+$("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+(s.resumeTime||"--:--");const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd&&!isJump;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();alignTimerFooterControls();fc();q38();q40();syncFaithfulMini()}
 let faithfulMiniBusy=false,faithfulMiniLast=0;
 function syncFaithfulMini(force=false){
  if(!document.body.classList.contains('settingsLive')||faithfulMiniBusy)return;
