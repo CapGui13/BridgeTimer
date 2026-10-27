@@ -99,6 +99,90 @@ def assert_same_stage_geometry(a,b,label,cross_viewport=False):
             assert delta<=1.1, f"{label}: {sel}.{dimension} changed by {delta:.2f}: {a[sel]} -> {b[sel]}"
         assert a[sel]["padding"]==b[sel]["padding"], f"{label}: {sel} padding changed: {a[sel]} -> {b[sel]}"
 
+
+def test_exit_and_live_settings(browser):
+    # Real browser execution; exercise the same event paths as users.
+    page=browser.new_page(viewport={"width":960,"height":540})
+    page.set_content(html,wait_until="domcontentloaded")
+    page.evaluate("""() => {
+      window.__exitCalls=0;
+      window.nativeExit=async()=>{window.__exitCalls++;return true};
+      window.nativeStateWrite=async()=>true;
+    }""")
+    assert page.evaluate("document.getElementById('exitConfirmOverlay').classList.contains('hidden')")
+    # Clicking Quitter opens a modal but NEVER exits directly.
+    page.locator("#quitAppBtn").click()
+    assert page.evaluate("q1d() && window.__exitCalls===0"), "Quitter bypassed confirmation"
+    page.keyboard.press("Escape")
+    assert page.evaluate("!q1d() && window.__exitCalls===0"), "Escape didn't cancel exit dialog"
+    # A direct call to the private confirmation action cannot exit unless
+    # the user has actually opened the confirmation dialog.
+    page.evaluate("q46()")
+    assert page.evaluate("window.__exitCalls===0"), "Direct exit call bypassed dialog gate"
+    # A Windows X/Alt+F4 request is consumed by the existing Win32 queue.
+    page.evaluate("""() => {
+      window.__nativeClosePending=true;
+      window.nativeConsumeCloseRequest=async()=>{
+        const p=window.__nativeClosePending;window.__nativeClosePending=false;return p;
+      };
+    }""")
+    page.wait_for_function("q1d()",timeout=2000)
+    assert page.evaluate("window.__exitCalls===0"), "Native X request exited without confirmation"
+    page.locator("#exitNoBtn").click()
+    assert page.evaluate("!q1d() && window.__exitCalls===0"), "Cancel on native close exited"
+    # Confirming 'Oui' is the ONLY permitted successful close.
+    page.locator("#quitAppBtn").click()
+    page.locator("#exitYesBtn").click()
+    page.wait_for_function("window.__exitCalls===1",timeout=2000)
+    page.close()
+
+    # Duration changes must be identical on all live Settings return paths.
+    for action in ("top-button","footer-button","F9","Escape","miniature"):
+        page=browser.new_page(viewport={"width":960,"height":540})
+        page.set_content(html,wait_until="domcontentloaded")
+        page.evaluate("""() => {
+          s.mode="2";s.between=0;fill();
+          st.started=true;st.running=true;st.phase="round";
+          st.remaining=123.5;st.roundDuration=3600;st.breakDuration=30;
+          st.roundBetween=0;st.endAt=performance.now()+123500;
+          showSettings();
+          document.getElementById("between").value="18";
+          window.__before={
+            remaining:st.remaining,endAt:st.endAt,running:st.running,
+            duration:st.roundDuration,breakDuration:st.breakDuration,phase:st.phase
+          };
+        }""")
+        if action=="top-button":
+            page.locator("#drawerClose").click()
+        elif action=="footer-button":
+            page.locator("#fresh").click()
+        elif action=="F9":
+            page.keyboard.press("F9")
+        elif action=="Escape":
+            page.keyboard.press("Escape")
+        else:
+            page.evaluate("document.getElementById('miniTimer').ondblclick()")
+        status=page.evaluate("""() => ({
+          hidden:document.getElementById('settings').classList.contains('hidden'),
+          between:s.between,roundBetween:st.roundBetween,
+          remaining:st.remaining,endAt:st.endAt,running:st.running,
+          duration:st.roundDuration,breakDuration:st.breakDuration,phase:st.phase,
+          before:window.__before
+        })""")
+        assert status["hidden"] and status["between"]==18 and status["roundBetween"]==18, f"{action}: interval not applied: {status}"
+        for field in ("remaining","endAt","running","duration","breakDuration","phase"):
+            assert status[field]==status["before"][field], f"{action}: ongoing round unexpectedly changed {field}: {status}"
+        page.close()
+    # Existing initialization still computes eight boards x duration/board.
+    page=browser.new_page(viewport={"width":960,"height":540})
+    page.set_content(html,wait_until="domcontentloaded")
+    defaults=page.evaluate("""() => ({
+      hours:s.hours,minutes:s.minutes,seconds:s.seconds,boards:s.boards,
+      perBoard:s.boardMinutes*60+s.boardSeconds
+    })""")
+    assert defaults["boards"]==8 and defaults["hours"]*3600+defaults["minutes"]*60+defaults["seconds"]==8*defaults["perBoard"], f"Default start duration changed: {defaults}"
+    page.close()
+
 def main():
     errors=[]
     # Prior tests toggled .fs without changing browser viewport. That never
@@ -111,6 +195,7 @@ def main():
         else:
             path=shutil.which("chromium") or shutil.which("chromium-browser")
             browser=pw.chromium.launch(executable_path=path,headless=True,args=["--no-sandbox"])
+        test_exit_and_live_settings(browser)
         for width,height in viewports:
             page=browser.new_page(viewport={"width":width,"height":height})
             page.on("pageerror",lambda err: errors.append(str(err)))
