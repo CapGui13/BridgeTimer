@@ -122,6 +122,7 @@ var (
 	messageBoxW = user32.NewProc("MessageBoxW")
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 	setProcessDPIAware = user32.NewProc("SetProcessDPIAware")
+	moveMemory = kernel32.NewProc("RtlMoveMemory")
 	getWindowRect = user32.NewProc("GetWindowRect")
 	getClientRect = user32.NewProc("GetClientRect")
 	isZoomed = user32.NewProc("IsZoomed")
@@ -455,7 +456,11 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 			result, _, _ = callWindowProcW.Call(originalWndProc, hwnd, msg, wp, lp)
 		}
 		if timerViewActive.Load() && lp != 0 {
-			mm := (*minMaxInfo)(unsafe.Pointer(lp))
+			mm := minMaxInfo{}
+			// WM_GETMINMAXINFO gives us a native pointer (LPARAM).
+			// Copy through Kernel32 rather than casting uintptr to
+			// unsafe.Pointer: the latter is correctly rejected by go vet.
+			moveMemory.Call(uintptr(unsafe.Pointer(&mm)),lp,unsafe.Sizeof(mm))
 			var wr, cr rect
 			ow, _, _ := getWindowRect.Call(hwnd,uintptr(unsafe.Pointer(&wr)))
 			oc, _, _ := getClientRect.Call(hwnd,uintptr(unsafe.Pointer(&cr)))
@@ -466,6 +471,7 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 				if minClientW > 0 {
 					mm.PtMinTrackSize.Y = (minClientW*9+8)/16+frameH
 				}
+				moveMemory.Call(lp,uintptr(unsafe.Pointer(&mm)),unsafe.Sizeof(mm))
 			}
 		}
 		return result
