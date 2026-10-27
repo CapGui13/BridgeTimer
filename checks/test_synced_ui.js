@@ -859,4 +859,54 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
  simulate(0,52,false);
  simulate(27,0,false);
 }
+
+// Reproduce the CHGT Debug lag: switching Match -> Paires through q7()
+// temporarily suspends Debug; its inner _upu()/read() can hide CHGT at 00.
+// q7 MUST refresh CHGT in its own finally, synchronously before returning,
+// without relying on the 450ms autosave timer.
+{
+ const src=scripts.map(x=>x[1]).join('\n');
+ const wrapper=src.match(/function q7\(fn\)\{[^\n]*\}/);
+ const sync=src.match(/function syncBetweenMsgButton\(\)\{([\s\S]*?)\n\}/);
+ assert.ok(wrapper&&sync,'Missing Debug format wrapper / CHGT sync function');
+ assert.ok(wrapper[0].includes('finally{document.body.classList.add("debugMode");_adu();syncBetweenMsgButton()}'),
+   'CHGT must update synchronously after restoring Debug');
+ function change(initialMode,newMode,initialSeconds,debugOn=true){
+  let mode={value:initialMode}, between={value:String(initialSeconds)};
+  let active=debugOn,hidden=true,disabled=true,syncCount=0,debugRestoreCount=0;
+  const button={classList:{toggle:(cls,on)=>{if(cls==='hidden')hidden=on}},
+   set disabled(v){disabled=v},get disabled(){return disabled}};
+  const body={classList:{contains:name=>name==='debugMode'&&active,
+   remove:name=>{if(name==='debugMode')active=false},
+   add:name=>{if(name==='debugMode'){active=true;debugRestoreCount++}}}};
+  const dom={mode,between,betweenMsgBtn:button};
+  const context={
+   document:{body},$:name=>dom[name],
+   debugActive:()=>active,_adu:()=>true,
+   Number,closeBetweenMsgDialog:()=>{},
+   syncCount
+  };
+  context.syncBetweenMsgButton=vm.runInNewContext(
+   '(function syncBetweenMsgButton(){'+sync[1]+'\n})',context);
+  const realSync=context.syncBetweenMsgButton;
+  context.syncBetweenMsgButton=()=>{syncCount++;return realSync()};
+  const q7=vm.runInNewContext('('+wrapper[0]+')',context);
+  // Simulate _upu/read's immediate eligibility calculation WHILE Debug is
+  // suspended by q7: even at zero it temporarily hides CHGT.
+  q7(()=>{mode.value=newMode;context.syncBetweenMsgButton()});
+  return {hidden,disabled,syncCount,debugRestoreCount};
+ }
+ assert.deepEqual(change('4','2',0),{
+  hidden:false,disabled:false,syncCount:2,debugRestoreCount:1
+ },'Debug + Paires + 00 must show CHGT immediately after mode switch');
+ assert.deepEqual(change('2','4',0),{
+  hidden:true,disabled:true,syncCount:2,debugRestoreCount:1
+ },'Match/4 must hide CHGT immediately after switch');
+ assert.deepEqual(change('4','2',30),{
+  hidden:false,disabled:false,syncCount:2,debugRestoreCount:1
+ },'Positive between duration must also remain immediate');
+ assert.deepEqual(change('4','2',0,false),{
+  hidden:true,disabled:true,syncCount:1,debugRestoreCount:0
+ },'Without Debug, zero seconds still correctly hides CHGT');
+}
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
