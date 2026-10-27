@@ -248,12 +248,12 @@ assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"));
 assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // October 25: requested exact native opening/minimum size from Windows screenshot.
 // On the user's ~1.18x Windows DPI, the original 812x612 constants opened
-// a visibly ~684x519 window. 960x570 provides an approximately 16:9
-// usable timer client area on Windows while keeping a 960 logical px width.
+// a visibly ~684x519 window. Restore 960x720 for full settings space;
+// never shrink the native window merely to fit the 16:9 timer stage.
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
 assert.ok(/defaultWindowWidth\s*=\s*960/.test(nativeSource),'Opening window must be 960 logical px wide to match approved screenshot at Windows DPI');
-assert.ok(/defaultWindowHeight\s*=\s*570/.test(nativeSource),'Opening window must fit the 16:9 stage without large vertical letterboxes');
+assert.ok(/defaultWindowHeight\s*=\s*720/.test(nativeSource),'Settings window must keep the full 720 logical px height');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 // MM:SS: larger and lower with a conditional progress gap; HH:MM:SS unchanged.
