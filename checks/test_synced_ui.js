@@ -1053,4 +1053,14 @@ assert.ok(!nativeSource.includes('target = settingsWindowRect'), 'Legacy restora
 assert.ok(html.includes('render();syncNativeView("settings");zclean()'), 'Initial Settings must calibrate native client aspect before any timer navigation');
 assert.ok(html.includes('#settings .actions,\nbody.settingsLive #settings .actions,'), 'Opaque footer must cover Settings in both modes');
 assert.ok(html.includes('background:var(--panel)!important;\n backdrop-filter:none!important;'), 'Settings footer must be opaque and not backdrop-filtered');
+
+/* Windowed only: slim Settings title band must inherit actual timer top band.
+   Never alter the fullscreen title band, permanent footer, or timer stage. */
+for(const rule of [
+ 'body:not(.fs) #settings .wrap{padding-top:0}',
+ 'height:var(--settings-window-top-height,42px);',
+ 'font-size:var(--settings-window-title-font-size,21px);',
+ 'root.style.setProperty("--settings-window-top-height",bar.getBoundingClientRect().height+"px");',
+ 'docRoot.style.setProperty(\'--settings-window-top-height\',(82*k)+\'px\');',
+])assert.ok(html.includes(rule),'Windowed title band regression: '+rule);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
