@@ -835,7 +835,7 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
    read:()=>{readCount++;savedBetween=Number(dom.between.value)},q41:()=>{},KEY:'test',s:{},
    render:()=>{}
   };
-  const run=(code)=>vm.runInNewContext('(function(){'+code+'\n})',scope)();
+  const run=(code,confirmed=false)=>vm.runInNewContext('(function(confirmed=false){'+code+'\n})',scope)(confirmed);
   run(open[1]);
   assert.equal(dom.betweenMsgSeconds.value,main,'Opening CHGT must copy current main seconds');
   dom.betweenMsgSeconds.value=String(choice);
