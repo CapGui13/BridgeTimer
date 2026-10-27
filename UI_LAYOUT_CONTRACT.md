@@ -389,3 +389,23 @@ des paramètres en mode fenêtré.
   typographique de ses boutons et leur hauteur. La miniature reste
   indépendante et au-dessus. Les paramètres en mode fenêtré et le timer
   restent inchangés.
+
+
+## Actualisation 27/10 : même format 16:9 natif en mode fenêtré
+
+* Cette décision **remplace** toutes les consignes anciennes de restauration d'une
+  fenêtre de paramètres à **960×720** : ouverture initiale **960×570** extérieur
+  (cible : zone utile réelle en 16:9 après prise en compte des bordures Windows).
+  La fenêtre des paramètres garde donc les **mêmes dimensions** au lancement,
+  pendant les changements de tour et au retour du timer ; aucune restauration
+  de hauteur ne doit plus avoir lieu entre les deux vues.
+* Calibration de la zone cliente Win32 **une seule fois à l'initialisation**,
+  puis aucune modification native de la taille lors des transitions
+  Paramètres ⇄ Timer. Le contenu des paramètres défile normalement.
+* Le fond de la barre inférieure des paramètres reste **totalement opaque**
+  en mode fenêtré comme en plein écran : aucun réglage défilant visible
+  à travers, aucun effet de verre. La miniature demeure posée au-dessus.
+* Dans la barre d'actions de paramètres, le bouton **Timer/Lancer précède
+  Arrêter** ; toutes les fonctions associées aux identifiants restent les mêmes.
+* Vérifier les modes Match et Paires, Debug, la non-réinitialisation du
+  décompte et les transitions en plein écran avec les contrôles préexistants.
