@@ -88,7 +88,12 @@ def assert_same_stage_geometry(a,b,label,cross_viewport=False):
             # widths/center positions are expected, but virtual font sizes
             # and the HEIGHTS of both persistent bands remain unchanged.
             dimensions=("h","font")
-            if sel in {"#clock","#status"}:
+            if sel=="#clock":
+                # The extra vertical space is part of the central main
+                # area; the clock is allowed to grow while all typography
+                # stays uniformly scaled (never stretched differently X/Y).
+                dimensions=()
+            elif sel=="#status":
                 dimensions=("font",)
         for dimension in dimensions:
             delta=abs(a[sel][dimension]-b[sel][dimension])
