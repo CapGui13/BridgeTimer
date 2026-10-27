@@ -166,6 +166,9 @@ def main():
                 # then change, but its right edge and baseline must not move.
                 equal(before,afterSettings,f"{width}x{height}, {mode}, settings return",exclusions=("#round",))
 
+                # Start this independent scenario from a clean active round:
+                # earlier phase tests intentionally set 10 seconds and ended.
+                page.evaluate("st.phase='round';st.remaining=128;st.roundDuration=3600;st.breakDuration=0")
                 # Live settings: lock both duration groups, but never the
                 # board-number display checkbox. PAIRS keep between-rounds
                 # editable. Debug unlocks both groups. Saving changes must
