@@ -57,6 +57,21 @@ d'architecture pour les prochaines modifications**, pas une affirmation que
 tous les paramètres sont déjà centralisés. Ne pas annoncer une synchronisation
 automatique avant de l'avoir démontrée.
 
+**RÈGLE D — Messages spéciaux synchronisés (27/10/2026).**
+Les **messages temporaires, annonces du numéro de donne** (« attaquer » /
+« jouer »), **pré-alertes de saut** et **messages d'entre-tours**
+(« CHANGEZ DE TABLE ») partagent obligatoirement **la même boîte `#msg`,
+les mêmes dimensions/position, alignement, typographie, relief/couleur,
+et le même algorithme d'adaptation à la longueur du texte (`q38()`)**.
+Seul le contenu change ; une ligne longue peut passer sur plusieurs lignes
+pour rester lisible. Une modification de ces paramètres doit les affecter tous
+automatiquement, en format court/long comme en fenêtré/plein écran.
+
+**Changement de tour :** supprimer totalement la ligne secondaire
+« Prochain tour : X ». Les annonces de fin de séance, PAUSE et le splash
+spécifique au saut effectif restent volontairement distincts et ne doivent
+pas être altérés par ce regroupement.
+
 **Important :** « même hauteur » signifie **mêmes mesures typographiques et
 même bande visuelle à glyphes comparables**, et non pas artificiellement la
 même boîte englobante pour des chiffres de formes différentes. Vérifier les
