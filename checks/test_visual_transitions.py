@@ -57,6 +57,7 @@ def main():
                 }""", mode)
                 before=measure(page)
                 background=page.evaluate("getComputedStyle(document.getElementById('timer')).backgroundColor")
+                phaseNativeCount=page.evaluate("window.__viewCalls.length")
                 for p in phases:
                     phase(page,p)
                     equal(before,measure(page),f"{width}x{height}, {mode}, {p}")
@@ -65,14 +66,13 @@ def main():
                         assert col==background, "Transition recolored permanent bands"
                         visible=page.evaluate("getComputedStyle(document.getElementById('jumpSplash')).display")
                         assert visible!="none", "Transition overlay vanished"
+                assert page.evaluate("window.__viewCalls.length")==phaseNativeCount, "Phase changed native window unexpectedly"
                 beforeNative=page.evaluate("window.__viewCalls.length")
                 page.evaluate("q25(true)")
                 assert page.evaluate("window.__viewCalls.length")==beforeNative, "Entering fullscreen changed native window"
                 page.evaluate("q25(false)")
                 assert page.evaluate("window.__viewCalls.at(-1).mode")=="timer", "Leaving fullscreen lost timer mode"
                 equal(before,measure(page),f"{width}x{height}, {mode}, fullscreen toggle")
-                # Each transition phase must leave the NATIVE window alone.
-                assert page.evaluate("window.__viewCalls.length")==1, "Phase changed native window unexpectedly"
                 page.evaluate("showSettings()")
                 page.evaluate("showTimer()")
                 calls=page.evaluate("window.__viewCalls.slice(-2)")
