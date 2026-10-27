@@ -1049,11 +1049,12 @@ assert.ok(!html.includes('st.remaining=newDuration;if(wasRunning)_ses()'),
  'Debug live duration changes must never restart the running clock');
 assert.ok(!html.includes('st.remaining=newBetween;if(wasRunning)_ses()'),
  'Debug changes of the inter-round setting must not restart an active break');
-// Final 27 October — unified 16:9 native window and opaque Settings footer.
-assert.ok(nativeSource.includes('nativeClientCalibrated bool')&&nativeSource.includes('if nativeClientCalibrated { return true }'),
- 'Native client must never be resized after its one-time calibration');
-assert.ok(!nativeSource.includes('target = settingsWindowRect'), 'Legacy restoration of tall Settings frame must be gone');
-assert.ok(html.includes('render();syncNativeView("settings");zclean()'), 'Initial Settings must calibrate native client aspect before any timer navigation');
+// Current contract: the 812x612 native frame is preserved from startup.
+// Internal Timer content may be 16:9, but native client calibration is forbidden.
+assert.ok(!nativeSource.includes('nativeClientCalibrated=true'),
+ 'Native window must not be resized to a 16:9 client aspect at startup');
+assert.ok(!nativeSource.includes('target = settingsWindowRect'), 'Legacy native view-based frame resizing must remain absent');
+assert.ok(html.includes('render();syncNativeView("settings");zclean()'), 'Initial Settings must sync native view without changing size');
 assert.ok(html.includes('#settings .actions,\nbody.settingsLive #settings .actions,'), 'Opaque footer must cover Settings in both modes');
 assert.ok(html.includes('background:var(--panel)!important;\n backdrop-filter:none!important;'), 'Settings footer must be opaque and not backdrop-filtered');
 
