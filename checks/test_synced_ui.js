@@ -1060,6 +1060,8 @@ for(const rule of [
  'body:not(.fs) #settings .wrap{padding-top:0}',
  'height:var(--settings-window-top-height,42px);',
  'font-size:var(--settings-window-title-font-size,21px);',
+ 'line-height:var(--settings-window-title-height,26px);',
+ 'root.style.setProperty("--settings-window-title-height",title.getBoundingClientRect().height+"px");',
  'root.style.setProperty("--settings-window-top-height",bar.getBoundingClientRect().height+"px");',
  'docRoot.style.setProperty(\'--settings-window-top-height\',(82*k)+\'px\');',
 ])assert.ok(html.includes(rule),'Windowed title band regression: '+rule);
