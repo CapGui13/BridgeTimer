@@ -300,3 +300,22 @@ toujours pleinement respecté.
 - Les chemins `round → break → round`, `round → jump → round`, `round → roundEnd → round`, `round → ended → round`, `fenêtré → plein écran → fenêtré`, `timer → paramètres → timer` et `Écrans tests → paramètres` sont des scénarios de non-régression.
 - Conserver l'ouverture Windows à **960 × 720** pour les paramètres. Ne pas toucher aux dimensions natives de la fenêtre pour corriger la maquette 16:9.
 - Tests source/CI et matrice visuelle Chromium sont complémentaires. Aucun test ne remplace la confirmation finale sur Windows.
+
+
+## Fenêtre native distincte des paramètres et du timer — 27/10/2026
+
+Le 1600 × 900 strict 16:9 ne peut pas remplir un client Windows d'aspect 4:3 sans
+bandes vides. Le **correctif natif**, pas une modification CSS, préserve :
+
+- paramètres : fenêtre initiale et minimale **960 × 720** (hauteur nécessaire
+  à l'interface avec défilement et barre d'actions) ;
+- timer : **même largeur**, mais hauteur extérieure ajustée via Win32 selon
+  `H_client = round(W_client × 9/16)`, plus les bordures et la barre de titre
+  réellement mesurées avec `GetWindowRect` et `GetClientRect` ;
+- retour aux paramètres : restauration des dimensions antérieures de fenêtre ;
+- plein écran : aucune modification de la logique et de la projection 16:9
+  native existante, nouveau contrôle de mode seulement au retour.
+
+Ne jamais corriger le letterboxing en réduisant le format de **toute**
+l'application ou en déformant la maquette. Ne jamais modifier la géométrie
+native en fonction du changement de tour, du saut, du chrono ou d'un thème.
