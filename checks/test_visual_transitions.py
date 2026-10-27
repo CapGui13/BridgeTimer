@@ -42,6 +42,17 @@ def main():
             page.on("pageerror",lambda err: errors.append(str(err)))
             page.set_content(html,wait_until="domcontentloaded")
             assert page.evaluate("typeof render")=="function", "Timer failed to initialize"
+            # Input in settings selects its existing content even on a click.
+            field=page.locator("#quickMessage")
+            field.fill("Texte déjà enregistré")
+            field.click()
+            assert page.evaluate("""() => {
+              const e=document.getElementById('quickMessage');
+              return e.selectionStart===0 && e.selectionEnd===e.value.length
+            }"""), "Settings temporary-message field did not select all content on click"
+            page.evaluate("""() => {
+              document.getElementById("quickMessage").value="";
+            }""")
             page.evaluate("""() => {
               window.__viewCalls=[];
               window.nativeSetView=(mode,serial)=>{window.__viewCalls.push({mode,serial});return Promise.resolve(true)};
@@ -56,6 +67,25 @@ def main():
                     document.getElementById('timer').classList.remove('hidden');render();
                 }""", mode)
                 before=measure(page)
+                # Pressing M while a message is actually displayed must HIDE it
+                # without opening the form or erasing the saved text. A second
+                # real key press alone opens the prefilled composer.
+                page.evaluate("""() => {
+                  s.quickMessage="Message à masquer";
+                  tempMessageUntil=Date.now()+60000;
+                  render();
+                }""")
+                page.keyboard.press("m")
+                assert page.evaluate("""() => !q16() &&
+                  document.getElementById("tempMessageOverlay").classList.contains("hidden") &&
+                  s.quickMessage==="Message à masquer"
+                """), "First M must dismiss the displayed temporary message only"
+                page.keyboard.press("m")
+                assert page.evaluate("""() => !document.getElementById("tempMessageOverlay").classList.contains("hidden") &&
+                  document.getElementById("tempMessageInput").value==="Message à masquer"
+                """), "Second M must open composer with original saved text"
+                page.evaluate("q20()")
+                page.evaluate("""() => {s.quickMessage="";render()}""")
                 background=page.evaluate("getComputedStyle(document.getElementById('timer')).backgroundColor")
                 phaseNativeCount=page.evaluate("window.__viewCalls.length")
                 for p in phases:
