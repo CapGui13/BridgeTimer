@@ -1012,7 +1012,7 @@ assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,1,
 for(const required of [
  'id="settingsFullscreenBtn"',
  'body.fs #settings .wrap>.head{',
- 'width:1600px;height:82px;transform:scale(var(--settings-stage-scale))',
+ 'width:1600px;height:var(--settings-top-height,82px);transform:scale(var(--settings-stage-scale))',
  'body.fs #settings .wrap>.head #drawerClose{',
  'width:168px;min-width:168px',
  'body.fs #settings .wrap>.head #settingsFullscreenBtn{',
@@ -1025,6 +1025,7 @@ for(const required of [
 ])assert.ok(html.includes(required),'Fullscreen settings/thumbnail regression: '+required);
 assert.ok(!html.includes('settingsActions.prepend($("miniTimer"))'),
  'Live thumbnail must never be placed inside the fixed footer');
+assert.ok(html.includes('function cacheSettingsHeaderGeometry(){')&&html.includes('cacheSettingsHeaderGeometry();q43();'), 'Settings must inherit the measured timer header height before hiding the timer');
 assert.ok(!html.includes('body.fs #timer .top{'),
  'Do not change the original timer header just to match settings');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
