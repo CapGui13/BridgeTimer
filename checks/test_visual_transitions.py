@@ -101,6 +101,25 @@ def main():
                     document.getElementById('timer').classList.remove('hidden');render();
                 }""", mode)
                 before=measure(page)
+                # Windowed settings header must have the SAME computed height
+                # as the existing timer band, without changing timer geometry.
+                timerHeader=page.evaluate("""() => {
+                  const e=document.querySelector("#timer .top"),r=e.getBoundingClientRect();
+                  return {height:r.height, title:e.querySelector("#club").getBoundingClientRect().height};
+                }""")
+                page.evaluate("showSettings()")
+                settingsHeader=page.evaluate("""() => {
+                  const e=document.querySelector("#settings .wrap>.head");
+                  const r=e.getBoundingClientRect(),c=getComputedStyle(e);
+                  const h=e.querySelector("h1").getBoundingClientRect();
+                  return {height:r.height,title:h.height,paddingTop:parseFloat(c.paddingTop),
+                    parentPaddingTop:parseFloat(getComputedStyle(document.querySelector("#settings .wrap")).paddingTop)};
+                }""")
+                assert abs(timerHeader["height"]-settingsHeader["height"])<=1.1, f"Windowed Settings header too tall: {width}x{height} {mode} {timerHeader} / {settingsHeader}"
+                assert abs(timerHeader["title"]-settingsHeader["title"])<=4, f"Windowed title sizes diverged: {timerHeader} / {settingsHeader}"
+                assert settingsHeader["paddingTop"]==0 and settingsHeader["parentPaddingTop"]==0, "Extra windowed title padding restored"
+                page.evaluate("showTimer()")
+                equal(before,measure(page),f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round",))
                 # Pressing M while a message is actually displayed must HIDE it
                 # without opening the form or erasing the saved text. A second
                 # real key press alone opens the prefilled composer.
