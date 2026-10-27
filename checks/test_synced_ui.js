@@ -126,7 +126,7 @@ assert.ok(html.includes('.boardTimeSetting::before{content:"";position:absolute;
 assert.ok(html.includes('<div class="timeEntry boardTimeSetting"><label for="boardMinutes">Temps par donne</label>'),'Complete minutes-seconds element should remain present');
 // Jump advance reminder must have the exact same relief as a temporary message, not a colored glow.
 assert.ok(!html.includes('text-shadow:0 0 22px color-mix(in srgb,var(--warn) 38%,transparent)'),'Legacy green jump-message halo must be removed');
-assert.ok(html.includes('#timer.roundReading #msg,#timer.breakState #msg{left:50%;right:auto;transform:translateX(-50%);top:70%;height:29%;'),'All notice types must use one layout (round/break)');
+assert.ok(html.includes('#timer.roundReading #msg{left:50%;right:auto;transform:translateX(-50%);top:70%;height:29%;'),'Round notices share one layout; between-round deliberately uses jump splash');
 assert.ok(!html.includes('#timer #msg.roundMessageTemporary{text-shadow:'),'No duplicate styling for temporary notices');
 // Gallery thumbnails are exactly scaled copies of the 1600x900 timer stage.
 // No separate typography, no 778x595 alternate reflow, and no stage re-scaling
@@ -592,19 +592,22 @@ assert.ok(!html.includes('#timer .bottom{height:90px;min-height:90px;'),
 assert.equal((html.match(/#timer #localTime,#timer #round\{top:50%;bottom:auto;transform:translateY\(-50%\)\}/g)||[]).length,1,
  'Footer alignment must remain a single shared CSS rule for both labels');
 
-/* CRITICAL notice-layout contract: one box, one font-fit rule for temporary,
-   board-number, advance-jump warning and between-round notices, independent
-   of short/long and window/fullscreen (only stage homothety scales them).
-   Pause, end-of-round, and actual jump splash remain separate semantics. */
-assert.ok(html.includes('#timer.roundReading #msg,#timer.breakState #msg{'),
- 'Shared notice box must apply both during a round and between rounds');
+/* Mandatory presentation contract:
+   - Round notices: one #msg box and one font fitting method.
+   - Between-round countdown and table-jump: same #jumpSplash screen and
+     same q40() fitter, typography, caption, timer, and progress bar.
+   - Both still live within the SAME homothetic 1600x900 main canvas. */
+assert.ok(html.includes('#timer.roundReading #msg{'),
+ 'Round messages must share their one approved box');
+assert.ok(!html.includes('#timer.roundReading #msg,#timer.breakState #msg{'),
+ 'Between-round must NOT use the old normal message box');
 for(const broken of [
  '#timer.breakState #msg{top:71.5%;',
  '#timer.roundReading #msg.roundMessageJump{color:',
  '#timer.roundReading #msg.roundMessageTemporary{color:'
 ])assert.ok(!html.includes(broken),'Old per-message layout must not return: '+broken);
-assert.ok(html.includes('const active=timer.classList.contains("roundReading")||timer.classList.contains("breakState");'),
- 'Auto-fitting notice text must apply to round and between-round');
+assert.ok(html.includes('const active=timer.classList.contains("roundReading");'),
+ 'The round message fitter must not independently lay out the between-round screen');
 assert.ok(html.includes('const max=154,min=22,step=2;'),
  'All notices must use one shared auto-fit range');
 assert.ok(html.includes('e.style.whiteSpace="normal";'),
@@ -619,7 +622,7 @@ assert.ok(html.includes('$( "submsg" )')===false ||
 // state gate and ensure all three message sources share identical outcomes.
 {
  const src=scripts.map(x=>x[1]).join('\n');
- const found=src.match(/function q38\(\)\{([\s\S]*?)\n\}\s*let lsf/);
+ const found=src.match(/function q38\(\)\{([\s\S]*?)\n\}\s*\/\* Single source of truth/);
  assert.ok(found,'Cannot find unified live message fitter');
  function run(kind,textValue,limit=1200){
   const e={textContent:textValue,style:{fontSize:'',whiteSpace:''},
@@ -642,8 +645,54 @@ assert.ok(html.includes('$( "submsg" )')===false ||
   return {font:e.style.fontSize,whitespace:e.style.whiteSpace};
  }
  for(const str of ['Annonce courte','Vous êtes censés jouer la donne 11','Au prochain tour, les EO sautent une table','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA']){
-  assert.deepEqual(run('roundReading',str),run('breakState',str),
-   'A given text must use the same font fit in all shared message states');
+  assert.ok(run('roundReading',str).font,
+   'Every notice displayed during a round must get a fitted font size');
+  assert.equal(run('breakState',str).font,'',
+   'Between-round now renders in transition splash, not the old round message fitter');
  }
 }
+
+// Actual jump and between-round MUST use precisely the same transition splash.
+// No duplicate layout, and the previous "Prochain tour : X" line stays removed.
+for(const required of [
+ 'function transitionSplashModel(state,settings,temporaryBreakText=""){',
+ 'const between=state.phase==="break",jump=state.phase==="jump";',
+ 'const transition=transitionSplashModel(st,s,breakTemporary);',
+ '$("jumpSplash").classList.toggle("on",transition.visible);',
+ '$("jumpSplashTitle").textContent=transition.title;',
+ '$("jumpSplashText").textContent=transition.text;',
+ '$("jumpSplashCountdownLabel").textContent=transition.label;',
+ '$("jumpSplashSeconds").textContent=transition.seconds;',
+ '$("jumpSplashBar").style.width=transition.percent+"%";',
+ 'const isTransition=isJump||st.phase==="break";',
+ '#jumpSplash.on{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;'
+])assert.ok(html.includes(required),'Jump/between same-design regression: '+required);
+assert.ok(!html.includes('Prochain tour :'),'Never reintroduce the next-round line');
+// Validate one pure content model drives both phases, with only content changing.
+{
+ const src=scripts.map(x=>x[1]).join('\n');
+ const match=src.match(/function transitionSplashModel\(state,settings,temporaryBreakText=""\)\{([\s\S]*?)\n\}\s*let lsf/);
+ assert.ok(match,'Shared transition model must be accessible');
+ const fn=vm.runInNewContext('(function transitionSplashModel(state,settings,temporaryBreakText=""){'+match[1]+'\n})',{
+  clamp:(x,min,max)=>Math.max(min,Math.min(max,x)),Math,Number
+ });
+ const settings={between:60,jumpDisplaySecs:15,jumpSplashTitleSetting:'ATTENTION',
+  jumpSplashBodySetting:'À cette position, les EO sautent une table',
+  jumpCountdownLabel:'secondes pour le changement'};
+ const jump=fn({phase:'jump',started:true,remaining:10},settings);
+ const between=fn({phase:'break',started:true,remaining:40,breakDuration:80},settings);
+ assert.equal(jump.visible,true);
+ assert.equal(between.visible,true);
+ assert.equal(jump.title,'ATTENTION');
+ assert.equal(between.title,'CHANGEMENT DE TOUR');
+ assert.equal(between.text,'CHANGEZ DE TABLE');
+ assert.equal(jump.label,between.label);
+ assert.equal(jump.seconds,10);
+ assert.equal(between.seconds,40);
+ assert.equal(jump.percent,10/15*100);
+ assert.equal(between.percent,50);
+ assert.equal(fn({phase:'break',started:true,remaining:20,breakDuration:40},settings,'Message personnalisé').text,'Message personnalisé');
+ assert.equal(fn({phase:'round',started:true,remaining:55},settings).visible,false);
+}
+// =======================================================================
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
