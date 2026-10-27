@@ -744,7 +744,7 @@ function updateStage(){
  }
  root.style.setProperty('--timer-vw',w/100+'px');
  root.style.setProperty('--timer-vh',h/100+'px');
- alignTimerFooterControls();
+ if(typeof alignTimerFooterControls==='function')alignTimerFooterControls();
  C=null;
 }
 updateStage();
