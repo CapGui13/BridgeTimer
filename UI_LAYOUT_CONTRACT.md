@@ -57,20 +57,25 @@ d'architecture pour les prochaines modifications**, pas une affirmation que
 tous les paramètres sont déjà centralisés. Ne pas annoncer une synchronisation
 automatique avant de l'avoir démontrée.
 
-**RÈGLE D — Messages spéciaux synchronisés (27/10/2026).**
-Les **messages temporaires, annonces du numéro de donne** (« attaquer » /
-« jouer »), **pré-alertes de saut** et **messages d'entre-tours**
-(« CHANGEZ DE TABLE ») partagent obligatoirement **la même boîte `#msg`,
-les mêmes dimensions/position, alignement, typographie, relief/couleur,
-et le même algorithme d'adaptation à la longueur du texte (`q38()`)**.
-Seul le contenu change ; une ligne longue peut passer sur plusieurs lignes
-pour rester lisible. Une modification de ces paramètres doit les affecter tous
-automatiquement, en format court/long comme en fenêtré/plein écran.
+**RÈGLE D — Deux familles d'annonces, chacune à réglage unique (27/10/2026).**
 
-**Changement de tour :** supprimer totalement la ligne secondaire
-« Prochain tour : X ». Les annonces de fin de séance, PAUSE et le splash
-spécifique au saut effectif restent volontairement distincts et ne doivent
-pas être altérés par ce regroupement.
+1. **Pendant le tour :** message temporaire, numéro de donne (« attaquer » /
+   « jouer ») et pré-alerte de saut partagent **la même boîte `#msg`**,
+   les mêmes positions, dimensions, police, couleur, relief et adaptation
+   automatique à la longueur du texte (`q38()`).
+2. **Transitions :** le **temps entre deux tours** doit désormais avoir
+   **EXACTEMENT le même design que le saut effectif de table**, réutilisant
+   **le même écran `#jumpSplash`**, le même titre en haut, le message central,
+   le décompte et sa barre, ainsi que le même ajustement `q40()`.
+   Aucune règle CSS ou coordonnée parallèle ne doit être créée.
+   Seuls le texte, le titre et la durée changent : entre-tours =
+   « CHANGEMENT DE TOUR » / « CHANGEZ DE TABLE » (ou message temporaire actif),
+   avec les secondes restantes et « secondes pour le changement ».
+   Le saut conserve ses textes configurables.
+
+Toutes ces annonces suivent la même homothétie fenêtré/plein écran.
+**Changement de tour :** la ligne « Prochain tour : X » est définitivement
+supprimée. PAUSE et fin de séance restent distincts et inchangés.
 
 **Important :** « même hauteur » signifie **mêmes mesures typographiques et
 même bande visuelle à glyphes comparables**, et non pas artificiellement la
