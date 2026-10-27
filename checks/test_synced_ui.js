@@ -1093,4 +1093,12 @@ for(const token of [
 ])assert.ok(html.includes(token),'Startup return/footer regression: '+token);
 assert.ok(html.includes('<button id="drawerClose" class="btn drawerClose">Retour au timer</button>'),
  'Startup return must not have legacy ambiguous Retour text');
+// The old 77px stop-button width must not clip the larger synchronized
+// footer typography. Give Arrêter room, with a visible gap before Reset.
+for(const token of [
+ '#settings .actions #stopTimer{',
+ 'width:auto!important;min-width:132px!important;',
+ 'padding-left:18px!important;padding-right:18px!important;',
+ 'margin-right:13px!important;'
+])assert.ok(html.includes(token),'Stop button sizing/gap regression: '+token);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
