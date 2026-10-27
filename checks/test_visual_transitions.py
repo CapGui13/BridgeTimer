@@ -63,10 +63,11 @@ def main():
             firstFooter=page.evaluate("""() => {
               const r=document.querySelector("#settings .actions").getBoundingClientRect();
               const t=document.getElementById("timer"),k=Number(t.style.getPropertyValue("--stage-scale"))||1;
-              return {h:r.height,expected:88*k,actual:r.bottom,viewport:innerHeight};
+              return {h:r.height,expected:88*k,actual:r.bottom,viewport:innerHeight,
+                stageBottom:parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--settings-stage-bottom"))||0};
             }""")
             assert abs(firstFooter["h"]-firstFooter["expected"])<=1.1, f"Startup footer must match timer's virtual 88px height: {firstFooter}"
-            assert abs(firstFooter["actual"]-firstFooter["viewport"])<=1.1, "Settings footer is not anchored to bottom"
+            assert abs(firstFooter["actual"]-(firstFooter["viewport"]-firstFooter["stageBottom"]))<=1.1, "Settings footer does not align with bottom of the homothetic timer stage"
             # In the real 16:9 settings viewport, fields must scroll BEHIND
             # an opaque, fixed action bar without moving the bar itself.
             initial=page.evaluate("""() => {
@@ -159,7 +160,8 @@ def main():
                 }""")
                 assert abs(settingsHeader["footer"]["h"]-timerFooter["height"])<=1.1, f"Windowed live Settings footer must be same height as timer: {width}x{height} {mode}"
                 assert abs(settingsHeader["footerButton"]["h"]-timerFooter["buttonHeight"])<=1.1, "Windowed settings buttons must match timer button height"
-                assert abs(settingsHeader["footer"]["y"]+settingsHeader["footer"]["h"]-height)<=1.1, "Windowed settings footer must align with bottom viewport"
+                stageBottom=page.evaluate("""() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--settings-stage-bottom"))||0""")
+                assert abs(settingsHeader["footer"]["y"]+settingsHeader["footer"]["h"]-(height-stageBottom))<=1.1, "Windowed settings footer must align with timer stage bottom"
                 page.evaluate("showTimer()")
                 afterWindowedSettings=measure(page)
                 equal(before,afterWindowedSettings,f"{width}x{height}, {mode}, return from slim Settings title",exclusions=("#round",))
