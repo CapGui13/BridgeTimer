@@ -7,7 +7,15 @@ const html = fs.readFileSync('timer.html', 'utf8');
 const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
 assert.ok(scripts.length, 'The embedded UI must include JavaScript');
 for (const [, src] of scripts) new vm.Script(src, {filename:'BridgeTimer:inline.js'});
-const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
+// Transition screens must overlay only the central pane. The club/actions
+// and time/round/buttons remain mounted, visible and unchanged in both phases.
+const mainStart=html.indexOf('<div class="main">');
+const footerStart=html.indexOf('<div><div class="bottom">',mainStart);
+assert.ok(mainStart>=0&&footerStart>mainStart,'Timer pane/footer structure missing');
+const mainPane=html.slice(mainStart,footerStart);
+assert.ok(mainPane.includes('<div id="jumpSplash"')&&mainPane.includes('id="jumpSplashBar"'),
+ 'Saut and CHGT must use one overlay INSIDE .main, never cover top/bottom bands');
+const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map(x=>x[1]);
 const counts = new Map(); for(const id of ids) counts.set(id,(counts.get(id)||0)+1);
 for(const id of ['settings','timer','clock','status','pauseOverlay','pause','round','sps','spg','miniTimer','tempMessageInput','messageBtn','quitAppBtn'])
   assert.equal(counts.get(id),1,`Missing/duplicate production UI element: ${id}`);
@@ -240,11 +248,12 @@ assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"));
 assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // October 25: requested exact native opening/minimum size from Windows screenshot.
 // On the user's ~1.18x Windows DPI, the original 812x612 constants opened
-// a visibly ~684x519 window. 960x720 restores about ~810x610 on screen.
+// a visibly ~684x519 window. 960x570 provides an approximately 16:9
+// usable timer client area on Windows while keeping a 960 logical px width.
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
 assert.ok(/defaultWindowWidth\s*=\s*960/.test(nativeSource),'Opening window must be 960 logical px wide to match approved screenshot at Windows DPI');
-assert.ok(/defaultWindowHeight\s*=\s*720/.test(nativeSource),'Opening window must be 720 logical px high to match approved screenshot at Windows DPI');
+assert.ok(/defaultWindowHeight\s*=\s*570/.test(nativeSource),'Opening window must fit the 16:9 stage without large vertical letterboxes');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 // MM:SS: larger and lower with a conditional progress gap; HH:MM:SS unchanged.
