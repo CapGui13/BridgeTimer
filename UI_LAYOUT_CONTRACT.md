@@ -252,7 +252,7 @@ l'interface, en rétrécissant le chrono long ou en détruisant l'homothétie.
 - La scène du timer se calcule toujours sur **1600 × 900** unités (16:9).
   Mode fenêtré et plein écran appliquent exactement **un seul coefficient** à
   tout le timer, sans recalcul des éléments lors du changement de mode.
-- Taille d'ouverture/minimum actuelle de la fenêtre Windows : **960 × 570** (environ 960 × 540 de surface WebView utile)
+- Taille d'ouverture/minimum actuelle de la fenêtre Windows : **960 × 720** (dimensions nécessaires aux paramètres ; ne pas les réduire pour la maquette du timer)
   unités logiques ; la maquette interne 16:9 est ajustée uniformément à cette
   fenêtre.
 - Les boutons d'en-tête ont une largeur suffisante pour « Paramètres » et
