@@ -1007,4 +1007,24 @@ assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,
  'Timer native resize must occur on view change, never on a phase change');
 assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,1,
  'Settings native restoration must occur on view change');
+// Fullscreen settings header shares the immutable timer stage geometry.
+// The native window remains untouched by these CSS-only fullscreen changes.
+for(const required of [
+ 'id="settingsFullscreenBtn"',
+ 'body.fs #settings .wrap>.head{',
+ 'width:1600px;height:82px;transform:scale(var(--settings-stage-scale))',
+ 'body.fs #settings .wrap>.head #drawerClose{',
+ 'width:168px;min-width:168px',
+ 'body.fs #settings .wrap>.head #settingsFullscreenBtn{',
+ 'display:inline-flex;width:246px;min-width:246px',
+ 'docRoot.style.setProperty(\'--settings-stage-scale\',k);',
+ '$("settingsFullscreenBtn").onclick=fs;',
+ 'document.body.appendChild($("miniTimer"))',
+ 'body.settingsLive #miniTimer.spView{',
+ 'display:block;position:fixed;left:0;bottom:0',
+])assert.ok(html.includes(required),'Fullscreen settings/thumbnail regression: '+required);
+assert.ok(!html.includes('settingsActions.prepend($("miniTimer"))'),
+ 'Live thumbnail must never be placed inside the fixed footer');
+assert.ok(!html.includes('body.fs #timer .top{'),
+ 'Do not change the original timer header just to match settings');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
