@@ -456,3 +456,21 @@ panneau ne doit être retouché.
 - Boutons de pied de page : même hauteur virtuelle et même taille de
   police que ceux du timer. Barre opaque ; pas de modification de la
   présentation plein écran ni des commandes du chronomètre.
+
+
+## 27/10 — Centrage des commandes du timer entre l'heure et le tour
+
+Pour MP4 et Tournoi par paires, l'espace effectivement libre sur la barre
+inférieure se situe entre **le bord droit de l'heure** et **le bord gauche
+du libellé de tour**. Le groupe de boutons doit occuper le centre exact de
+cet espace : distance heure→premier bouton égale à distance dernier bouton→tour.
+L'ancien centrage à 50 % de la largeur totale des 1600 pixels était faux quand
+les étiquettes gauche et droite ont des largeurs différentes.
+
+Le point médian est mesuré en coordonnées visibles, converti ensuite dans
+les pixels virtuels (facteur homothétique unique). Il s'actualise après
+l'affichage du tour, lors du changement de phase, et lors d'un redimensionnement
+de fenêtre. Ni la position de l'heure ou du tour, ni leur taille, ni les dimensions
+de la barre ne changent. Le contrôle dans Edge doit vérifier l'écart entre
+les deux espaces (≤1.1 pixel projeté) dans les 2 formats, y compris les numéros
+de tour à un et deux chiffres, le mode plein écran et les transitions.
