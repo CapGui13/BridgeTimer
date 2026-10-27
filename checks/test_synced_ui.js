@@ -204,13 +204,17 @@ for(const required of [
    const sandbox={innerWidth:w,innerHeight:h,$:()=>root,Math,C:3};
    vm.runInNewContext('(function updateStage(){'+body[1]+'\n})',sandbox)();
    const preview=mode==='single',factor=Math.min(w/1600,h/(preview?956:900));
-   const y=preview?(h-956*factor)/2+56*factor:(h-900*factor)/2;
+   const y=preview?(h-956*factor)/2+56*factor:0;
    assert.ok(Math.abs(Number(variables.get('--stage-scale'))-factor)<1e-12,
-     'Single preview must be one uniformly scaled 1600x900 stage');
+     'Single shared uniform scale, including native non-16:9 windows');
    assert.ok(Math.abs(parseFloat(variables.get('--stage-top'))-y)<1e-8,
-     'Full preview stage must begin directly below its outside toolbar');
-   assert.ok(Math.abs(parseFloat(variables.get('--stage-left'))-(w-1600*factor)/2)<1e-8,
-     'No horizontal distortion in single preview');
+     'Timer bands flush with viewport edges except isolated screen preview');
+   assert.ok(Math.abs(parseFloat(variables.get('--stage-left'))-(preview?(w-1600*factor)/2:0))<1e-8,
+     'Timer uses full window width, preview uses original 1600x900');
+   assert.ok(Math.abs(parseFloat(variables.get('--stage-width'))-(preview?1600:w/factor))<1e-7,
+     'Windowed timer expands stage grid horizontally without stretching fonts');
+   assert.ok(Math.abs(parseFloat(variables.get('--stage-height'))-(preview?900:h/factor))<1e-7,
+     'Windowed timer expands stage grid vertically, removing empty top/bottom strips');
   }
  }
 }
@@ -260,8 +264,9 @@ assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Restored opening/mi
 assert.ok(/defaultWindowHeight\s*=\s*612/.test(nativeSource),'Restored opening/minimum window must be 612 pixels tall');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
-assert.ok(nativeSource.includes('if !nativeCloseConfirmation(hwnd) { return 0 }'),
-  'Native X / Alt+F4 must visibly confirm instead of silently consuming WM_CLOSE');
+assert.ok(nativeSource.includes('nativeCloseRequestHandler()') &&
+  nativeSource.includes('w.Eval(`if(typeof q34==="function"){q34()}'),
+  'Native X / Alt+F4 must open the SAME HTML confirmation as Quitter');
 assert.ok(nativeSource.includes('closeApproved.Store(true)'),
   'An approved HTML quit must bypass the second native confirmation');
 assert.ok(!nativeSource.includes('nativeClientCalibrated=true'),
@@ -533,10 +538,10 @@ assert.ok(html.includes('#timer #clock.longStartClock .clockSeconds{font-size:.5
    const k=Number(set.get('--stage-scale'));
    const expected=Math.min(viewportW/1600,viewportH/900);
    assert.ok(Math.abs(k-expected)<1e-12,'Stage must use one factor in every viewport');
-   assert.equal(set.get('--stage-width'),'1600px');
-   assert.equal(set.get('--stage-height'),'900px');
-   assert.ok(Math.abs(parseFloat(set.get('--stage-left'))-(viewportW-1600*k)/2)<1e-8);
-   assert.ok(Math.abs(parseFloat(set.get('--stage-top'))-(viewportH-900*k)/2)<1e-8);
+   assert.ok(Math.abs(parseFloat(set.get('--stage-width'))-viewportW/k)<1e-7);
+   assert.ok(Math.abs(parseFloat(set.get('--stage-height'))-viewportH/k)<1e-7);
+   assert.equal(set.get('--stage-left'),'0px');
+   assert.equal(set.get('--stage-top'),'0px');
    for(const reference of [15,42,90,300,480,1100]){
      const width=reference*k,height=reference*k;
      assert.ok(Math.abs(width/height-1)<1e-12,
@@ -1166,4 +1171,11 @@ for(const rule of [
  "body:not(.fs).settingsLive #settings .actions {",
  "bottom:0!important;"
 ]) assert.ok(html.includes(rule),'Settings independent window resize regression: '+rule);
+// The native request never shows a separate MessageBox. Only the existing
+// on-page exit overlay is allowed to ask for confirmation.
+assert.ok(!nativeSource.includes('func confirmNativeClose('));
+assert.ok(nativeSource.includes('if msg == wmClose && !closeApproved.Load() {'));
+assert.ok(nativeSource.includes('nativeCloseRequestHandler = func() {'));
+assert.ok(nativeSource.includes('w.Dispatch(func() {'));
+assert.ok(html.includes('function q34(){') && html.includes('exitConfirmOverlay'));
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
