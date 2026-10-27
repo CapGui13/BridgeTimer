@@ -409,3 +409,16 @@ des paramètres en mode fenêtré.
   Arrêter** ; toutes les fonctions associées aux identifiants restent les mêmes.
 * Vérifier les modes Match et Paires, Debug, la non-réinitialisation du
   décompte et les transitions en plein écran avec les contrôles préexistants.
+
+
+## Ajustement isolé de la barre du haut Paramètres en mode fenêtré (27/10/2026)
+
+Après le passage aux fenêtres natives communes 16:9, l'en-tête des paramètres
+restait trop haut : marge supérieure de `.wrap` + titre 34px + séparation.
+La page **fenêtrée seulement** reprend désormais la hauteur du haut du Timer
+mesurée au moment du passage de vue. Le titre « Bridge Timer » et son bouton
+« Retour au timer » sont réduits proportionnellement ; la barre n'ajoute
+aucune marge verticale. Le mode plein écran conserve son en-tête synchronisé,
+la barre opaque du bas et sa miniature restent inchangées. Un test Chromium
+compare désormais les hauteurs des deux en-têtes en mode fenêtré, ainsi que
+la géométrie du timer avant/après le retour.
