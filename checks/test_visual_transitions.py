@@ -80,25 +80,47 @@ def assert_same_stage_geometry(a,b,label,cross_viewport=False):
     # can measure colon glyphs differently. Compare rendered font size
     # and vertical geometry, not intrinsic width of dynamic text.
     # Same-viewport transitions remain strictly checked.
-    variable_text={"#localTime","#round","#clock","#club","#status"}
     for sel in a:
         dimensions=("x","y","w","h","font")
         if cross_viewport:
-            if sel in variable_text:
-                dimensions=("y","h","font")
-                if sel=="#localTime":
-                    dimensions=("x","y","h","font")
-            if sel in {"#timer .controls","#minus","#pause","#plus","#next","#resetRound"}:
-                # These buttons FOLLOW the midpoint between two dynamic
-                # text labels; x may drift by a few pixels when the real
-                # time/round strings have different intrinsic widths.
-                # Their y, width, height and typography must remain equal.
-                dimensions=("y","w","h","font")
+            # A non-16:9 window now grows the central grid instead of leaving
+            # blank areas around the header/footer. Different reference-stage
+            # widths/center positions are expected, but virtual font sizes
+            # and the HEIGHTS of both persistent bands remain unchanged.
+            dimensions=("h","font")
+            if sel in {"#clock","#status"}:
+                dimensions=("font",)
         for dimension in dimensions:
             delta=abs(a[sel][dimension]-b[sel][dimension])
             assert delta<=1.1, f"{label}: {sel}.{dimension} changed by {delta:.2f}: {a[sel]} -> {b[sel]}"
         assert a[sel]["padding"]==b[sel]["padding"], f"{label}: {sel} padding changed: {a[sel]} -> {b[sel]}"
 
+
+def test_timer_bands_fill_window(browser):
+    """Native user screenshot: no giant blank strips above/below the timer."""
+    page=browser.new_page(viewport={"width":812,"height":580})
+    page.set_content(html,wait_until="domcontentloaded")
+    for mode in ("4","2"):
+        page.evaluate("""mode => {
+          s.mode=mode;st.started=true;st.phase='round';st.running=false;
+          st.remaining=3599;st.roundDuration=3600;
+          showTimer();render();
+        }""",mode)
+        for width,height in ((812,580),(812,700),(960,540),(1210,646),(1280,720),(1600,900)):
+            page.set_viewport_size({"width":width,"height":height})
+            page.evaluate("updateStage();render()")
+            r=page.evaluate("""() => {
+              const q=sel=>{const x=document.querySelector(sel).getBoundingClientRect();
+                return {x:x.left,y:x.top,right:x.right,bottom:x.bottom,w:x.width,h:x.height}};
+              return {stage:q('#timer'),top:q('#timer .top'),bottom:q('#timer .bottom'),
+                w:innerWidth,h:innerHeight,scale:parseFloat(document.querySelector('#timer').style.getPropertyValue('--stage-scale'))};
+            }""")
+            assert abs(r["stage"]["x"])<=1.1 and abs(r["stage"]["y"])<=1.1, f"Timer canvas detached: {mode} {r}"
+            assert abs(r["stage"]["right"]-width)<=1.1 and abs(r["stage"]["bottom"]-height)<=1.1, f"Timer canvas letterboxed: {mode} {r}"
+            assert abs(r["top"]["y"])<=1.1 and abs(r["top"]["right"]-width)<=1.1, f"Timer header detached: {mode} {r}"
+            assert abs(r["bottom"]["bottom"]-height)<=1.1 and abs(r["bottom"]["right"]-width)<=1.1, f"Timer footer detached: {mode} {r}"
+            assert r["top"]["h"]>15 and r["bottom"]["h"]>15, f"Persistent bars collapsed: {mode} {r}"
+    page.close()
 
 def test_exit_and_live_settings(browser):
     # Real browser execution; exercise the same event paths as users.
@@ -259,6 +281,7 @@ def main():
             path=shutil.which("chromium") or shutil.which("chromium-browser")
             browser=pw.chromium.launch(executable_path=path,headless=True,args=["--no-sandbox"])
         test_exit_and_live_settings(browser)
+        test_timer_bands_fill_window(browser)
         test_settings_window_resize(browser)
         for width,height in viewports:
             page=browser.new_page(viewport={"width":width,"height":height})
