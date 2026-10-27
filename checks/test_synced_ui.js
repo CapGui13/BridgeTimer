@@ -1111,4 +1111,21 @@ for(const contract of [
  'if(debugActive())_adu();alignTimerFooterControls();fc();',
  " if(typeof alignTimerFooterControls==='function')alignTimerFooterControls();"
 ])assert.ok(html.includes(contract),'Footer center regression: '+contract);
+// A single 1600x900 stage must have identical typography in full and
+// windowed modes, even below the old 850px viewport breakpoint.
+for(const val of [
+ 'invariant settings-button slots & screen-independent timer styles',
+ 'width:711px!important;min-width:711px!important;max-width:711px!important;',
+ 'flex:0 0 104px!important;',
+ 'flex:0 0 136px!important;',
+ 'flex:0 0 154px!important;',
+ 'flex:0 0 106px!important;',
+ 'flex:0 0 162px!important;',
+ '#settings .actions .settingsActionButtons > #stopTimer.hidden {',
+ 'display:inline-flex!important;visibility:hidden!important;',
+ '#timer .controls{gap:9px!important;}',
+ 'font-size:21px!important;padding:10px 14px!important;',
+ '#timer .topBtns{gap:8px!important;}',
+ 'font-size:18px!important;padding:10px 13px!important;'
+]) assert.ok(html.includes(val),'Stable settings positions/fullscreen typography: '+val);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
