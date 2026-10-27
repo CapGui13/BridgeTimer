@@ -422,3 +422,17 @@ aucune marge verticale. Le mode plein écran conserve son en-tête synchronisé,
 la barre opaque du bas et sa miniature restent inchangées. Un test Chromium
 compare désormais les hauteurs des deux en-têtes en mode fenêtré, ainsi que
 la géométrie du timer avant/après le retour.
+
+
+## Complément 27/10 : boutons Paramètres superposés aux boutons Timer en fenêtre
+
+L'en-tête des Paramètres fenêtrés reprend exactement la projection
+1600 × 900 du Timer : même origine, même facteur homothétique, même marge
+de droite et même hauteur. Les deux boutons de Paramètres occupent les
+**deux dernières positions** du Timer : « Retour au timer » (largeur 168)
+superposé à « Paramètres », « Plein écran » (largeur 246) superposé au bouton
+homonyme du Timer. En plein écran, le texte de sortie existant reste
+« Quitter plein écran ». La zone de réglages défile sous l'en-tête fixe,
+et l'espace réservé n'a pas été ajouté deux fois. Tests de coordonnées
+pour sept tailles de fenêtre et les deux modes de tournoi. Aucun autre
+panneau ne doit être retouché.
