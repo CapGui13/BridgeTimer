@@ -139,6 +139,7 @@ var (
 	// without distorting the same 1600x900 timer layout.
 	timerViewActive atomic.Bool
 	viewRequestSerial int64
+	nativeClientCalibrated bool
 	settingsWindowRect rect
 	settingsWindowRectValid bool
 	savedStyle uintptr
@@ -365,6 +366,7 @@ func setNativeView(hwnd uintptr, requested string, serial int64) bool {
 	// Preserve existing WM_GETMINMAXINFO support in both views.
 	timerViewActive.Store(true)
 	if fullscreen { return true }
+	if nativeClientCalibrated { return true } // no native resize on screen transitions
 	zoomed, _, _ := isZoomed.Call(hwnd)
 	if zoomed != 0 { return true }
 	var wr, cr rect
@@ -377,12 +379,13 @@ func setNativeView(hwnd uintptr, requested string, serial int64) bool {
 	// Only the initial native-client calibration may change its geometry.
 	// Thereafter, both views compute the same target and do nothing.
 	if desiredHeight < 200 || desiredHeight > 10000 { return false }
-	if diff := desiredHeight-oldHeight; diff >= -1 && diff <= 1 { return true }
+	if diff := desiredHeight-oldHeight; diff >= -1 && diff <= 1 { nativeClientCalibrated=true; return true }
 	y := wr.Top + (oldHeight-desiredHeight)/2
 	ok, _, _ := setWindowPos.Call(hwnd, 0,
 		uintptr(wr.Left), uintptr(y), uintptr(oldWidth), uintptr(desiredHeight),
 		swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
 	if ok != 0 {
+		nativeClientCalibrated=true
 		log.Printf("one-time 16:9 client calibration (%s): %dx%d -> %dx%d",requested,oldWidth,oldHeight,oldWidth,desiredHeight)
 	}
 	return ok != 0
