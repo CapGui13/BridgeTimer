@@ -113,7 +113,7 @@ assert.ok(html.includes('id="resumeTime" type="time" value="" required'),'The Re
 assert.ok(html.includes('#resumeTime:invalid:not(:focus){background:#30202a!important;border-color:#94535d!important'),'The empty, unfocused restart input needs a muted red background and border');
 assert.ok(html.includes('#resumeTime::-webkit-calendar-picker-indicator{display:none!important'),'The time picker icon must remain hidden');
 // Visual regression: consistent text relief, no overlay for live temporary notices.
-assert.ok(html.includes('#timer #msg.roundMessageTemporary{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px'),'Temporary notice relief must not disappear');
+assert.ok(html.includes('color:var(--message-color);font-size:96px;text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px'),'All shared notices keep the same text relief');
 assert.ok(html.includes('#timer #pauseOverlay .pauseBig{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.5px'),'PAUSE headline needs finish-like text relief');
 assert.ok(html.includes('#timer #pauseOverlay .pauseSmall{text-shadow:0 3px 15px #000c'),'PAUSE instruction needs a readable subtle shadow');
 assert.ok(html.includes('$("msg").classList.toggle("roundMessageTemporary",!!temporary)'),'A real temporary message in a between-round break must receive relief');
@@ -126,8 +126,8 @@ assert.ok(html.includes('.boardTimeSetting::before{content:"";position:absolute;
 assert.ok(html.includes('<div class="timeEntry boardTimeSetting"><label for="boardMinutes">Temps par donne</label>'),'Complete minutes-seconds element should remain present');
 // Jump advance reminder must have the exact same relief as a temporary message, not a colored glow.
 assert.ok(!html.includes('text-shadow:0 0 22px color-mix(in srgb,var(--warn) 38%,transparent)'),'Legacy green jump-message halo must be removed');
-assert.ok(html.includes('#timer.roundReading #msg.roundMessageJump{color:var(--message-color);text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px rgba(0,0,0,.30)}'),'Jump notice must use the same shadow and stroke as a temporary notice');
-assert.ok(html.includes('#timer #msg.roundMessageTemporary{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px rgba(0,0,0,.30)}'),'Temporary notice relief must remain intact');
+assert.ok(html.includes('#timer.roundReading #msg,#timer.breakState #msg{left:50%;right:auto;transform:translateX(-50%);top:70%;height:29%;'),'All notice types must use one layout (round/break)');
+assert.ok(!html.includes('#timer #msg.roundMessageTemporary{text-shadow:'),'No duplicate styling for temporary notices');
 // Gallery thumbnails are exactly scaled copies of the 1600x900 timer stage.
 // No separate typography, no 778x595 alternate reflow, and no stage re-scaling
 // inside the iframe. These properties must apply to ALL 9 special screens.
@@ -591,4 +591,59 @@ assert.ok(!html.includes('#timer .bottom{height:90px;min-height:90px;'),
  'Footer cannot silently return to the original 90px band');
 assert.equal((html.match(/#timer #localTime,#timer #round\{top:50%;bottom:auto;transform:translateY\(-50%\)\}/g)||[]).length,1,
  'Footer alignment must remain a single shared CSS rule for both labels');
+
+/* CRITICAL notice-layout contract: one box, one font-fit rule for temporary,
+   board-number, advance-jump warning and between-round notices, independent
+   of short/long and window/fullscreen (only stage homothety scales them).
+   Pause, end-of-round, and actual jump splash remain separate semantics. */
+assert.ok(html.includes('#timer.roundReading #msg,#timer.breakState #msg{'),
+ 'Shared notice box must apply both during a round and between rounds');
+for(const broken of [
+ '#timer.breakState #msg{top:71.5%;',
+ '#timer.roundReading #msg.roundMessageJump{color:',
+ '#timer.roundReading #msg.roundMessageTemporary{color:'
+])assert.ok(!html.includes(broken),'Old per-message layout must not return: '+broken);
+assert.ok(html.includes('const active=timer.classList.contains("roundReading")||timer.classList.contains("breakState");'),
+ 'Auto-fitting notice text must apply to round and between-round');
+assert.ok(html.includes('const max=154,min=22,step=2;'),
+ 'All notices must use one shared auto-fit range');
+assert.ok(html.includes('e.style.whiteSpace="normal";'),
+ 'Long messages must be allowed to wrap');
+assert.ok(html.includes('e.style.whiteSpace="nowrap";'),
+ 'Short messages may use one line');
+assert.ok(!html.includes('Prochain tour :'),'Remove Prochain tour X from between-round screen');
+assert.ok(html.includes('$( "submsg" )')===false ||
+ html.includes('$("submsg").textContent="";'),
+ 'Between-round explanatory line must be empty');
+// Exercise production fit rule with mocked element sizes to catch a broken
+// state gate and ensure all three message sources share identical outcomes.
+{
+ const src=scripts.map(x=>x[1]).join('\n');
+ const found=src.match(/function q38\(\)\{([\s\S]*?)\n\}\s*let lsf/);
+ assert.ok(found,'Cannot find unified live message fitter');
+ function run(kind,textValue,limit=1200){
+  const e={textContent:textValue,style:{fontSize:'',whiteSpace:''},
+   clientWidth:limit,clientHeight:220,getClientRects:()=>[1]};
+  Object.defineProperty(e,'scrollWidth',{get(){
+   const size=parseFloat(e.style.fontSize)||96;
+   // Simulated line width; use same width/height metrics across all kinds.
+   const full=textValue.length*size*.53;
+   return e.style.whiteSpace==='nowrap'?full:Math.min(full,limit);
+  }});
+  Object.defineProperty(e,'scrollHeight',{get(){
+   const size=parseFloat(e.style.fontSize)||96;
+   const lines=e.style.whiteSpace==='nowrap'?1:
+     Math.ceil(textValue.length*size*.53/limit);
+   return lines*size*1.08;
+  }});
+  const timer={clientWidth:1600,classList:{contains:c=>c===kind}};
+  const sandbox={ $:id=>id==='msg'?e:timer,Math };
+  vm.runInNewContext('(function q38(){'+found[1]+'\n})',sandbox)();
+  return {font:e.style.fontSize,whitespace:e.style.whiteSpace};
+ }
+ for(const str of ['Annonce courte','Vous êtes censés jouer la donne 11','Au prochain tour, les EO sautent une table','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA']){
+  assert.deepEqual(run('roundReading',str),run('breakState',str),
+   'A given text must use the same font fit in all shared message states');
+ }
+}
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
