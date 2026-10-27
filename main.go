@@ -154,9 +154,7 @@ var (
 	nativeAwake bool
 	logFile *os.File
 	stateFileMu sync.Mutex
-	// Close-request handshake: Windows asks, JS confirms, then nativeExit posts WM_CLOSE.
-	closePromptPending atomic.Bool
-	closeRequestAt atomic.Int64
+	// Prevent duplicate native confirmation after an approved HTML Quitter.
 	closeApproved atomic.Bool
 )
 
@@ -327,9 +325,6 @@ func applyDarkTitleBar(hwnd uintptr) {
 	setWindowPos.Call(hwnd, 0, 0, 0, 0, 0, swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
 }
 
-// A second Windows close request after 12 seconds without a WebView
-// acknowledgement provides a last-resort escape when the UI is frozen.
-// Normal closes still always use the user's custom HTML confirmation.
 // Native title-bar X and Alt+F4 confirmation. Does not call WebView/COM
 // from WndProc; no JS event loop or asynchronous polling is required.
 func confirmNativeClose(hwnd uintptr) bool {
@@ -339,12 +334,6 @@ func confirmNativeClose(hwnd uintptr) bool {
  return response == 6 // IDYES
 }
 
-func confirmUnresponsiveExit(hwnd uintptr) bool {
-	text, _ := syscall.UTF16PtrFromString("BridgeTimer ne répond pas à la demande de fermeture.\n\nForcer la fermeture ? Le tournoi en cours sera interrompu.")
-	title, _ := syscall.UTF16PtrFromString("BridgeTimer - Fermeture de secours")
-	response, _, _ := messageBoxW.Call(hwnd, uintptr(unsafe.Pointer(text)), uintptr(unsafe.Pointer(title)), 0x00000024) // MB_YESNO | MB_ICONQUESTION
-	return response == 6 // IDYES
-}
 
 
 /*
@@ -356,14 +345,6 @@ func confirmUnresponsiveExit(hwnd uintptr) bool {
  * Fullscreen is handled independently by toggleNativeFullscreen.
  * Serial guards drop stale asynchronous view requests.
  */
-func timerWindowOuterHeight(outerHeight, clientWidth, clientHeight int32) int32 {
-	if outerHeight <= 0 || clientWidth <= 0 || clientHeight <= 0 {
-		return outerHeight
-	}
-	targetClientHeight := (clientWidth*9 + 8)/16
-	return targetClientHeight + outerHeight - clientHeight
-}
-
 // Timer and Settings share one native window. Switching views NEVER resizes
 // it; in particular, no 16:9 client calibration may undo the user-specified
 // startup/minimum outer dimensions (812 x 612).
@@ -694,13 +675,10 @@ func main() {
 	hwnd := uintptr(w.Window())
 	applyDarkTitleBar(hwnd)
 	installDarkTitleHook(hwnd)
-	// Consume close requests on the JS side, without calling WebView/COM from WndProc.
-	if err := w.Bind("nativeConsumeCloseRequest", func() bool {
-		if !closePromptPending.Swap(false) { return false }
-		closeRequestAt.Store(0)
-		return true
-	}); err != nil {
-		log.Printf("close request bind: %v", err)
+	// Compatibility shim for existing HTML; title-bar close requests
+	// now show their own synchronous native confirmation in WM_CLOSE.
+	if err := w.Bind("nativeConsumeCloseRequest", func() bool { return false }); err != nil {
+		log.Printf("close request legacy bind: %v", err)
 	}
 	// The approved path bypasses the confirmation intercept exactly once.
 	if err := w.Bind("nativeExit", func() bool {
