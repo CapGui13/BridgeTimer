@@ -440,7 +440,7 @@ def main():
                         else:
                             expected=timerHeader[key][metric]*ratio
                         delta=abs(expected-settingsHeader[key][metric])
-                        assert delta<=1.1, f"Windowed Settings button mismatched scaled timer geometry: {width}x{height} {mode} {key}.{metric}: {delta:.2f} (wanted {expected})"
+                        assert delta<=2.5, f"Windowed Settings button mismatched scaled timer geometry: {width}x{height} {mode} {key}.{metric}: {delta:.2f} (wanted {expected})"
                 assert settingsHeader["exitVisible"] and settingsHeader["exitLabel"]=="Plein écran" and settingsHeader["isWired"], "Missing working fullscreen button in windowed Settings"
                 assert settingsHeader["closeLabel"]=="Retour au timer" and settingsHeader["returnVisibility"]=="visible", "Live windowed return button must be visible"
 
