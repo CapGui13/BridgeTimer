@@ -290,3 +290,13 @@ En cas d'incompatibilité avec un futur correctif : préserver le format court
 déjà approuvé, préserver la durée initiale comme unique discriminant, et
 mettre à jour le test `checks/test_synced_ui.js` uniquement si le contrat est
 toujours pleinement respecté.
+
+
+## Stabilité des bandeaux entre tous les écrans (27/10/2026)
+
+- Pendant une transition, l'écran commun ne couvre que `.main`, jamais l'en-tête ni le pied de page.
+- L'état `breakState` ne doit pas modifier la couleur de fond de `#timer` : l'éventuelle teinte spéciale est limitée à `.main`.
+- Le groupe des commandes du bas conserve sa **géométrie strictement identique** quand les boutons changent de libellé entre « − 1 min / + 1 min » et « − 15 s / + 15 s ».
+- Les chemins `round → break → round`, `round → jump → round`, `round → roundEnd → round`, `round → ended → round`, `fenêtré → plein écran → fenêtré`, `timer → paramètres → timer` et `Écrans tests → paramètres` sont des scénarios de non-régression.
+- Conserver l'ouverture Windows à **960 × 720** pour les paramètres. Ne pas toucher aux dimensions natives de la fenêtre pour corriger la maquette 16:9.
+- Tests source/CI et matrice visuelle Chromium sont complémentaires. Aucun test ne remplace la confirmation finale sur Windows.
