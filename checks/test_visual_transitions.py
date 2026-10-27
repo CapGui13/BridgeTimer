@@ -138,14 +138,28 @@ def main():
                 assert rects2["miniInBody"], "Miniature still inside the footer"
                 assert abs(rects2["mini"]["x"])<0.1 and abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["viewport"]["h"])<0.1, "Miniature not pinned to bottom-left corner"
                 page.evaluate("showTimer()")
-                equal(measure(page),measure(page), "sanity")
+                actual=page.evaluate("""() => {
+                  const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
+                    return {x:r.x,y:r.y,w:r.width,h:r.height};};
+                  return {band:b("#timer .top"),settings:b("#settingsBtn"),exit:b("#fsBtn")}
+                }""")
+                for key in ["band","settings","exit"]:
+                    for metric in ["x","y","w","h"]:
+                        assert abs(rects[key][metric]-actual[key][metric])<=1.1, f"Timer header moved on settings return: {key}.{metric}"
                 page.evaluate("q25(false)")
                 page.evaluate("showSettings()")
                 page.evaluate("showTimer()")
                 calls=page.evaluate("window.__viewCalls.slice(-2)")
                 assert [c["mode"] for c in calls]==["settings","timer"], f"Incorrect native mode changes: {calls}"
                 assert calls[0]["serial"]<calls[1]["serial"], "Native mode requests not ordered"
-                equal(before,measure(page),f"{width}x{height}, {mode}, settings return")
+                afterSettings=measure(page)
+                # The PAIRS format may recalculate the number of tours on
+                # re-entering settings. The footer label's TEXT width can
+                # then change, but its right edge and baseline must not move.
+                equal(before,afterSettings,f"{width}x{height}, {mode}, settings return",exclusions=("#round",))
+                oldRound,newRound=before["#round"],afterSettings["#round"]
+                assert abs((oldRound[0]+oldRound[2])-(newRound[0]+newRound[2]))<0.1, "Round label right anchor moved"
+                assert oldRound[1]==newRound[1] and oldRound[3:]==newRound[3:], "Round label baseline or typography moved"
             before=measure(page)
             page.set_viewport_size({"width":1920,"height":1080})
             page.evaluate("q25(true)")
