@@ -708,6 +708,7 @@ for(const id of [
 for(const token of [
  'id="betweenField" class="unitField hidden"><input id="between" type="tel" min="0" max="99" value="00"><span class="unit">S</span></div><button id="betweenMsgBtn"',
  'title="Personnaliser le changement de tour">CHGT</button>',
+ '#betweenLabel,#betweenField,#betweenMsgBtn,#sessionDurationBox{position:relative;left:-80px}',
  'id="betweenMsgOverlay" class="jumpMsgOverlay hidden"',
  'id="betweenMsgForm"',
  'id="betweenSplashTitleSetting"',
