@@ -974,4 +974,18 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
  assert.equal(q2a(preset),true,
   'Previously saved themes without new field remain compatible');
 }
+// Phase-isolation guards. Verified separately with headless Chromium across
+// five viewport sizes: transitions and fullscreen toggles cannot move bands.
+assert.ok(html.includes('#timer.breakState .main{background:var(--panel)}'),
+ 'Between-round may tint only the central pane, never the permanent bands');
+assert.ok(!html.includes('#timer.breakState{background:var(--panel)}'),
+ 'Whole-stage background changes would repaint both header and footer');
+assert.ok(html.includes('#timer .controls #minus,#timer .controls #plus{box-sizing:border-box;width:114px;min-width:114px;flex:0 0 114px}'),
+ 'Jump-specific +/- 15 s labels must not shift the controls group');
+assert.ok(html.includes('const transition=transitionSplashModel(st,s,breakTemporary);'),
+ 'Transition phases must share one model, not redefine stage layout');
+assert.ok(html.includes('tm.classList.remove("spa","spm");')&&html.includes('tm.classList.add("spm","spa");'),
+ 'Gallery captures must isolate and restore preview mode classes');
+assert.ok(html.includes('$("timer").classList.remove("spm","spa");'),
+ 'Returning from screen tests must restore the standard stage classes');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
