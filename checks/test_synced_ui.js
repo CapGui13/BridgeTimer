@@ -1028,4 +1028,23 @@ assert.ok(!html.includes('settingsActions.prepend($("miniTimer"))'),
 assert.ok(html.includes('function cacheSettingsHeaderGeometry(){')&&html.includes('cacheSettingsHeaderGeometry();q43();'), 'Settings must inherit the measured timer header height before hiding the timer');
 assert.ok(!html.includes('body.fs #timer .top{'),
  'Do not change the original timer header just to match settings');
+
+// 27 October — live tournament locks, deferred Debug edits, and unified footer.
+for(const k of [
+ 'const lockedDurationIds=["hours","minutes","seconds","boardMinutes","boardSeconds"]',
+ 'function syncLiveTournamentControls(live){',
+ 'const locked=!!live&&!debugActive();',
+ '$("between").disabled=locked?$("mode").value!=="2"',
+ 'if(locked)$("boardProgressNotice").disabled=false;',
+ 'if(st.started&&document.body.classList.contains("settingsLive")){cb.disabled=false;return}',
+ 'st.roundBetween=Math.max(0,Number(s.between)||0);',
+ 'body.fs #settings .actions{',
+ 'height:var(--settings-bottom-height,88px)!important;',
+ 'body.fs #settings .actions .settingsActionButtons .btn,',
+ 'body.fs #settings .actions #quitAppBtn{'
+])assert.ok(html.includes(k),'Missing active-session/footer guard: '+k);
+assert.ok(!html.includes('st.remaining=newDuration;if(wasRunning)_ses()'),
+ 'Debug live duration changes must never restart the running clock');
+assert.ok(!html.includes('st.remaining=newBetween;if(wasRunning)_ses()'),
+ 'Debug changes of the inter-round setting must not restart an active break');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
