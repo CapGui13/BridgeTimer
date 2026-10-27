@@ -210,7 +210,7 @@ def test_settings_window_resize(browser):
           const pad=parseFloat(getComputedStyle(document.querySelector('#settings .wrap')).paddingTop);
           return {head:rect('#settings .wrap>.head'),footer:rect('#settings .actions'),
             heading:rect('#settings .wrap>.head h1'),
-            form:rect('#settings .panel'),
+            form:rect('#settings .tournamentCard'),
             pad,scale:Number(document.documentElement.style.getPropertyValue('--settings-window-scale')),
             vw:innerWidth,vh:innerHeight};
         }""")
