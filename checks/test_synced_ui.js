@@ -685,7 +685,7 @@ assert.ok(!html.includes('Prochain tour :'),'Never reintroduce the next-round li
  assert.equal(between.visible,true);
  assert.equal(jump.title,'ATTENTION');
  assert.equal(between.title,'CHANGEMENT DE TOUR');
- assert.equal(between.text,'CHANGEZ DE TABLE');
+ assert.equal(between.text,'Changez de table');
  assert.equal(jump.label,between.label);
  assert.equal(jump.seconds,10);
  assert.equal(between.seconds,40);
@@ -737,7 +737,7 @@ for(const token of [
  'betweenSplashBodySetting:$("betweenSplashBodySetting").value',
  'betweenCountdownLabel:$("betweenCountdownLabel").value',
  'title:between?(settings.betweenSplashTitleSetting??"CHANGEMENT DE TOUR")',
- 'text:between?(temporaryBreakText||(settings.betweenSplashBodySetting??"CHANGEZ DE TABLE"))',
+ 'text:between?(temporaryBreakText||((settings.betweenSplashBodySetting??"Changez de table")==="CHANGEZ DE TABLE"?"Changez de table":(settings.betweenSplashBodySetting??"Changez de table")))',
  'label:between?(settings.betweenCountdownLabel??"secondes pour le changement")',
  'el.closest("#jumpMsgForm,#betweenMsgForm")'
 ])assert.ok(html.includes(token),'CHGT regression: '+token);
@@ -820,7 +820,7 @@ assert.ok(!html.includes('Durée : réglée par le champ « Temps entre tours »
     remove:name=>{if(name==='hidden')modalOpen=true}
    }},
    betweenSplashTitleSetting:{value:'CHANGEMENT DE TOUR',focus:()=>{}},
-   betweenSplashBodySetting:{value:'CHANGEZ DE TABLE'},
+   betweenSplashBodySetting:{value:'Changez de table'},
    betweenCountdownLabel:{value:'secondes pour le changement'},
    settings:{classList:{contains:()=>false}}
   };
