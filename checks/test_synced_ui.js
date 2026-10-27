@@ -38,7 +38,7 @@ assert.equal(sandbox.q15(250,60),59750);
 assert.equal(sandbox.q15(0,-20),0);
 // Lock the October 23 footer/restart/overtime contracts.
 const stopPos=html.indexOf('id="stopTimer"'),launchPos=html.indexOf('id="fresh"');
-assert.ok(stopPos>0&&launchPos>stopPos,'Arrêter must precede Lancer/Timer in the footer');
+assert.ok(launchPos>0&&stopPos>launchPos,'Timer / Lancer must precede Arrêter in the footer');
 assert.ok(html.includes('#settings #stopTimer.hidden{display:inline-flex!important;visibility:hidden!important'),'The hidden Arrêter slot must remain reserved');
 assert.ok(html.includes('function q48(){')&&html.includes('st.syncDisplayCeiling=0;start();q4c(prev'),'Recommencer must restart immediately');
 assert.ok(!html.includes('textContent="+"+fmt('),'End-of-round overrun must have no plus prefix');
@@ -251,14 +251,13 @@ assert.ok(.78/.68>1.14,'Subhour 0.68 line-height allows more font growth than be
 // HH:MM:SS font size and transform remain unchanged, including after returning from MM:SS.
 assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"));
 assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
-// October 25: requested exact native opening/minimum size from Windows screenshot.
-// On the user's ~1.18x Windows DPI, the original 812x612 constants opened
-// a visibly ~684x519 window. Restore 960x720 for full settings space;
-// never shrink the native window merely to fit the 16:9 timer stage.
+// October 27: user explicitly requests identical native 16:9 WINDOW geometry
+// for BOTH Settings and Timer, with scrollable Settings and a fixed footer.
+// The caption height is compensated using the actual Win32 client rectangle.
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
 assert.ok(/defaultWindowWidth\s*=\s*960/.test(nativeSource),'Opening window must be 960 logical px wide to match approved screenshot at Windows DPI');
-assert.ok(/defaultWindowHeight\s*=\s*720/.test(nativeSource),'Settings window must keep the full 720 logical px height');
+assert.ok(/defaultWindowHeight\s*=\s*570/.test(nativeSource),'Both windowed screens must start in the same 960x570 native frame');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 // MM:SS: larger and lower with a conditional progress gap; HH:MM:SS unchanged.
@@ -993,20 +992,20 @@ assert.ok(html.includes('tm.classList.remove("spa","spm");')&&html.includes('tm.
  'Gallery captures must isolate and restore preview mode classes');
 assert.ok(html.includes('$("timer").classList.remove("spm","spa");'),
  'Returning from screen tests must restore the standard stage classes');
-// Windows frame-vs-client size must be adapted on entry to the timer,
-// not by shrinking the native SETTINGS opening size.
+// Native client aspect is calibrated ONCE at startup; settings and timer
+// must not change the window height on each navigation.
 assert.ok(nativeSource.includes('func timerWindowOuterHeight('),'Missing native frame/client aspect fix');
 assert.ok(nativeSource.includes('getClientRect = user32.NewProc("GetClientRect")'),'Native geometry must use real client dimensions');
 assert.ok(nativeSource.includes('w.Bind("nativeSetView"'),'Missing JS/native screen-mode binding');
 assert.ok(nativeSource.includes('case wmActivate:')&&nativeSource.includes('if msg == wmGetMinMaxInfo'),'Timer-specific native minimum not installed');
 assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),
- 'Both views must request their distinct native dimensions');
+ 'Both views should share one native 16:9 client area');
 assert.ok(html.includes('if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer")'),
  'Native window must be corrected after leaving fullscreen');
 assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,
- 'Timer native resize must occur on view change, never on a phase change');
-assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,1,
- 'Settings native restoration must occur on view change');
+ 'Timer must preserve native geometry on view change and phase change');
+assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,2,
+ 'Settings must normalize native client ratio on startup and share geometry on view changes');
 // Fullscreen settings header shares the immutable timer stage geometry.
 // The native window remains untouched by these CSS-only fullscreen changes.
 for(const required of [
@@ -1047,4 +1046,11 @@ assert.ok(!html.includes('st.remaining=newDuration;if(wasRunning)_ses()'),
  'Debug live duration changes must never restart the running clock');
 assert.ok(!html.includes('st.remaining=newBetween;if(wasRunning)_ses()'),
  'Debug changes of the inter-round setting must not restart an active break');
+// Final 27 October — unified 16:9 native window and opaque Settings footer.
+assert.ok(nativeSource.includes('nativeClientCalibrated bool')&&nativeSource.includes('if nativeClientCalibrated { return true }'),
+ 'Native client must never be resized after its one-time calibration');
+assert.ok(!nativeSource.includes('target = settingsWindowRect'), 'Legacy restoration of tall Settings frame must be gone');
+assert.ok(html.includes('render();syncNativeView("settings");zclean()'), 'Initial Settings must calibrate native client aspect before any timer navigation');
+assert.ok(html.includes('#settings .actions,\nbody.settingsLive #settings .actions,'), 'Opaque footer must cover Settings in both modes');
+assert.ok(html.includes('background:var(--panel)!important;\n backdrop-filter:none!important;'), 'Settings footer must be opaque and not backdrop-filtered');
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
