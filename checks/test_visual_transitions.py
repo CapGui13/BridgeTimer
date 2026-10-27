@@ -42,6 +42,10 @@ def main():
             page.on("pageerror",lambda err: errors.append(str(err)))
             page.set_content(html,wait_until="domcontentloaded")
             assert page.evaluate("typeof render")=="function", "Timer failed to initialize"
+            page.evaluate("""() => {
+              window.__viewCalls=[];
+              window.nativeSetView=(mode,serial)=>{window.__viewCalls.push({mode,serial});return Promise.resolve(true)};
+            }""")
             for mode in ["4","2"]:
                 page.evaluate("""mode=>{
                     s.mode=mode;s.positions=6;s.between=30;s.jumpDisplaySecs=15;
@@ -61,11 +65,19 @@ def main():
                         assert col==background, "Transition recolored permanent bands"
                         visible=page.evaluate("getComputedStyle(document.getElementById('jumpSplash')).display")
                         assert visible!="none", "Transition overlay vanished"
+                beforeNative=page.evaluate("window.__viewCalls.length")
                 page.evaluate("q25(true)")
+                assert page.evaluate("window.__viewCalls.length")==beforeNative, "Entering fullscreen changed native window"
                 page.evaluate("q25(false)")
+                assert page.evaluate("window.__viewCalls.at(-1).mode")=="timer", "Leaving fullscreen lost timer mode"
                 equal(before,measure(page),f"{width}x{height}, {mode}, fullscreen toggle")
+                # Each transition phase must leave the NATIVE window alone.
+                assert page.evaluate("window.__viewCalls.length")==1, "Phase changed native window unexpectedly"
                 page.evaluate("showSettings()")
                 page.evaluate("showTimer()")
+                calls=page.evaluate("window.__viewCalls.slice(-2)")
+                assert [c["mode"] for c in calls]==["settings","timer"], f"Incorrect native mode changes: {calls}"
+                assert calls[0]["serial"]<calls[1]["serial"], "Native mode requests not ordered"
                 equal(before,measure(page),f"{width}x{height}, {mode}, settings return")
             before=measure(page)
             page.set_viewport_size({"width":1920,"height":1080})
