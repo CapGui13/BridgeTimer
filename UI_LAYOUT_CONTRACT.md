@@ -337,3 +337,31 @@ native en fonction du changement de tour, du saut, du chrono ou d'un thème.
   sélectionne immédiatement l'intégralité du texte existant pour remplacement.
 - Toute cette logique est indépendante des modes d'écran et de la géométrie
   des bandeaux. Préserver les contrôles visuels précédents.
+
+
+## Harmonisation de l'en-tête en plein écran et miniature (27/10/2026)
+
+**Périmètre strict :** l'en-tête des paramètres en plein écran et la
+miniature en cours. Ne jamais modifier l'en-tête existant du timer, son chrono,
+ses commandes, ses transitions, la taille native des paramètres ou la grille
+des paramètres en mode fenêtré.
+
+- Sur paramètres **en plein écran**, en-tête largeur **1600** et hauteur
+  **82 unités virtuelles**, positionné via **les mêmes** origine et coefficient
+  homothétique calculés par `updateStage()` pour le timer. La taille de police
+  du titre « Bridge Timer » égale celle du nom du club (40 px virtuels,
+  ligne 55 px). La couleur d'accent du titre est conservée.
+- Bouton « Timer » à l'emplacement exact du bouton « Paramètres » du timer,
+  largeur **168 unités virtuelles**. Bouton « Quitter plein écran » de
+  **246 unités virtuelles**, superposé à l'équivalent du timer. Tous deux
+  sont dans la même barre d'en-tête ; sortir du plein écran restaure la
+  présentation initiale des paramètres.
+- Le bouton « Quitter plein écran » dans les paramètres est relié à la
+  commande native/HTML plein écran existante, pas à une nouvelle logique.
+- La miniature du timer actif est **déplacée en dehors du DOM de la barre
+  d'actions**, directement sous `body`, avec `position:fixed;left:0;bottom:0` :
+  **coïncidence exacte des angles inférieurs gauches**, affichage au-dessus
+  de la barre, sans modifier le placement de ses boutons ni la forme du timer.
+- Test graphique Windows obligatoire : mêmes x/y/largeur/hauteur pour
+  les en-têtes et les deux boutons en plein écran, miniature à (0, bas),
+  et retour au timer et au mode fenêtré sans dérive.
