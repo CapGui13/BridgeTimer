@@ -104,6 +104,42 @@ def main():
                 page.evaluate("q25(false)")
                 assert page.evaluate("window.__viewCalls.at(-1).mode")=="timer", "Leaving fullscreen lost timer mode"
                 equal(before,measure(page),f"{width}x{height}, {mode}, fullscreen toggle")
+                # Fullscreen settings must share the EXACT 1600x900
+                # timer header geometry, despite using distinct content.
+                page.evaluate("q25(true)")
+                rects=page.evaluate("""() => {
+                  const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
+                    return {x:r.x,y:r.y,w:r.width,h:r.height};};
+                  return {
+                    band:b("#timer .top"),title:b("#club"),
+                    settings:b("#settingsBtn"),exit:b("#fsBtn")
+                  }
+                }""")
+                page.evaluate("showSettings()")
+                rects2=page.evaluate("""() => {
+                  const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
+                    return {x:r.x,y:r.y,w:r.width,h:r.height};};
+                  return {
+                    band:b("#settings .wrap>.head"),title:b("#settings .head h1"),
+                    settings:b("#drawerClose"),exit:b("#settingsFullscreenBtn"),
+                    mini:b("#miniTimer"),viewport:{h:innerHeight},
+                    miniInBody:document.getElementById("miniTimer").parentElement===document.body,
+                    exitWired:document.getElementById("settingsFullscreenBtn").onclick===fs,
+                    closeText:document.getElementById("drawerClose").textContent,
+                    visible:getComputedStyle(document.getElementById("settingsFullscreenBtn")).display!=="none"
+                  }
+                }""")
+                for key in ["band","settings","exit"]:
+                    for metric in ["x","y","w","h"]:
+                        diff=abs(rects[key][metric]-rects2[key][metric])
+                        assert diff<=1.1, f"Fullscreen header misaligned: {width}x{height} {mode} {key}.{metric} diff {diff:.2f}"
+                assert abs(rects["title"]["h"]-rects2["title"]["h"])<=1.1, "Settings heading font doesn't match club font"
+                assert rects2["closeText"]=="Timer" and rects2["visible"] and rects2["exitWired"], "Settings fullscreen header buttons misconfigured"
+                assert rects2["miniInBody"], "Miniature still inside the footer"
+                assert abs(rects2["mini"]["x"])<0.1 and abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["viewport"]["h"])<0.1, "Miniature not pinned to bottom-left corner"
+                page.evaluate("showTimer()")
+                equal(measure(page),measure(page), "sanity")
+                page.evaluate("q25(false)")
                 page.evaluate("showSettings()")
                 page.evaluate("showTimer()")
                 calls=page.evaluate("window.__viewCalls.slice(-2)")
