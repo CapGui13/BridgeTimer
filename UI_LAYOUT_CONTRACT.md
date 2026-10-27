@@ -543,3 +543,22 @@ et les polices du Timer, notamment l'heure et le numéro de tour.
 Tests navigateur dédiés : annulation/confirmation fermeture, demande
 Win32 simulée, cinq chemins de retour, conservation exacte des champs
 chronométriques, et règle standard des huit donnes au lancement.
+
+
+## 27 octobre — régression corrigée : fermeture par X et dimensions natives
+
+La dimension d'ouverture ET minimum historique demandée est **812 × 612**.
+La configuration native de WebView2 utilise cette paire en démarrage et en
+`HintMin`; aucune recalibration du rectangle de fenêtre à un ratio 16:9
+ne doit réduire sa hauteur au chargement ni aux changements de vue. Le
+chronomètre reste une maquette 16:9 **intérieure** qui s'adapte à la fenêtre.
+La fenêtre peut être agrandie librement horizontalement et verticalement,
+mais ne peut devenir plus petite que son format d'ouverture.
+
+Une demande WM_CLOSE déclenchée par la croix ou Alt+F4 ouvre directement
+une boîte Windows Oui/Non. Non ne ferme rien; Oui ferme explicitement.
+Cela remplace l'ancien accusé de réception JS asynchrone pouvant avaler
+le clic sans rien afficher. Le bouton Quitter de l'interface reste branché
+sur son dialogue HTML et `nativeExit` contourne le second dialogue natif
+après confirmation. Le moteur de tournoi, les règles de sauvegarde, les
+couleurs et la logique de minuterie ne sont pas modifiés.
