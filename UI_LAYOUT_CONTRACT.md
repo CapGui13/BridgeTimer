@@ -75,8 +75,12 @@ automatique avant de l'avoir démontrée.
 
 **RÈGLE E — Bouton CHGT (27/10/2026).**
 Dans les paramètres de Paires, le bouton **CHGT** est à droite du champ
-« Temps entre tours ». Il apparaît **si et seulement si** la durée de
-l'entre-tours est au moins **1 seconde** (à `00`, aucun bouton).
+« Temps entre tours ». **En fonctionnement normal**, il apparaît
+si la durée de l'entre-tours atteint **1 seconde** (à `00`, bouton masqué).
+**Exception explicite Debug :** en mode **Paires**, activer Debug rend
+CHGT visible et utilisable même avec `00` seconde pour permettre les réglages
+et essais. Le passage Debug activé/désactivé rafraîchit le bouton immédiatement.
+En Match par 4, CHGT reste masqué, y compris lorsque Debug est activé.
 Le bouton ouvre un dialogue du **même modèle graphique que MSG pour le saut**
 (titre, texte central, texte du décompte ; Annuler et Valider), mais les
 valeurs sont **indépendantes** de celles du saut. La durée se règle toujours
