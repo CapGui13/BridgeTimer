@@ -46,7 +46,12 @@ assert.ok(html.includes('st.phase==="roundEnd"||st.phase==="ended"'),'Both modes
 // Regression guarantees: Message publishes only after Valider;
 // advancing from the MP4 end screen restarts immediately; overtime controls are grey.
 assert.ok(!html.includes('id="sendTempBtn"'),'The obsolete instant-send M button must not return');
-assert.ok(html.includes('$("messageBtn").onclick=()=>$("tempMessageOverlay").classList.contains("hidden")?q2c():q20()'),'Message toggle must remain');
+assert.ok(html.includes('$("messageBtn").onclick=toggleTemporaryMessageEditor'),'Message button must share the M-key behaviour');
+assert.ok(html.includes('if(!e.repeat)toggleTemporaryMessageEditor()'),'Holding M must not dismiss and immediately reopen a message');
+assert.ok(html.includes('if(q16()&&(st.phase==="round"||st.phase==="break")){q23();render();return}'),
+ 'Active displayed temporary message must be hidden before the composer is opened');
+assert.ok(html.includes('for(const evt of ["focus","click"])$("quickMessage").addEventListener(evt,()=>{$("quickMessage").select()})'),
+ 'Clicking or focusing the saved temporary-message field must select the whole text');
 assert.ok(html.includes('$("tempMessageForm").onsubmit=q1e'),'Only form submit can publish message');
 assert.ok(html.includes('q20();q23();q2f()'),'Valider must publish the new message');
 assert.ok(html.includes('q4a(st.pos+1,false);start();q4c(prev);return'),'MP4 next position must auto-start');
