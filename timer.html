@@ -836,10 +836,17 @@ function updateStage(){
  const singlePreview=!!root.classList?.contains('spm')&&!root.classList?.contains('spa');
  const standardScale=Math.min(innerWidth/w,innerHeight/h);
  const k=singlePreview?Math.min(innerWidth/w,innerHeight/(h+previewToolbar)):standardScale;
- root.style.setProperty('--stage-width',w+'px');
- root.style.setProperty('--stage-height',h+'px');
- root.style.setProperty('--stage-left',(innerWidth-w*k)/2+'px');
- root.style.setProperty('--stage-top',(singlePreview?(innerHeight-(h+previewToolbar)*k)/2+previewToolbar*k:(innerHeight-h*k)/2)+'px');
+ // Every band must touch the actual WINDOW edges: no letterbox strips.
+ // Keep ONE uniform scale for all typography, controls and countdown.
+ // When the client isn't 16:9, allow the internal grid to have extra
+ // virtual width/height; the central region absorbs this extra space.
+ // Preview/gallery remains the immutable 1600x900 scene.
+ const virtualW=singlePreview?w:innerWidth/k;
+ const virtualH=singlePreview?h:innerHeight/k;
+ root.style.setProperty('--stage-width',virtualW+'px');
+ root.style.setProperty('--stage-height',virtualH+'px');
+ root.style.setProperty('--stage-left',singlePreview?(innerWidth-w*k)/2+'px':'0px');
+ root.style.setProperty('--stage-top',singlePreview?(innerHeight-(h+previewToolbar)*k)/2+previewToolbar*k+'px':'0px');
  root.style.setProperty('--stage-scale',k);
  // Share exactly the stage origin/scale with the full-screen settings header.
  const docRoot=typeof document==="undefined"?null:document.documentElement;
