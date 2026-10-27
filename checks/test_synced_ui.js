@@ -1128,4 +1128,13 @@ for(const val of [
  '#timer .topBtns{gap:8px!important;}',
  'font-size:18px!important;padding:10px 13px!important;'
 ]) assert.ok(html.includes(val),'Stable settings positions/fullscreen typography: '+val);
+// Window-width media rules must never downscale the hour or round text
+// inside the fixed 1600x900 virtual stage. Their apparent size depends
+// exclusively on the outer stage scale.
+for(const token of [
+ '#timer #localTime{\n font-size:clamp(34px,calc(var(--timer-vw) * 3.1),56px)!important;',
+ '#timer #round{\n font-size:clamp(34px,calc(var(--timer-vw) * 3.4),62px)!important;',
+ 'left:22px!important;',
+ 'right:22px!important;'
+])assert.ok(html.includes(token),'Footer hour/round virtual scale regression: '+token);
 console.log(`Production UI regression OK: ${ids.length} unique elements, JS, countdown, pause, notices, previews and native bindings`);
