@@ -349,7 +349,9 @@ func setNativeView(hwnd uintptr, requested string, serial int64) bool {
  viewRequestSerial = serial
  isTimer := requested == "timer"
  timerViewActive.Store(isTimer)
- if fullscreen { return true }
+ // Tests exercise view transitions without a real Windows window.
+ // In production the HWND is supplied by WebView2 after creation.
+ if hwnd == 0 || fullscreen { return true }
  newHeight := defaultWindowHeight
  if isTimer { newHeight = timerWindowHeight }
  // Keep the window's top-left origin and width; don't activate it or
