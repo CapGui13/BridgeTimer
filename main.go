@@ -32,7 +32,8 @@ const (
 	host = "127.0.0.1"
 	port = 43831
 	defaultWindowWidth = 812
-	defaultWindowHeight = 640
+	defaultWindowHeight = 680
+	timerWindowHeight = 490
 
 	wsCaption = 0x00C00000
 	wsThickFrame = 0x00040000
@@ -337,17 +338,26 @@ func applyDarkTitleBar(hwnd uintptr) {
  * Fullscreen is handled independently by toggleNativeFullscreen.
  * Serial guards drop stale asynchronous view requests.
  */
-// Timer and Settings share one native window. Switching views NEVER resizes
-// it; in particular, no 16:9 client calibration may undo the user-specified
-// startup/minimum outer dimensions (812 x 640).
-// Only the interior timer projection is 16:9 and letterboxed as necessary.
+// The settings screen keeps its established 812x680 window. The timer uses
+// a shorter native window to preserve the visual 16:9 composition. All resizing
+// is done through Go/Win32, never by patching executable instructions.
 func setNativeView(hwnd uintptr, requested string, serial int64) bool {
  if requested != "timer" && requested != "settings" { return false }
  fullscreenMu.Lock()
  defer fullscreenMu.Unlock()
  if serial <= viewRequestSerial { return false }
  viewRequestSerial = serial
- timerViewActive.Store(true)
+ isTimer := requested == "timer"
+ timerViewActive.Store(isTimer)
+ if fullscreen { return true }
+ newHeight := defaultWindowHeight
+ if isTimer { newHeight = timerWindowHeight }
+ // Keep the window's top-left origin and width; don't activate it or
+ // change the z-order. The WM_GETMINMAXINFO callback updates the minimum.
+ result, _, err := setWindowPos.Call(hwnd, 0, 0, 0,
+    uintptr(defaultWindowWidth), uintptr(newHeight),
+    swpNoMove|swpNoZOrder|swpNoOwnerZOrder|0x0010)
+ if result == 0 { log.Printf("native view resize %s: %v", requested, err); return false }
  return true
 }
 
@@ -360,8 +370,8 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		nativeCloseRequestHandler()
 		return 0
 	}
-	// Leave WM_GETMINMAXINFO to WebView2/HINT_MIN (812 x 640). The old
-	// custom 16:9 track-height rule could override the requested minimum.
+	// WebView2's initial HINT_MIN is overridden *after* the original
+	// procedure handles WM_GETMINMAXINFO, so each view has its own minimum.
 	switch msg {
 	case wmActivate:
 		if wp&0xFFFF != waInactive {
@@ -374,6 +384,14 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 	}
 	if originalWndProc != 0 {
 		r, _, _ := callWindowProcW.Call(originalWndProc, hwnd, msg, wp, lp)
+		if msg == wmGetMinMaxInfo && lp != 0 {
+			limits := (*minMaxInfo)(unsafe.Pointer(lp))
+			limits.PtMinTrackSize.X = int32(defaultWindowWidth)
+			limits.PtMinTrackSize.Y = int32(defaultWindowHeight)
+			if timerViewActive.Load() {
+				limits.PtMinTrackSize.Y = int32(timerWindowHeight)
+			}
+		}
 		return r
 	}
 	return 0
@@ -655,9 +673,8 @@ func main() {
 		showStartupError("Bridge Timer ne peut pas initialiser Microsoft Edge WebView2.\n\nVérifie que le runtime WebView2 est installé sur Windows.")
 		return
 	}
-	// Historical user contract: opening window is 812 x 640 and these
-	// same dimensions are its minimum. Both views share this exact native
-	// rectangle. Scaling only applies to the INNER timer canvas.
+	// Settings opens at 812x680, while timer switches to 812x490.
+	// WM_GETMINMAXINFO adjusts the native minimum during each view switch.
 	// The window may be enlarged freely in either dimension.
 	w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)
 	defer w.Destroy()
