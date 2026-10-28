@@ -420,8 +420,11 @@ assert.ok(!openEditor[1].includes('style.height')&&!closeEditor[1].includes('sty
   'Temporary message must NEVER resize the title/header on open or close');
 assert.ok(!openEditor[1].includes('messageEditing')&&!closeEditor[1].includes('messageEditing'),
   'Temporary message must not activate the old grid-reflow class');
-assert.ok(html.includes("const top=$('timer').querySelector('.top');top.style.height=top.getBoundingClientRect().height+'px';top.classList.add('messageEditing');$('resumeOverlay')"),
-  'Resume-time editor must remain unchanged');
+assert.ok(html.includes("function openResumeEditor(){") && html.includes("$('resumeOverlay').classList.remove('hidden');input.focus()") &&
+  !html.includes("top.style.height=top.getBoundingClientRect().height+'px'") &&
+  html.includes('#timer .topBtns #resumeOverlay:not(.hidden)') &&
+  html.includes('<div class="topBtns"><div id="resumeOverlay"'),
+  'Resume-time editor must open compactly before Reprise without header reflow');
 
 /* Screenshot positioning only: compare unchanged typography, body and footer,
    while moving the event and MM:SS upward by the requested distances.
