@@ -2,7 +2,7 @@ name: Build Bridge Timer
 
 on:
   push:
-    branches: [main, essai-fenetre-dynamique-20261028]
+    branches: [main, essai-fenetre-dynamique-20261028, fix-bandeaux-parametres-fenetres-20261028]
   pull_request:
   workflow_dispatch:
 
@@ -31,6 +31,7 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check playwright==1.56.0
           python checks/test_visual_transitions.py
+          python checks/test_windowed_settings_bands.py
       - name: Generate Windows resources
         shell: pwsh
         run: |
