@@ -261,7 +261,7 @@ assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
 assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Restored opening/minimum window must be 812 pixels wide');
-assert.ok(/defaultWindowHeight\s*=\s*640/.test(nativeSource),'Opening and non-reducible minimum must match user's reference screenshot: 640px tall');
+assert.ok(/defaultWindowHeight\s*=\s*640/.test(nativeSource),'Opening and minimum must match the reference screenshot: 640px tall');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 assert.ok(nativeSource.includes('nativeCloseRequestHandler()') &&
