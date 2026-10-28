@@ -261,7 +261,7 @@ assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
 assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Restored opening/minimum window must be 812 pixels wide');
-assert.ok(/defaultWindowHeight\s*=\s*640/.test(nativeSource),'Opening and minimum must match the reference screenshot: 640px tall');
+assert.ok(/defaultWindowHeight\s*=\s*680/.test(nativeSource),'Settings opening/minimum must match the 680px reference');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 assert.ok(nativeSource.includes('nativeCloseRequestHandler()') &&
@@ -1003,17 +1003,17 @@ assert.ok(html.includes('tm.classList.remove("spa","spm");')&&html.includes('tm.
  'Gallery captures must isolate and restore preview mode classes');
 assert.ok(html.includes('$("timer").classList.remove("spm","spa");'),
  'Returning from screen tests must restore the standard stage classes');
-// User-defined 812x640 is the native opening and minimum; the timer's
-// internal 16:9 projection never modifies native outer dimensions.
+// Updated contract: Settings opens at 812x680; Timer uses a shorter 812x490
+// native frame without changing fullscreen rendering.
 assert.ok(!nativeSource.includes('func timerWindowOuterHeight('),'Obsolete 16:9 outer-window calibration returned');
 assert.ok(nativeSource.includes('w.Bind("nativeSetView"'),'Missing JS/native screen-mode binding');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),'Native min must equal opening size');
-assert.ok(nativeSource.includes('timerViewActive.Store(true)'),'View switch must remain active without window resize');
-assert.ok(!nativeSource.includes('if msg == wmGetMinMaxInfo'),'Aspect-ratio minimum override would break requested min');
-assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),'Both views should have equal native dimensions');
+assert.ok(nativeSource.includes('timerViewActive.Store(isTimer)') && nativeSource.includes('timerWindowHeight = 490'),'Timer needs a distinct minimum and height of 490px');
+assert.ok(nativeSource.includes('msg == wmGetMinMaxInfo') && nativeSource.includes('limits.PtMinTrackSize.Y = int32(timerWindowHeight)'), 'Native minimum must follow the active screen');
+assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),'Both screens must notify the native window of their active mode');
 assert.ok(html.includes('if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer")'),'Synchronize native mode after fullscreen');
 assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,'Timer must not change geometry on phase transitions');
-assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,2,'Settings and Timer share the native dimensions');
+assert.equal((html.match(/syncNativeView\("settings"\)/g)||[]).length,2,'Settings and Timer must both synchronize the native view');
 // Fullscreen settings header shares the immutable timer stage geometry.
 // The native window remains untouched by these CSS-only fullscreen changes.
 for(const required of [
@@ -1054,8 +1054,8 @@ assert.ok(!html.includes('st.remaining=newDuration;if(wasRunning)_ses()'),
  'Debug live duration changes must never restart the running clock');
 assert.ok(!html.includes('st.remaining=newBetween;if(wasRunning)_ses()'),
  'Debug changes of the inter-round setting must not restart an active break');
-// Current contract: the 812x640 native frame is preserved from startup.
-// Internal Timer content may be 16:9, but native client calibration is forbidden.
+// Preserve the 812x680 Settings startup; dynamic 812x490 is applied only
+// when Timer is activated.
 assert.ok(!nativeSource.includes('nativeClientCalibrated=true'),
  'Native window must not be resized to a 16:9 client aspect at startup');
 assert.ok(!nativeSource.includes('target = settingsWindowRect'), 'Legacy native view-based frame resizing must remain absent');
