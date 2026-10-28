@@ -1009,7 +1009,7 @@ assert.ok(!nativeSource.includes('func timerWindowOuterHeight('),'Obsolete 16:9 
 assert.ok(nativeSource.includes('w.Bind("nativeSetView"'),'Missing JS/native screen-mode binding');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),'Native min must equal opening size');
 assert.ok(nativeSource.includes('timerViewActive.Store(isTimer)') && nativeSource.includes('timerWindowHeight = 490'),'Timer needs a distinct minimum and height of 490px');
-assert.ok(nativeSource.includes('msg == wmGetMinMaxInfo') && nativeSource.includes('limits.PtMinTrackSize.Y = int32(timerWindowHeight)'), 'Native minimum must follow the active screen');
+assert.ok(nativeSource.includes('msg == wmGetMinMaxInfo') && nativeSource.includes('minimum.Y = int32(timerWindowHeight)') && nativeSource.includes('rtlMoveMemory.Call(lp+24'), 'Native minimum must follow the active screen');
 assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),'Both screens must notify the native window of their active mode');
 assert.ok(html.includes('if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer")'),'Synchronize native mode after fullscreen');
 assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,'Timer must not change geometry on phase transitions');
