@@ -32,7 +32,7 @@ const (
 	host = "127.0.0.1"
 	port = 43831
 	defaultWindowWidth = 812
-	defaultWindowHeight = 612
+	defaultWindowHeight = 640
 
 	wsCaption = 0x00C00000
 	wsThickFrame = 0x00040000
@@ -305,7 +305,7 @@ func releaseSingleInstance() {
 }
 
 func startupWindowGeometry() (int32, int32, uint, uint, bool) {
-	// Always open Bridge Timer centered at the same native 812 x 612
+	// Always open Bridge Timer centered at the same native 812 x 640
 	// size requested as its minimum. Never change the opening dimensions
 	// based on the view, prior window geometry, or a 16:9 recalibration.
 	return 0, 0, defaultWindowWidth, defaultWindowHeight, false
@@ -339,7 +339,7 @@ func applyDarkTitleBar(hwnd uintptr) {
  */
 // Timer and Settings share one native window. Switching views NEVER resizes
 // it; in particular, no 16:9 client calibration may undo the user-specified
-// startup/minimum outer dimensions (812 x 612).
+// startup/minimum outer dimensions (812 x 640).
 // Only the interior timer projection is 16:9 and letterboxed as necessary.
 func setNativeView(hwnd uintptr, requested string, serial int64) bool {
  if requested != "timer" && requested != "settings" { return false }
@@ -360,7 +360,7 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		nativeCloseRequestHandler()
 		return 0
 	}
-	// Leave WM_GETMINMAXINFO to WebView2/HINT_MIN (812 x 612). The old
+	// Leave WM_GETMINMAXINFO to WebView2/HINT_MIN (812 x 640). The old
 	// custom 16:9 track-height rule could override the requested minimum.
 	switch msg {
 	case wmActivate:
@@ -655,7 +655,7 @@ func main() {
 		showStartupError("Bridge Timer ne peut pas initialiser Microsoft Edge WebView2.\n\nVérifie que le runtime WebView2 est installé sur Windows.")
 		return
 	}
-	// Historical user contract: opening window is 812 x 612 and these
+	// Historical user contract: opening window is 812 x 640 and these
 	// same dimensions are its minimum. Both views share this exact native
 	// rectangle. Scaling only applies to the INNER timer canvas.
 	// The window may be enlarged freely in either dimension.
