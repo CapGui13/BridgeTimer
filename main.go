@@ -107,6 +107,8 @@ var (
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 	user32 = syscall.NewLazyDLL("user32.dll")
 	dwmapi = syscall.NewLazyDLL("dwmapi.dll")
+	ntdll = syscall.NewLazyDLL("ntdll.dll")
+	rtlMoveMemory = ntdll.NewProc("RtlMoveMemory")
 	comdlg32 = syscall.NewLazyDLL("comdlg32.dll")
 	getWindowLongPtrW = user32.NewProc("GetWindowLongPtrW")
 	setWindowLongPtrW = user32.NewProc("SetWindowLongPtrW")
@@ -387,12 +389,15 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 	if originalWndProc != 0 {
 		r, _, _ := callWindowProcW.Call(originalWndProc, hwnd, msg, wp, lp)
 		if msg == wmGetMinMaxInfo && lp != 0 {
-			limits := (*minMaxInfo)(unsafe.Pointer(lp))
-			limits.PtMinTrackSize.X = int32(defaultWindowWidth)
-			limits.PtMinTrackSize.Y = int32(defaultWindowHeight)
+			// MINMAXINFO.PtMinTrackSize begins at byte offset 24.
+			// Copy into the OS-supplied memory using a Windows API, rather
+			// than converting an unmanaged uintptr into a Go unsafe.Pointer.
+			minimum := point{X: int32(defaultWindowWidth), Y: int32(defaultWindowHeight)}
 			if timerViewActive.Load() {
-				limits.PtMinTrackSize.Y = int32(timerWindowHeight)
+				minimum.Y = int32(timerWindowHeight)
 			}
+			rtlMoveMemory.Call(lp+24, uintptr(unsafe.Pointer(&minimum)), unsafe.Sizeof(minimum))
+			runtime.KeepAlive(&minimum)
 		}
 		return r
 	}
