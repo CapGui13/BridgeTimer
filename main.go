@@ -31,8 +31,8 @@ const (
 	appVersion = "1.7.8"
 	host = "127.0.0.1"
 	port = 43831
-	defaultWindowWidth = 920
-	defaultWindowHeight = 700
+	defaultWindowWidth = 812
+	defaultWindowHeight = 640
 
 	wsCaption = 0x00C00000
 	wsThickFrame = 0x00040000
@@ -52,12 +52,14 @@ const (
 	wmShowWindow = 0x0018
 	wmClose = 0x0010
 	wmThemeChanged = 0x031A
+	wmGetMinMaxInfo = 0x0024
 	wmAppDarkTitle = 0x8061
 	waInactive = 0
 )
 
 type point struct{ X, Y int32 }
 type rect struct{ Left, Top, Right, Bottom int32 }
+type minMaxInfo struct { PtReserved, PtMaxSize, PtMaxPosition, PtMinTrackSize, PtMaxTrackSize point }
 type windowPlacement struct {
 	Length uint32
 	Flags uint32
@@ -120,7 +122,10 @@ var (
 	messageBoxW = user32.NewProc("MessageBoxW")
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 	setProcessDPIAware = user32.NewProc("SetProcessDPIAware")
+	moveMemory = kernel32.NewProc("RtlMoveMemory")
 	getWindowRect = user32.NewProc("GetWindowRect")
+	getClientRect = user32.NewProc("GetClientRect")
+	isZoomed = user32.NewProc("IsZoomed")
 	createMutexW = kernel32.NewProc("CreateMutexW")
 	closeHandle = kernel32.NewProc("CloseHandle")
 	setThreadExecutionState = kernel32.NewProc("SetThreadExecutionState")
@@ -129,6 +134,14 @@ var (
 
 	fullscreenMu sync.Mutex
 	fullscreen bool
+	// Settings keeps its original native height. Timer needs a 16:9 CLIENT
+	// area; resizing the native window is the only way to avoid letterboxing
+	// without distorting the same 1600x900 timer layout.
+	timerViewActive atomic.Bool
+	viewRequestSerial int64
+	nativeClientCalibrated bool
+	settingsWindowRect rect
+	settingsWindowRectValid bool
 	savedStyle uintptr
 	savedPlace windowPlacement
 
@@ -141,10 +154,11 @@ var (
 	nativeAwake bool
 	logFile *os.File
 	stateFileMu sync.Mutex
-	// Close-request handshake: Windows asks, JS confirms, then nativeExit posts WM_CLOSE.
-	closePromptPending atomic.Bool
-	closeRequestAt atomic.Int64
+	// Prevent duplicate native confirmation after an approved HTML Quitter.
 	closeApproved atomic.Bool
+	// Native X / Alt+F4 delivers the SAME HTML confirmation as Quitter.
+	// Set before subclassing the HWND; replaceable in Windows unit tests.
+	nativeCloseRequestHandler = func() {}
 )
 
 func showStartupError(message string) {
@@ -291,8 +305,9 @@ func releaseSingleInstance() {
 }
 
 func startupWindowGeometry() (int32, int32, uint, uint, bool) {
-	// Always open Bridge Timer centered, regardless of where the previous
-	// session's window was moved. Window size remains the native 920x700.
+	// Always open Bridge Timer centered at the same native 812 x 640
+	// size requested as its minimum. Never change the opening dimensions
+	// based on the view, prior window geometry, or a 16:9 recalibration.
 	return 0, 0, defaultWindowWidth, defaultWindowHeight, false
 }
 
@@ -313,37 +328,40 @@ func applyDarkTitleBar(hwnd uintptr) {
 	setWindowPos.Call(hwnd, 0, 0, 0, 0, 0, swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
 }
 
-// A second Windows close request after 12 seconds without a WebView
-// acknowledgement provides a last-resort escape when the UI is frozen.
-// Normal closes still always use the user's custom HTML confirmation.
-func confirmUnresponsiveExit(hwnd uintptr) bool {
-	text, _ := syscall.UTF16PtrFromString("BridgeTimer ne répond pas à la demande de fermeture.\n\nForcer la fermeture ? Le tournoi en cours sera interrompu.")
-	title, _ := syscall.UTF16PtrFromString("BridgeTimer - Fermeture de secours")
-	response, _, _ := messageBoxW.Call(hwnd, uintptr(unsafe.Pointer(text)), uintptr(unsafe.Pointer(title)), 0x00000024) // MB_YESNO | MB_ICONQUESTION
-	return response == 6 // IDYES
+/*
+ * Stable single-view native window geometry.
+ * Timer AND Settings share exactly one 16:9 CLIENT rectangle, so switching
+ * screens must NEVER change native window dimensions or position.
+ * The starter's 960x570 outer dimensions only approximate Windows decorations;
+ * first loaded Settings view aligns the real client ratio once, via Win32.
+ * Fullscreen is handled independently by toggleNativeFullscreen.
+ * Serial guards drop stale asynchronous view requests.
+ */
+// Timer and Settings share one native window. Switching views NEVER resizes
+// it; in particular, no 16:9 client calibration may undo the user-specified
+// startup/minimum outer dimensions (812 x 640).
+// Only the interior timer projection is 16:9 and letterboxed as necessary.
+func setNativeView(hwnd uintptr, requested string, serial int64) bool {
+ if requested != "timer" && requested != "settings" { return false }
+ fullscreenMu.Lock()
+ defer fullscreenMu.Unlock()
+ if serial <= viewRequestSerial { return false }
+ viewRequestSerial = serial
+ timerViewActive.Store(true)
+ return true
 }
 
 func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
-	// The native X / Alt+F4 must not destroy the WebView before the HTML
-	// confirmation. Never invoke COM/WebView code from this Windows callback.
+	// X and Alt+F4 trigger the existing HTML confirmation, exactly like Quitter.
+	// Dispatch is asynchronous: never call WebView COM directly from WndProc.
+	// A cancel leaves the window and the timer untouched. A confirmed HTML
+	// exit calls nativeExit, sets closeApproved and posts a second WM_CLOSE.
 	if msg == wmClose && !closeApproved.Load() {
-		now := time.Now().UnixMilli()
-		if closePromptPending.CompareAndSwap(false, true) {
-			closeRequestAt.Store(now)
-			return 0
-		}
-		first := closeRequestAt.Load()
-		if first == 0 || now-first < 12000 {
-			return 0
-		}
-		// WebView did not consume a close request for 12 seconds.
-		closePromptPending.Store(false)
-		closeRequestAt.Store(0)
-		if !confirmUnresponsiveExit(hwnd) {
-			return 0
-		}
-		closeApproved.Store(true)
+		nativeCloseRequestHandler()
+		return 0
 	}
+	// Leave WM_GETMINMAXINFO to WebView2/HINT_MIN (812 x 640). The old
+	// custom 16:9 track-height rule could override the requested minimum.
 	switch msg {
 	case wmActivate:
 		if wp&0xFFFF != waInactive {
@@ -637,21 +655,27 @@ func main() {
 		showStartupError("Bridge Timer ne peut pas initialiser Microsoft Edge WebView2.\n\nVérifie que le runtime WebView2 est installé sur Windows.")
 		return
 	}
-	// The native opening size is also the minimum resizable size.
-	// The window may still be enlarged or maximized normally.
+	// Historical user contract: opening window is 812 x 640 and these
+	// same dimensions are its minimum. Both views share this exact native
+	// rectangle. Scaling only applies to the INNER timer canvas.
+	// The window may be enlarged freely in either dimension.
 	w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)
 	defer w.Destroy()
 
 	hwnd := uintptr(w.Window())
 	applyDarkTitleBar(hwnd)
+	nativeCloseRequestHandler = func() {
+		w.Dispatch(func() {
+			w.Eval(`if(typeof q34==="function"){q34()}else{
+			window.addEventListener("DOMContentLoaded",function(){if(typeof q34==="function")q34()},{once:true})
+			}`)
+		})
+	}
 	installDarkTitleHook(hwnd)
-	// Consume close requests on the JS side, without calling WebView/COM from WndProc.
-	if err := w.Bind("nativeConsumeCloseRequest", func() bool {
-		if !closePromptPending.Swap(false) { return false }
-		closeRequestAt.Store(0)
-		return true
-	}); err != nil {
-		log.Printf("close request bind: %v", err)
+	// Compatibility binding retained for existing HTML. WM_CLOSE directly
+	// requests the identical on-page confirmation; no native popup.
+	if err := w.Bind("nativeConsumeCloseRequest", func() bool { return false }); err != nil {
+		log.Printf("close request legacy bind: %v", err)
 	}
 	// The approved path bypasses the confirmation intercept exactly once.
 	if err := w.Bind("nativeExit", func() bool {
@@ -663,6 +687,11 @@ func main() {
 		return posted != 0
 	}); err != nil {
 		log.Printf("exit bind: %v", err)
+	}
+	if err := w.Bind("nativeSetView", func(mode string, serial int64) bool {
+		return setNativeView(hwnd,mode,serial)
+	}); err != nil {
+		log.Printf("native view bind: %v", err)
 	}
 	if err := w.Bind("nativeFullscreen", func() bool {
 		return toggleNativeFullscreen(hwnd)
