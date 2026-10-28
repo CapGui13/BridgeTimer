@@ -261,7 +261,7 @@ assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
 assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Restored opening/minimum window must be 812 pixels wide');
-assert.ok(/defaultWindowHeight\s*=\s*612/.test(nativeSource),'Restored opening/minimum window must be 612 pixels tall');
+assert.ok(/defaultWindowHeight\s*=\s*640/.test(nativeSource),'Opening and non-reducible minimum must match user's reference screenshot: 640px tall');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 assert.ok(nativeSource.includes('nativeCloseRequestHandler()') &&
@@ -1003,7 +1003,7 @@ assert.ok(html.includes('tm.classList.remove("spa","spm");')&&html.includes('tm.
  'Gallery captures must isolate and restore preview mode classes');
 assert.ok(html.includes('$("timer").classList.remove("spm","spa");'),
  'Returning from screen tests must restore the standard stage classes');
-// User-defined 812x612 is the native opening and minimum; the timer's
+// User-defined 812x640 is the native opening and minimum; the timer's
 // internal 16:9 projection never modifies native outer dimensions.
 assert.ok(!nativeSource.includes('func timerWindowOuterHeight('),'Obsolete 16:9 outer-window calibration returned');
 assert.ok(nativeSource.includes('w.Bind("nativeSetView"'),'Missing JS/native screen-mode binding');
@@ -1054,7 +1054,7 @@ assert.ok(!html.includes('st.remaining=newDuration;if(wasRunning)_ses()'),
  'Debug live duration changes must never restart the running clock');
 assert.ok(!html.includes('st.remaining=newBetween;if(wasRunning)_ses()'),
  'Debug changes of the inter-round setting must not restart an active break');
-// Current contract: the 812x612 native frame is preserved from startup.
+// Current contract: the 812x640 native frame is preserved from startup.
 // Internal Timer content may be 16:9, but native client calibration is forbidden.
 assert.ok(!nativeSource.includes('nativeClientCalibrated=true'),
  'Native window must not be resized to a 16:9 client aspect at startup');
