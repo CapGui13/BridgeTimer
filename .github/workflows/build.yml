@@ -2,7 +2,7 @@ name: Build Bridge Timer
 
 on:
   push:
-    branches: [main]
+    branches: [main, essai-fenetre-dynamique-20261028]
   pull_request:
   workflow_dispatch:
 
