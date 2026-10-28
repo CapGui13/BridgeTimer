@@ -547,7 +547,7 @@ chronométriques, et règle standard des huit donnes au lancement.
 
 ## 27 octobre — régression corrigée : fermeture par X et dimensions natives
 
-La dimension d'ouverture ET minimum historique demandée est **812 × 612**.
+La dimension d'ouverture ET minimum historique demandée est **812 × 640**.
 La configuration native de WebView2 utilise cette paire en démarrage et en
 `HintMin`; aucune recalibration du rectangle de fenêtre à un ratio 16:9
 ne doit réduire sa hauteur au chargement ni aux changements de vue. Le
@@ -562,3 +562,16 @@ le clic sans rien afficher. Le bouton Quitter de l'interface reste branché
 sur son dialogue HTML et `nativeExit` contourne le second dialogue natif
 après confirmation. Le moteur de tournoi, les règles de sauvegarde, les
 couleurs et la logique de minuterie ne sont pas modifiés.
+
+
+## 28 octobre — ajustement de la hauteur native à la capture de référence
+
+L'utilisatrice a fourni deux captures sur le même écran, mêmes positions
+horizontales et même bord supérieur. La première (format demandé) a une hauteur
+visible de 633 px sur le PNG, la seconde (ancienne ouverture) 605 px :
+**écart exact +28 px**. On augmente uniquement `defaultWindowHeight` de
+612 à **640** en conservant la largeur **812**. Le même couple est passé
+à `WindowOptions` au lancement et à `SetSize(..., webview.HintMin)`
+pour empêcher toute réduction au-dessous du format voulu.
+Le rendu du timer, les bandes, la confirmation de sortie, le plein écran
+et la mise à l'échelle restent inchangés dans cette correction.
