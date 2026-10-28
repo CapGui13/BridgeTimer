@@ -3,12 +3,12 @@ package main
 import "testing"
 
 func TestOpeningAndMinimumWindowDimensions(t *testing.T) {
- if defaultWindowWidth!=812 || defaultWindowHeight!=612 {
-  t.Fatalf("BridgeTimer must open at its original minimum 812x612, got %dx%d",defaultWindowWidth,defaultWindowHeight)
+ if defaultWindowWidth!=812 || defaultWindowHeight!=640 {
+  t.Fatalf("BridgeTimer must open at its original minimum 812x640, got %dx%d",defaultWindowWidth,defaultWindowHeight)
  }
  x,y,w,h,saved:=startupWindowGeometry()
- if x!=0 || y!=0 || w!=812 || h!=612 || saved {
-  t.Fatalf("startup geometry must be centered at 812x612: %+v",[]any{x,y,w,h,saved})
+ if x!=0 || y!=0 || w!=812 || h!=640 || saved {
+  t.Fatalf("startup geometry must be centered at 812x640: %+v",[]any{x,y,w,h,saved})
  }
 }
 
