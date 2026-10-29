@@ -647,3 +647,27 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - Vérifier l'EXE réel et son alarme, puis au minimum un redémarrage après
   fermeture forcée, une reprise en Paires et une reprise en Match par 4,
   en plus des tests Edge et Windows automatisés.
+
+## Anti-veille liée à la séance active — essai du 29/10/2026
+
+- Branche `essai-anti-veille-tournoi-actif-20261029` ; retour arrière
+  `essai-reprise-seance-interrompue-20261029`, dont la géométrie,
+  la miniature, le plein écran, les alertes et l'horloge sont inchangés.
+- La protection anti-veille Windows et l'éventuel `navigator.wakeLock`
+  sont maintenus **tant qu'une séance est active**, y compris chrono en pause,
+  dans les paramètres et sur l'écran de fin d'un tour MP4.
+- Libérer à l'arrêt du tournoi, à la fin définitive d'un tournoi Paires,
+  ou à la fermeture de l'EXE. Restaurer lors d'une reprise de séance
+  interrompue, même si le chrono est initialement en pause.
+- Les appels `SetThreadExecutionState` de Windows sont liés au thread ;
+  les exécuter sur un goroutine `runtime.LockOSThread()` dédié pendant
+  toute la vie de l'application. Ordonner les requêtes via un numéro
+  séquentiel pour éviter qu'une requête obsolète annule la suivante.
+- Ne pas toucher aux effets du bouton Pause sur le chrono, à la gestion
+  des secondes ni aux paramètres visuels. Tester start/pause/reprise,
+  stop, fin Paires, fin de tour MP4, passage dans les paramètres, et
+  fermeture de l'application. Tester également échec natif et rattrapage
+  navigateur, ainsi que des appels natifs hors ordre.
+- L'anti-veille empêche la mise en veille automatique ; elle ne peut
+  pas empêcher une fermeture volontaire du capot ou une veille forcée
+  selon les politiques de Windows.
