@@ -63,6 +63,40 @@ with sync_playwright() as pw:
    # The 1px preview border clips the scaled iframe by 2px in width.
    assert a["frame"] is not None and abs(a["frame"]["w"]-(a["mini"]["w"]-2))<1.5,(width,mode,a)
    assert abs(a["frame"]["h"]-(a["mini"]["h"]-2))<1.5,(width,mode,a)
+   # Fixed bands remain opaque, and the maximum scroll stops at an equal
+   # spacing: header-to-first-card == last-card-to-footer.
+   top=page.evaluate("""() => {
+     const rect=s=>document.querySelector(s).getBoundingClientRect();
+     const header=document.querySelector('#settings .wrap>.head');
+     const c=getComputedStyle(header).backgroundColor;
+     return {gap:rect('#settings .tournamentCard').top-header.getBoundingClientRect().bottom,
+       color:c,opacity:getComputedStyle(header).opacity};
+   }""")
+   assert top["color"].startswith("rgb(") or top["color"].endswith(", 1)"),(width,mode,"Header must be opaque",top)
+   assert top["opacity"]=="1",(width,mode,top)
+   page.evaluate("window.scrollTo(0,document.documentElement.scrollHeight)")
+   page.wait_for_function("window.scrollY > 20")
+   scrolled=page.evaluate("""() => {
+     const rect=s=>document.querySelector(s).getBoundingClientRect();
+     const last=document.querySelector('#settings .wrap > .card:last-child');
+     const h=document.querySelector('#settings .wrap>.head');
+     return {gap:rect('#settings .actions').top-last.getBoundingClientRect().bottom,
+       scrollY:window.scrollY,max:document.documentElement.scrollHeight-innerHeight,
+       headTop:h.getBoundingClientRect().top,
+       color:getComputedStyle(h).backgroundColor};
+   }""")
+   assert abs(scrolled["gap"]-top["gap"])<=2.5,(width,mode,"Max-scroll bottom margin must match top margin",top,scrolled)
+   assert scrolled["color"]==top["color"],(width,mode,"Header changed while scrolling",scrolled)
+   assert abs(scrolled["scrollY"]-scrolled["max"])<=2.0,(width,mode,"Scroll wasn't at bottom",scrolled)
+   # Double-click on the FULLSCREEN mini must return to the TIMER.
+   if (width,height)==(1650,928) and mode=="4":
+    page.screenshot(path="mini-preview-scrolled-1650x928.png",full_page=False)
+   page.locator("#miniTimer").dblclick()
+   assert page.evaluate("document.getElementById('settings').classList.contains('hidden')"),(width,mode,"Mini double-click did not return to timer")
+   assert page.evaluate("!document.getElementById('timer').classList.contains('hidden')"),(width,mode)
+   page.evaluate("showSettings(false);render()")
+   page.evaluate("window.scrollTo(0,0)")
+
    # Chromium/Edge screenshot at the user's exact reference resolution;
    # CI publishes it separately for visual inspection, not as a substitute
    # for the native Windows executable check.
@@ -77,4 +111,4 @@ with sync_playwright() as pw:
   assert not errors,(width,errors)
   page.close()
  browser.close()
-print("Fullscreen Settings 16:9 mini reaches settings-card left border, flush to viewport bottom; windowed restored")
+print("Fullscreen mini geometry, double-click, opaque header and balanced scrolling: 4 viewports x 2 modes OK")
