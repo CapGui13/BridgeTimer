@@ -170,7 +170,17 @@ def verify():
    document.dispatchEvent(new KeyboardEvent("keydown",
     {key:"d",ctrlKey:true,shiftKey:true,bubbles:true,cancelable:true}));
   }""")
-  assert page.evaluate("__diagCalls")==1
+  diag=page.evaluate("""()=>{
+   return {calls:__diagCalls,exit:q1d(),recovery:recoveryDecisionOpen,
+    recoveryHidden:document.getElementById('recoveryOverlay').classList.contains('hidden'),
+    between:betweenMsgIsOpen(),resume:resumeEditorOpen(),
+    tempHidden:document.getElementById('tempMessageOverlay').classList.contains('hidden'),
+    jump:q3b(),color:colorMenuOpen(),
+    themeHidden:document.getElementById('themeTest').classList.contains('hidden'),
+    diagOpen:document.getElementById('diagOverlay').classList.contains('on'),
+    screenPreview:!!_sps,active:document.activeElement?.id};
+  }""")
+  assert diag["calls"]==1,diag
   assert repeat(page,"d",ctrlKey=True,shiftKey=True)
   assert page.evaluate("__diagCalls")==1
   # Screen-test gallery blocks timer commands even on key repeat.
