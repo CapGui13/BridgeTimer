@@ -737,6 +737,15 @@ body:not(.fs) #timer:not(.spm):not(.spa) .controls .btn{
   box-sizing:border-box!important;
 }
 
+/* Compact native window only. Shorten lateral padding on buttons with
+   natural width to keep time / TOUR labels clear. The +/- buttons retain
+   their fixed slots; 1600x900 stage, fullscreen and previews stay untouched. */
+@media (max-width:850px){
+ body:not(.fs) #timer:not(.spm):not(.spa) .controls .btn:not(#minus):not(#plus){
+  padding-left:7px!important;padding-right:7px!important;
+ }
+}
+
 
 /* Phase screen "teleportation": the saut/changement screen REPLACES the
    central timer, just as Settings replaces Timer. No overlay animation;
