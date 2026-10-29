@@ -291,8 +291,11 @@ body.fs.settingsLive #miniTimer.spView{
  width:var(--fullscreen-mini-width,260px)!important;
  height:auto!important;aspect-ratio:16/9!important;
  max-width:calc(100vw - 12px)!important;
- left:0!important;right:auto!important;bottom:0!important;top:auto!important;
- border-radius:0!important;
+ /* The large preview cannot cover the footer controls: anchor it to
+    the lower-left of the SETTINGS CONTENT, directly above that footer. */
+ left:0!important;right:auto!important;
+ bottom:var(--fullscreen-mini-bottom,0px)!important;top:auto!important;
+ border-radius:0!important;pointer-events:none!important;
 }
 
 /* 27 Oct 2026 — SETTINGS FOOTER, FULLSCREEN ONLY.
@@ -1384,20 +1387,36 @@ $("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume
    the first Settings footer command. Preserves the single virtual canvas.
    A height cap only matters on unusually short / narrow monitors. */
 function syncFullscreenMiniWidth(){
- const holder=$("miniTimer"),first=$("fresh");
+ const holder=$("miniTimer");
  if(!holder)return;
- if(!document.body.classList.contains("fs")||
-    !document.body.classList.contains("settingsLive")||!first){
+ const root=document.body;
+ if(!root.classList.contains("fs")||!root.classList.contains("settingsLive")){
   holder.style.removeProperty("--fullscreen-mini-width");
+  holder.style.removeProperty("--fullscreen-mini-bottom");
   return;
  }
- const x=first.getBoundingClientRect().left;
- if(!Number.isFinite(x)||x<=24)return;
- const maxByHeight=Math.max(120,(innerHeight-92)*16/9);
- const target=Math.max(80,Math.min(x-12,innerWidth-12,maxByHeight));
- const value=target.toFixed(2)+"px";
- if(holder.style.getPropertyValue("--fullscreen-mini-width")!==value)
-  holder.style.setProperty("--fullscreen-mini-width",value);
+ const keys=$("settings")?.querySelector(".shortcuts");
+ const first=keys?.querySelector(".shortcut:nth-child(1)");
+ const second=keys?.querySelector(".shortcut:nth-child(2)");
+ const footer=$("settings")?.querySelector(".actions");
+ if(!footer)return;
+ const firstRect=first?.getBoundingClientRect();
+ const secondRect=second?.getBoundingClientRect();
+ const footerRect=footer.getBoundingClientRect();
+ // The "right menu column" is the SECOND shortcuts column (Espace/F8),
+ // NOT the first bottom-footer button (Timer). Compare row-one x positions
+ // to avoid mistaking a single-column mobile layout for a right column.
+ const twoColumns=firstRect&&secondRect&&
+  secondRect.left-firstRect.left>Math.max(120,firstRect.width*.35);
+ const columnX=twoColumns?secondRect.left:null;
+ const fallback=$("fresh")?.getBoundingClientRect().left||260;
+ const targetRight=columnX||fallback;
+ const roomAboveFooter=Math.max(100,footerRect.top-12);
+ const maxWidthByHeight=roomAboveFooter*16/9;
+ const width=Math.max(80,Math.min(targetRight-12,innerWidth-12,maxWidthByHeight));
+ const bottom=twoColumns?Math.max(0,innerHeight-footerRect.top):0;
+ holder.style.setProperty("--fullscreen-mini-width",width.toFixed(2)+"px");
+ holder.style.setProperty("--fullscreen-mini-bottom",bottom.toFixed(2)+"px");
 }
 let faithfulMiniBusy=false,faithfulMiniLast=0;
 function syncFaithfulMini(force=false){
