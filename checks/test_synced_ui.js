@@ -62,7 +62,10 @@ for (const selector of ['#timer.roundEndState #minus:disabled','#timer.roundEndS
 // 2026-10-23 jump/reprise/position-specific regression checks.
 for (const id of ['resumeTime','resumeBtn','resumeOverlay','resumeForm','resumeInput','resumeCancel','resumeConfirm','finishResume','prev'])
   assert.equal(counts.get(id),1,'Missing or duplicated new control '+id);
-assert.ok(html.includes('function adjustmentStep(){return st.phase==="jump"?15:60}'),'Jump adjustments must be ±15 seconds');
+assert.ok(html.includes('function adjustmentStep(){return st.phase==="jump"||st.phase==="break"?15:60}'),'Jump and between-round adjustments must both be ±15 seconds; normal round remains ±60 seconds');
+assert.ok(html.includes('const transitionAdjustment=st.phase==="jump"||st.phase==="break";'),'Both transition button labels must indicate ±15s');
+assert.ok(html.includes('#timer .main.phasePage > :not(#jumpSplash):not(#pauseOverlay){display:none!important}'),'Transition screen must preserve the standard PAUSE curtain');
+assert.ok(html.includes('#timer .main.phasePage #pauseOverlay.on{z-index:31}'),'Pause curtain must appear above transition splash');
 assert.ok(html.includes('zshift(-adjustmentStep())')&&html.includes('zshift(adjustmentStep())'),'Buttons and shortcuts must use phase-adjusted increment');
 assert.ok(html.includes('function previousPosition()')&&html.includes('s.mode!=="2"'),'Previous position is for pairs only');
 assert.ok(html.includes('s.mode==="2"?"Pos. suiv.":"Tour suivant"'),'Round navigation labels must depend on format');
