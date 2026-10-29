@@ -784,3 +784,28 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - Les comparaisons pixel-à-pixel du Timer doivent rester
   inchangées ; valider aussi tous les tests de l'application
   et une compilation Windows.
+
+## 29 octobre 2026 — proposition n°11 : dégagement du pied de page compact
+
+- Branche isolée `essai-footer-sans-chevauchement-20261029`, retour arrière
+  `essai-miniature-synchronisee-20261029`.
+- Le vieux test Edge de pied de page révélait un recouvrement mesuré à
+  812 × 456 px, quand `TOUR 12 sur 18` réduisait le segment entre
+  l'heure et le numéro du tour.
+- Correction ciblée **uniquement pour fenêtre native ≤ 850 px de large** :
+  remplace la marge intérieure horizontale de 12 à 7 px pour les
+  boutons de largeur naturelle (Pause, Tour suivant, Recommencer,
+  et Position précédente lorsqu'elle est visible).
+- Le bouton `−` et le bouton `+` conservent leurs cases fixes ;
+  les tailles de polices, hauteurs, couleurs, séparations générales,
+  alignement du centre libre et les deux libellés restent identiques.
+- Aucun changement CSS au-delà de 850 px, en vrai plein écran
+  (`body.fs`) ou dans les aperçus `spm/spa`. L'alignement
+  fonctionne comme précédemment : au centre exact de l'espace libre,
+  quel que soit le nombre de tours.
+- Protection automatique en Edge : 6, 12, 18 et 24 tours,
+  MP4/Paires, phases tour/entre-tours/saut/fin de tour,
+  huit tailles de fenêtre, comparaison visuelle et tests
+  existants du moteur de chrono.
+- Vérifier la taille et les marges de l'EXE Windows réel :
+  la réussite des mesures Edge ne vaut pas validation visuelle native.
