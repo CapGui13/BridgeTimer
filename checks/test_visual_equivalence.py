@@ -52,29 +52,39 @@ def screenshot(browser,html,item):
   try:page.wait_for_function("document.getElementById('faithfulMiniFrame')?.contentDocument?.body?.children.length>0",timeout=2000)
   except PTTimeout:pass
  masks=[page.locator("#localTime"),page.locator("#miniTimer")]
+ # The ONLY approved visual difference is the new sound test control.
+ # Return its bounding box to mask the union of the old/new local areas.
+ sound=page.locator(".soundOption")
+ sound_box=sound.bounding_box() if view=="settings" and sound.count() else None
  image=page.screenshot(animations="disabled",mask=masks,caret="hide")
  if errors:raise AssertionError(f"{name}: JS errors {errors}")
  page.close()
- return image
+ return image,sound_box
 
 with sync_playwright() as pw:
  browser=pw.chromium.launch(channel="msedge",headless=True) if os.name=="nt" else pw.chromium.launch(
   executable_path=shutil.which("chromium") or shutil.which("chromium-browser"),headless=True,args=["--no-sandbox"])
  for item in SCENARIOS:
-  a=screenshot(browser,REF,item)
-  b=screenshot(browser,APP,item)
-  if a!=b:
-   # The screenshot dimensions and per-pixel appearance must be equal;
-   # PNG metadata differences are not considered a visual failure.
-   from PIL import Image,ImageChops
-   from io import BytesIO
-   x,y=Image.open(BytesIO(a)).convert("RGBA"),Image.open(BytesIO(b)).convert("RGBA")
-   d=ImageChops.difference(x,y)
-   if d.getbbox():
-    Path("visual-baseline-before.png").write_bytes(a)
-    Path("visual-baseline-after.png").write_bytes(b)
-    d.save("visual-baseline-diff.png")
-    raise AssertionError(f"Visual regression {item[0]}: changed pixels, diff bbox {d.getbbox()}")
-  print("Pixel-identical:",item[0],hashlib.sha256(b).hexdigest()[:10],flush=True)
+  a,old_sound=screenshot(browser,REF,item)
+  b,new_sound=screenshot(browser,APP,item)
+  from PIL import Image,ImageChops,ImageDraw
+  from io import BytesIO
+  x,y=Image.open(BytesIO(a)).convert("RGBA"),Image.open(BytesIO(b)).convert("RGBA")
+  # Only the union of the two sound-option rectangles is exempted. Every
+  # surrounding card, timer band, footer and mini footprint must match.
+  if old_sound and new_sound:
+   left=max(0,int(min(old_sound["x"],new_sound["x"])-2))
+   top=max(0,int(min(old_sound["y"],new_sound["y"])-2))
+   right=min(x.width,int(max(old_sound["x"]+old_sound["width"],new_sound["x"]+new_sound["width"])+3))
+   bottom=min(x.height,int(max(old_sound["y"]+old_sound["height"],new_sound["y"]+new_sound["height"])+3))
+   if right>left and bottom>top:
+    for img in (x,y):ImageDraw.Draw(img).rectangle((left,top,right,bottom),fill=(0,0,0,255))
+  d=ImageChops.difference(x,y)
+  if d.getbbox():
+   Path("visual-baseline-before.png").write_bytes(a)
+   Path("visual-baseline-after.png").write_bytes(b)
+   d.save("visual-baseline-diff.png")
+   raise AssertionError(f"Visual regression outside sound button {item[0]}: {d.getbbox()}")
+  print("Pixel-identical outside sound test control:",item[0],flush=True)
  browser.close()
-print(f"Visual baseline: {len(SCENARIOS)} scenarios pixel-identical to approved release")
+print(f"Visual baseline: {len(SCENARIOS)} scenarios unchanged outside the new sound control")
