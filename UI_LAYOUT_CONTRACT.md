@@ -813,3 +813,37 @@ Après validation par capture de la taille et de l'alignement de la miniature :
   existants du moteur de chrono.
 - Vérifier la taille et les marges de l'EXE Windows réel :
   la réussite des mesures Edge ne vaut pas validation visuelle native.
+
+## 29 octobre 2026 — « Reprise à » et délai « OU » en match par 4
+
+- Branche isolée `essai-reprise-relative-mp4-20261029`, base/repli :
+  `essai-footer-sans-chevauchement-20261029`.
+- Le libellé « Reprise à » est décalé vers la droite **sans déplacer
+  sa case horaire** ; son écart visuel avec celle-ci doit correspondre à
+  celui de « Temps par match » et sa première case.
+- En MP4 seulement, immédiatement après le champ horaire HH:MM,
+  apparaît « OU [minutes] min ». Les minutes vont de 1 à 99.
+  Le champ reste masqué en Paires.
+- Taper un délai calcule immédiatement HH:MM = **heure de fin du
+  match + délai**. Pendant la manche, la fin est estimée d'après
+  la durée restante ; à la fin du match, c'est l'instant de
+  fin effectif enregistré. L'heure est arrondie à la minute
+  avant addition du délai pour éviter une erreur de 1 minute
+  due aux millisecondes. Passage à minuit autorisé.
+- Exemple de validation : fin MP4 à 13 h 00, « OU 15 »
+  donne « Reprise à 13:15 » dans les paramètres **et**
+  sur l'écran de fin de match.
+- Saisir une heure manuelle HH:MM dans les paramètres ou
+  dans l'éditeur direct du timer efface le délai : le choix
+  est bien alternatif, pas deux ordres contradictoires.
+  Effacer le délai laisse la dernière heure comme heure
+  saisie explicitement.
+- Le délai et l'heure de reprise concernent **la séance
+  active** : le prochain démarrage de l'application les
+  remet tous deux à zéro. Le moteur du compte à rebours,
+  les alertes, les transitions, le thème, la miniature et
+  les dimensions de la scène 1600 × 900 sont inchangés.
+- Vérifications requises : affichage en Paires/MP4, heure
+  manuelle prioritaire, heures de fin 13h00 et 23h50,
+  délai 15 et 99, espace entre les libellés et les cases,
+  sauvegarde et régression visuelle.
