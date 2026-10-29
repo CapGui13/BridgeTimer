@@ -164,7 +164,12 @@ def verify():
   # Diagnostic shortcut remains explicit, and repeated Ctrl+Shift+D only
   # requests one dialog (no duplicate repeated actions).
   page.evaluate("window.__diagCalls=0;q2b=()=>{__diagCalls++}")
-  page.keyboard.press("Control+Shift+d")
+  # Headless Edge can reserve Ctrl+Shift+D for its own bookmark command
+  # before delivering it to the page; dispatch explicitly to test the app.
+  page.evaluate("""()=>{
+   document.dispatchEvent(new KeyboardEvent("keydown",
+    {key:"d",ctrlKey:true,shiftKey:true,bubbles:true,cancelable:true}));
+  }""")
   assert page.evaluate("__diagCalls")==1
   assert repeat(page,"d",ctrlKey=True,shiftKey=True)
   assert page.evaluate("__diagCalls")==1
