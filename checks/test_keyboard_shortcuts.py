@@ -126,8 +126,15 @@ def verify():
   def modal_inert(label,setup,cleanup):
    page.evaluate(setup)
    before=page.evaluate("({pos:st.pos,running:st.running,remaining:st.remaining,hits:{...__hits}})")
-   for k in ["Space","ArrowRight","r","F7","F8","m","F9"]:
-    page.keyboard.press(k)
+   # Dispatch events rather than keyboard.press("Space") on the modal's
+   # focused action button: Space is supposed to CLICK that button, not
+   # be silently swallowed by the dialog.
+   page.evaluate("""keys=>{
+    for(const key of keys){
+     const ev=new KeyboardEvent("keydown",{key,bubbles:true,cancelable:true});
+     document.dispatchEvent(ev);
+    }
+   }""",[" ","ArrowRight","r","F7","F8","m","F9"])
    after=page.evaluate("({pos:st.pos,running:st.running,remaining:st.remaining,hits:{...__hits}})")
    assert before==after,(label,before,after)
    page.evaluate(cleanup)
