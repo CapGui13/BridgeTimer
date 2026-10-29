@@ -152,6 +152,52 @@ def temporary_message(page):
     page.locator("#tempMessageSubmit").click()
     assert page.evaluate("s.quickMessage")=="Nouveau"
 
+
+def jump_keyboard_adjustments(page):
+    setup(page,mode="2",between=12,positions=4,jumpRound=1)
+    page.evaluate("zadvance(0)")
+    page.locator("#timer").click(position={"x":10,"y":220})
+    page.keyboard.press("F8")
+    a=snap(page)
+    assert a["phase"]=="jump" and a["remaining"]==23,a
+    page.keyboard.press("F7")
+    assert snap(page)["remaining"]==8
+
+def pairs_no_between(page):
+    setup(page,mode="2",between=0,positions=3)
+    page.evaluate("zadvance(0)")
+    a=snap(page)
+    assert (a["phase"],a["pos"])==("round",2),a
+
+def mp4_undo_from_roundend(page):
+    setup(page,mode="4",between=0,positions=2)
+    page.evaluate("zadvance(0);next()")
+    a=snap(page)
+    assert a["pos"]==2 and a["running"],a
+    page.evaluate("q4d()")
+    b=snap(page)
+    assert b["pos"]==1 and b["phase"]=="roundEnd" and not b["running"],b
+
+def mutually_exclusive_editors(page):
+    setup(page,positions=3)
+    page.evaluate("openResumeEditor();q2c()")
+    state=page.evaluate("""() => ({
+      resumeHidden:document.getElementById("resumeOverlay").classList.contains("hidden"),
+      messageHidden:document.getElementById("tempMessageOverlay").classList.contains("hidden")
+    })""")
+    assert state["resumeHidden"] and not state["messageHidden"],state
+
+def live_f9_round_trip(page):
+    setup(page,mode="4",between=0,positions=3)
+    page.evaluate("start()")
+    page.keyboard.press("F9")
+    a=snap(page)
+    assert a["running"] and a["screen"]=="settings",a
+    page.keyboard.press("F9")
+    b=snap(page)
+    assert b["running"] and b["screen"]=="timer" and b["pos"]==1,b
+    page.evaluate("pause()")
+
 scenarios=[
  ("pairs_break_end",pairs_break_end),
  ("pairs_jump_break",pairs_jump_break),
@@ -163,6 +209,11 @@ scenarios=[
  ("keyboard_shortcuts",keyboard),
  ("resume_editor",resume_editor),
  ("temporary_message",temporary_message),
+ ("jump_keyboard_adjustments",jump_keyboard_adjustments),
+ ("pairs_no_between",pairs_no_between),
+ ("mp4_undo_from_roundend",mp4_undo_from_roundend),
+ ("mutually_exclusive_editors",mutually_exclusive_editors),
+ ("live_f9_round_trip",live_f9_round_trip),
 ]
 with sync_playwright() as pw:
     if os.name=="nt":
@@ -185,4 +236,4 @@ with sync_playwright() as pw:
         finally:
             page.close()
     browser.close()
-print("Functional end-to-end audit OK: 10 actual timer scenarios in Edge")
+print("Functional end-to-end audit OK: 15 actual timer scenarios in Edge")
