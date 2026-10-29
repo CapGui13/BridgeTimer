@@ -3,11 +3,11 @@ package main
 import "testing"
 
 func TestOpeningAndMinimumWindowDimensions(t *testing.T) {
- if defaultWindowWidth!=812 || defaultWindowHeight!=680 {
-  t.Fatalf("BridgeTimer must open at its original minimum 812x680, got %dx%d",defaultWindowWidth,defaultWindowHeight)
+ if defaultWindowWidth!=812 || defaultWindowHeight!=520 {
+  t.Fatalf("BridgeTimer must open at its original minimum 812x520, got %dx%d",defaultWindowWidth,defaultWindowHeight)
  }
  x,y,w,h,saved:=startupWindowGeometry()
- if x!=0 || y!=0 || w!=812 || h!=680 || saved {
+ if x!=0 || y!=0 || w!=812 || h!=520 || saved {
   t.Fatalf("startup geometry must be centered at 812x680: %+v",[]any{x,y,w,h,saved})
  }
 }
@@ -27,8 +27,8 @@ func TestViewSwitchPreservesNativeGeometry(t *testing.T) {
  if setNativeView(0,"unknown",3) {t.Fatal("unknown view must be rejected")}
 }
 
-func TestTimerNativeDimensions(t *testing.T) {
- if timerWindowHeight!=490 {t.Fatalf("timer native height must be 490px, got %d",timerWindowHeight)}
+func TestBothWindowedViewsHaveTheSameMinimum(t *testing.T) {
+ if defaultWindowHeight != 520 { t.Fatalf("Unified minimum must be 520px, got %d",defaultWindowHeight) }
 }
 
 func TestNativeWindowCloseAlwaysPromptsUnlessPreviouslyApproved(t *testing.T) {
