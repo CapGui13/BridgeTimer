@@ -320,10 +320,10 @@ def main():
             }"""), "Startup shows an inactive Retour button"
             firstFooter=page.evaluate("""() => {
               const r=document.querySelector("#settings .actions").getBoundingClientRect();
-              return {h:r.height,expected:88*innerWidth/1600,actual:r.bottom,
+              return {h:r.height,expected:59,actual:r.bottom,
                 x:r.x,right:r.right,viewport:innerHeight,width:innerWidth};
             }""")
-            assert abs(firstFooter["h"]-firstFooter["expected"])<=1.1, f"Startup footer must match timer's virtual 88px height: {firstFooter}"
+            assert abs(firstFooter["h"]-firstFooter["expected"])<=1.1, f"Windowed Settings footer must remain 59px at every viewport: {firstFooter}"
             assert abs(firstFooter["actual"]-firstFooter["viewport"])<=1.1, "Settings footer detaches from bottom on non-16:9 window"
             assert abs(firstFooter["x"])<=1.1 and abs(firstFooter["right"]-firstFooter["width"])<=1.1, "Settings footer must fill full window width"
             # In the real 16:9 settings viewport, fields must scroll BEHIND
