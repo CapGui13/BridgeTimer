@@ -1870,7 +1870,8 @@ function recoverySnapshot(){
  };
  // Club logos are already stored with preferences: omitting them ensures
  // the recovery payload is within the native storage limit (100 KB).
- return {schema:1,savedAt:Date.now(),settings:{...s,logoData:""},state};
+ // Reprise a is deliberately per-launch, never retained by a crash checkpoint.
+ return {schema:1,savedAt:Date.now(),settings:{...s,logoData:"",resumeTime:"",resumeDelayMinutes:0},state};
 }
 function recoveryAutoSave(force=false){
  if(!recoveryArmed||recoveryDecisionOpen||recoveryClosing||_sps)return;
@@ -1941,7 +1942,9 @@ function recoveryShow(snapshot){
 function recoveryResume(){
  const snapshot=recoveryPending;if(!snapshot)return;
  const v=snapshot.state;
- s={...s,...snapshot.settings,logoData:s.logoData||"",resumeTime:""};
+ // Legacy checkpoints can still contain an old relative delay: clear BOTH
+ // restart choices on every program relaunch, even when resuming a match.
+ s={...s,...snapshot.settings,logoData:s.logoData||"",resumeTime:"",resumeDelayMinutes:0};
  clearInterval(st.interval);st.interval=null;
  st.started=true;st.running=false;st.endAt=null;
  st.pos=v.pos;st.phase=v.phase;st.remaining=v.remaining;
