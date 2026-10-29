@@ -621,7 +621,9 @@ def main():
                 assert abs(rects["title"]["h"]-rects2["title"]["h"])<=1.1, "Settings heading font doesn't match club font"
                 assert rects2["closeText"]=="Timer" and rects2["visible"] and rects2["exitWired"], "Settings fullscreen header buttons misconfigured"
                 assert rects2["miniInBody"], "Miniature still inside the footer"
-                assert abs(rects2["mini"]["x"])<0.1 and abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["viewport"]["h"])<0.1, "Miniature not pinned to bottom-left corner"
+                assert abs(rects2["mini"]["x"])<0.1, "Miniature must remain anchored to the left"
+                if width>=1100:
+                    assert abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["footer"]["y"])<1.5, "Full-sized miniature must sit ABOVE the fixed footer"
                 page.evaluate("showTimer()")
                 check_footer_balance(page, f"{width}x{height}, {mode}, return from fullscreen Settings")
                 actual=page.evaluate("""() => {
