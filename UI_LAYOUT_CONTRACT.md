@@ -756,3 +756,31 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - Conserver les tests existants (y compris comparaison visuelle)
   et valider la compilation Windows. Ne pas toucher aux points
   précédemment reportés : confirmation d'arrêt et sauvegarde de réglages.
+
+## 29/10/2026 — miniature plein écran, géométrie synchronisée (essai n°10)
+
+- Branche `essai-miniature-synchronisee-20261029`, reprise et rollback :
+  `essai-transitions-tour-fiables-20261029`.
+- Cause racine : `showSettings()` laissait `syncFaithfulMini()`
+  appeler `syncFullscreenMiniWidth()` pour ajuster le bord droit de
+  la miniature. Or `syncFaithfulMini()` ignore des appels rapprochés
+  (< 250 ms) pour économiser les mises à jour de son contenu. Après
+  Timer -> Paramètres en plein écran, la miniature pouvait ainsi
+  garder temporairement la mauvaise largeur.
+- Correction minimale : `showSettings()` appelle explicitement
+  `syncFullscreenMiniWidth()` après l'actualisation et la remise
+  du scroll en haut, dans **le même événement**. La limite à
+  250 ms ne s'applique toujours qu'au rendu du contenu.
+  `q25()` et `onresize` continuent d'assurer la mise à jour
+  lors de la bascule plein écran et des redimensionnements.
+- Ne modifier NI la largeur cible (bord gauche de
+  `.tournamentCard`), NI l'angle inférieur gauche, NI le
+  ratio 16:9, NI le double-clic de `#miniTimer`, NI les bandes,
+  NI les paramètres en mode fenêtré.
+- Tests : 2 modes × 6 tailles, 3 aller-retours immédiats par
+  taille, passage fenêtré/plein écran, scroll et **vrai double-clic**
+  Playwright sur le composant. La géométrie se mesure avant
+  toute attente supplémentaire.
+- Les comparaisons pixel-à-pixel du Timer doivent rester
+  inchangées ; valider aussi tous les tests de l'application
+  et une compilation Windows.
