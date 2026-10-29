@@ -113,8 +113,8 @@ assert.ok(html.includes('#finishOverlay .finishBig.pairFinish{top:58.8%;font-siz
 assert.ok(html.includes('.finishBig.pairFinish~.finishResume{top:calc(58.8% + clamp(112px,calc(var(--timer-vw) * 13.8),220px));font-size:clamp(60px,calc(var(--timer-vw) * 9),170px)}'),'Pairs red announcement must match MP4');
 assert.ok(html.includes('#resumeTime::-webkit-datetime-edit-ampm-field{display:none!important}'),'Hide extra AM/PM field in settings');
 // Resume time is for the current application launch only.
-assert.ok(html.includes('function q41(key,value){const next=JSON.stringify(key===KEY?{...value,resumeTime:""}:value);'),'Saved settings must not retain restart time');
-assert.ok(html.includes('movement:"mitchell"};s.resumeTime=""; /* The next tournament must request its own restart time. */'),'Opening BridgeTimer must clear the old restart time');
+assert.ok(html.includes('function q41(key,value){const next=JSON.stringify(key===KEY?{...value,resumeTime:"",resumeDelayMinutes:0}:value);'),'Saved settings must not retain restart time or relative delay');
+assert.ok(html.includes('movement:"mitchell"};s.resumeTime="";s.resumeDelayMinutes=0; /* The next tournament must request its own restart time. */'),'Opening BridgeTimer must clear the old restart time and relative delay');
 assert.ok(html.includes('function commitResumeTime(e)')&&html.includes('s.resumeTime=v;')&&html.includes('q41(KEY,s);closeResumeEditor();render()'),'Live edit must still update the timer and UI');
 // Default toggles: unchecked for fresh/reset settings, previously saved choices still honored.
 assert.ok(html.includes('boardProgressNotice:false,sound:false,warnEnabled:true'),'Son and board notice must be OFF by default');
