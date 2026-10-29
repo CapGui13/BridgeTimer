@@ -730,3 +730,29 @@ Après validation par capture de la taille et de l'alignement de la miniature :
   apparence : comparer huit scénarios visuels pixel par pixel.
 - Les points 5 et 6 de l'audit ont été reportés par l'utilisatrice :
   **ne pas modifier la confirmation Arrêter ni les sauvegardes de réglages**.
+
+## 29 octobre 2026 — transitions de tour et protection du zéro (essai)
+
+- Branche `essai-transitions-tour-fiables-20261029`, rollback
+  `essai-raccourcis-clavier-securises-20261029`.
+- Défaut reproduit dans les tests du moteur réel : quand un décompte
+  Paires arrive à zéro, `tick()` entre dans `break`, puis un clic
+  `Suivant` quasi simultané permettait de sauter immédiatement
+  l'entre-tours. En MP4, la même course pouvait faire quitter l'écran
+  `roundEnd` de façon involontaire.
+- Après une transition automatique constatée dans `tick()`, un
+  `next()` survenant **moins de 200 ms** après est ignoré.
+  La progression des phases, du chronomètre et des alarmes reste
+  inchangée ; une nouvelle commande après cette fenêtre fonctionne
+  comme avant. Une action manuelle antérieure au passage auto à zéro
+  n'est jamais bloquée par ce mécanisme.
+- Aucun anti-double-clic global ni freinage des commandes manuelles :
+  la protection s'applique seulement si une transition automatique
+  a réellement eu lieu. Aucun changement du design ni des messages.
+- 15 scénarios Playwright Edge avec temps monotone déterministe :
+  Paires/MP4, saut, entre-tours, pause, Undo, retour, redémarrage,
+  changement de paramètres, plusieurs tours sautés par retard,
+  fin de tournoi, course à zéro dans les deux ordres.
+- Conserver les tests existants (y compris comparaison visuelle)
+  et valider la compilation Windows. Ne pas toucher aux points
+  précédemment reportés : confirmation d'arrêt et sauvegarde de réglages.
