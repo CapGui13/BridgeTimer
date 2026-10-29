@@ -75,5 +75,22 @@ with sync_playwright() as pw:
                 close_to(m["mini"]["left"],0,f"{width}px mini left")
                 close_to(m["mini"]["bottom"],height,f"{width}px mini bottom")
         page.close()
+    # 812x520 is the outer Windows frame. A standard caption removes about
+    # 30-40 logical pixels, so exercise the effective 480px WebView height.
+    # Tournament must fit ABOVE the permanent footer in both formats.
+    page=browser.new_page(viewport={"width":812,"height":480})
+    page.set_content(html,wait_until="domcontentloaded")
+    for mode in ("4","2"):
+        page.evaluate("mode=>{s.mode=mode;fill();updateStage()}",mode)
+        m=page.evaluate("""() => {
+          const card=document.querySelector('.tournamentCard').getBoundingClientRect();
+          const footer=document.querySelector('#settings .actions').getBoundingClientRect();
+          const bar=document.querySelector('#settings .head').getBoundingClientRect();
+          return {cardBottom:card.bottom,footerTop:footer.top,footerBottom:footer.bottom,
+            headBottom:bar.bottom,scrollHeight:document.scrollingElement.scrollHeight};
+        }""")
+        assert m["cardBottom"]<=m["footerTop"]-8,             f"812x520 native frame hides Tournament bottom ({mode}): {m}"
+        assert m["scrollHeight"]>480, "Advanced settings must remain scrollable"
+    page.close()
     browser.close()
-print("Settings band geometry OK: 684/812/960px, startup and live")
+print("Settings band geometry OK: 684/812/960px + Tournament visible in 812x520")
