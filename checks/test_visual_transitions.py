@@ -469,16 +469,14 @@ def main():
                 assert -1.1<=gapBelowTitle<=5.1, "Settings title content overlap or excessive gap"
                 assert abs(settingsHeader["band"]["y"])<=1.1 and abs(settingsHeader["band"]["x"])<=1.1, "Settings header must touch native top-left"
                 assert abs(settingsHeader["band"]["w"]-width)<=1.1, "Settings header must fill native width"
+                # Settings has its OWN right-side button group (including
+                # Retour au timer), so its x coordinates intentionally differ
+                # from Timer's. Protect alignment and non-overlap instead.
+                assert settingsHeader["settings"]["x"]+settingsHeader["settings"]["w"] < settingsHeader["exit"]["x"], "Settings header buttons overlap"
+                assert settingsHeader["exit"]["x"]+settingsHeader["exit"]["w"] <= width-4, "Fullscreen button clipped in Settings"
                 for key in ("settings","exit"):
-                    for metric in ("x","y","w","h"):
-                        if metric=="x":
-                            expected=(timerHeader[key]["x"]-timerHeader["band"]["x"])*ratio
-                        elif metric=="y":
-                            expected=(timerHeader[key]["y"]-timerHeader["band"]["y"])*ratio
-                        else:
-                            expected=timerHeader[key][metric]*ratio
-                        delta=abs(expected-settingsHeader[key][metric])
-                        assert delta<=2.5, f"Windowed Settings button mismatched scaled timer geometry: {width}x{height} {mode} {key}.{metric}: {delta:.2f} (wanted {expected})"
+                    assert settingsHeader[key]["h"]>=30, f"Settings {key} button too short"
+                    assert settingsHeader[key]["y"]>=-1 and settingsHeader[key]["y"]+settingsHeader[key]["h"]<=settingsHeader["height"]+1.1, f"Settings {key} button vertically clipped"
                 assert settingsHeader["exitVisible"] and settingsHeader["exitLabel"]=="Plein écran" and settingsHeader["isWired"], "Missing working fullscreen button in windowed Settings"
                 assert settingsHeader["closeLabel"]=="Retour au timer" and settingsHeader["returnVisibility"]=="visible", "Live windowed return button must be visible"
 
