@@ -2,7 +2,7 @@ name: Build Bridge Timer
 
 on:
   push:
-    branches: [main, essai-fenetre-dynamique-20261028, fix-bandeaux-parametres-fenetres-20261028, audit-fix-native-geometry-20261029]
+    branches: [main, essai-fenetre-dynamique-20261028, fix-bandeaux-parametres-fenetres-20261028, audit-fix-native-geometry-20261029, audit-transitions-plein-ecran-20261029]
   pull_request:
   workflow_dispatch:
 
