@@ -142,6 +142,7 @@ var (
 	// without distorting the same 1600x900 timer layout.
 	timerViewActive atomic.Bool
 	viewRequestSerial int64
+	settingsWindowHeight int32 = defaultWindowHeight
 	nativeClientCalibrated bool
 	settingsWindowRect rect
 	settingsWindowRectValid bool
@@ -332,37 +333,111 @@ func applyDarkTitleBar(hwnd uintptr) {
 }
 
 /*
- * Stable single-view native window geometry.
- * Timer AND Settings share exactly one 16:9 CLIENT rectangle, so switching
- * screens must NEVER change native window dimensions or position.
- * The starter's 960x570 outer dimensions only approximate Windows decorations;
- * first loaded Settings view aligns the real client ratio once, via Win32.
- * Fullscreen is handled independently by toggleNativeFullscreen.
- * Serial guards drop stale asynchronous view requests.
+ * Settings and Timer have different native heights but retain the same
+ * USER-CHOSEN WIDTH. The timer's height grows with width from the validated
+ * 812x490 baseline (16:9 client projection); Settings restores the last
+ * user-sized settings height (minimum 680). Both modes use the same HWND.
+ * A work-area clamp prevents transitions from moving the window offscreen.
+ * The fullscreen path deliberately does not resize the native frame.
  */
-// The settings screen keeps its established 812x680 window. The timer uses
-// a shorter native window to preserve the visual 16:9 composition. All resizing
-// is done through Go/Win32, never by patching executable instructions.
+func timerOuterHeight(width int32) int32 {
+	if width < defaultWindowWidth { width = defaultWindowWidth }
+	delta := width - defaultWindowWidth
+	return timerWindowHeight + (delta*9+8)/16
+}
+
+// Pure geometry calculation, independently tested without a real HWND.
+func planNativeViewRect(current, work rect, requested string, settingsHeight int32) rect {
+	width := current.Right-current.Left
+	if width < defaultWindowWidth { width = defaultWindowWidth }
+	height := settingsHeight
+	if height < defaultWindowHeight { height = defaultWindowHeight }
+	if requested == "timer" { height = timerOuterHeight(width) }
+
+	left, top := current.Left, current.Top
+	workWidth := work.Right-work.Left
+	workHeight := work.Bottom-work.Top
+	if workWidth > 0 && workHeight > 0 {
+		// Preserve the chosen width unless it does not fit the monitor.
+		// Small displays may be unable to contain the application's minima.
+		if workWidth >= defaultWindowWidth && width > workWidth { width = workWidth }
+		if requested == "timer" { height = timerOuterHeight(width) }
+		if workHeight >= defaultWindowHeight || requested == "timer" && workHeight >= timerWindowHeight {
+			if height > workHeight { height = workHeight }
+		}
+		if width <= workWidth {
+			if left < work.Left { left = work.Left }
+			if left+width > work.Right { left = work.Right-width }
+		} else { left = work.Left }
+		if height <= workHeight {
+			if top < work.Top { top = work.Top }
+			if top+height > work.Bottom { top = work.Bottom-height }
+		} else { top = work.Top }
+	}
+	return rect{Left:left,Top:top,Right:left+width,Bottom:top+height}
+}
+
+func monitorWorkArea(hwnd uintptr) (rect, bool) {
+	monitor, _, _ := monitorFromWindow.Call(hwnd, monitorDefaultToNearest)
+	if monitor == 0 { return rect{}, false }
+	mi := monitorInfo{CbSize:uint32(unsafe.Sizeof(monitorInfo{}))}
+	ok, _, _ := getMonitorInfoW.Call(monitor,uintptr(unsafe.Pointer(&mi)))
+	if ok == 0 { return rect{}, false }
+	return mi.RcWork, true
+}
+
 func setNativeView(hwnd uintptr, requested string, serial int64) bool {
- if requested != "timer" && requested != "settings" { return false }
- fullscreenMu.Lock()
- defer fullscreenMu.Unlock()
- if serial <= viewRequestSerial { return false }
- viewRequestSerial = serial
- isTimer := requested == "timer"
- timerViewActive.Store(isTimer)
- // Tests exercise view transitions without a real Windows window.
- // In production the HWND is supplied by WebView2 after creation.
- if hwnd == 0 || fullscreen { return true }
- newHeight := defaultWindowHeight
- if isTimer { newHeight = timerWindowHeight }
- // Keep the window's top-left origin and width; don't activate it or
- // change the z-order. The WM_GETMINMAXINFO callback updates the minimum.
- result, _, err := setWindowPos.Call(hwnd, 0, 0, 0,
-    uintptr(defaultWindowWidth), uintptr(newHeight),
-    swpNoMove|swpNoZOrder|swpNoOwnerZOrder|0x0010)
- if result == 0 { log.Printf("native view resize %s: %v", requested, err); return false }
- return true
+	if requested != "timer" && requested != "settings" { return false }
+	fullscreenMu.Lock()
+	defer fullscreenMu.Unlock()
+	if serial <= viewRequestSerial { return false }
+	viewRequestSerial = serial
+	isTimer := requested == "timer"
+	wasTimer := timerViewActive.Load()
+
+	// The test-only zero-HWND path validates state transitions.
+	// Never resize maximized or native-fullscreen windows.
+	if hwnd == 0 || fullscreen {
+		timerViewActive.Store(isTimer)
+		return true
+	}
+	zoomed, _, _ := isZoomed.Call(hwnd)
+	if zoomed != 0 {
+		timerViewActive.Store(isTimer)
+		return true
+	}
+
+	var current rect
+	ok, _, _ := getWindowRect.Call(hwnd,uintptr(unsafe.Pointer(&current)))
+	if ok == 0 { log.Printf("native view %s: GetWindowRect failed",requested); return false }
+	work, hasWork := monitorWorkArea(hwnd)
+	if !hasWork {
+		log.Printf("native view %s: monitor work area unavailable",requested)
+		return false
+	}
+
+	preferredSettingsHeight := settingsWindowHeight
+	if !wasTimer {
+		preferredSettingsHeight = current.Bottom-current.Top
+		if preferredSettingsHeight < defaultWindowHeight {
+			preferredSettingsHeight = defaultWindowHeight
+		}
+	}
+	target := planNativeViewRect(current,work,requested,preferredSettingsHeight)
+	timerViewActive.Store(isTimer) // WM_GETMINMAXINFO uses the NEW view minimum.
+	result, _, err := setWindowPos.Call(hwnd,0,
+		uintptr(int64(target.Left)),uintptr(int64(target.Top)),
+		uintptr(target.Right-target.Left),uintptr(target.Bottom-target.Top),
+		swpNoZOrder|swpNoOwnerZOrder|0x0010)
+	if result == 0 {
+		timerViewActive.Store(wasTimer)
+		log.Printf("native view resize %s: %v",requested,err)
+		return false
+	}
+	settingsWindowHeight = preferredSettingsHeight
+	log.Printf("native view: %s %dx%d at (%d,%d)",requested,
+		target.Right-target.Left,target.Bottom-target.Top,target.Left,target.Top)
+	return true
 }
 
 func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
