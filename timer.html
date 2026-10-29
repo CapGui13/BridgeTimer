@@ -1307,7 +1307,7 @@ $("jumpSplashText").textContent=transition.text;
 $("jumpSplashCountdownLabel").textContent=transition.label;
 $("jumpSplashSeconds").textContent=transition.seconds;
 $("jumpSplashBar").style.width=transition.percent+"%";
-phasePage.classList.toggle("on",transition.visible);
+$("jumpSplash").classList.toggle("on",transition.visible);
 if(transition.visible)q40(); // compute size before any visible frame
 phaseMain.classList.toggle("phasePage",transition.visible);
 if(firstPhaseFrame)phasePage.style.visibility="";$("bar").style.width=(total?clamp(st.remaining/total*100,0,100):0)+"%";const paused=st.started&&!st.running&&st.phase!=="ended"&&st.phase!=="roundEnd"&&!$("timer").classList.contains("hidden");$("pauseOverlay").classList.toggle("on",paused);const finished=st.phase==="roundEnd"||st.phase==="ended";
