@@ -948,7 +948,103 @@ function _rspg(){
  fitGalleryFrames();requestAnimationFrame(fitGalleryFrames);
 }
 function _ssp(kind){if(kind!=="all"&&!_spch.has(kind))return;const isAll=kind==="all";const sample=_bsp(isAll?"prejump":kind);spk=kind;_sps=sample.v;_spset=sample.cfg;$("sps").value=kind;$("timer").classList.toggle("spa",isAll);$("spg").classList.toggle("hidden",!isAll);if(isAll)_rspg();updateStage();$("timer").scrollTop=0;C=null;render();}function _osp(){if(q3b()||_sps)return;read();$("settings").classList.add("hidden");$("timer").classList.remove("hidden");$("timer").classList.add("spm");$("timer").querySelectorAll(".main,.bottom").forEach(el=>el.inert=true);$("sptb").classList.remove("hidden");$("tempMessageOverlay").classList.add("hidden");_ssp("all");$("sps").focus();}function _csp(){if(!_sps)return;_sps=null;_spset=null;spk=null;$("sptb").classList.add("hidden");$("timer").classList.remove("spm","spa");$("spg").classList.add("hidden");$("timer").scrollTop=0;$("timer").querySelectorAll(".main,.bottom").forEach(el=>el.inert=false);updateStage();C=null;showSettings(false);$("spb").focus();}function _ott(){read();_rtt();$("themeTest").classList.remove("hidden");$("themeTest").setAttribute("aria-hidden","false");$("themeTestGrid").scrollTop=0}function _ctt(){$("themeTest").classList.add("hidden");$("themeTest").setAttribute("aria-hidden","true");fill()}function _roc(){s.accent=def.accent;s.background=def.background;s.menu=def.menu;s.text=def.text;s.messageColor=def.messageColor;s.transitionMessageColor=def.transitionMessageColor;fill();save()}let scp=null;function q9(){return scp?{...colorPresets,saved:{name:"Custom",...scp}}:colorPresets}function q3c(){for(const b of document.querySelectorAll("#resetColors,.colorPreset,#savedColorsBtn")){const p=b.id==="savedColorsBtn"?scp:colorPresets[b.dataset.preset||"original"];b.style.cssText=p?"background:"+p.background+";color:"+p.text+";border-color:"+p.accent:""}}function _usc(){const b=$("savedColorsBtn");if(!b)return;b.disabled=!scp&&!document.body.classList.contains("debugMode");b.textContent="Custom";q3c()}function q33(){scp=q45(COLORKEY,q2a)||{accent:def.accent,background:def.background,menu:def.menu,text:def.text,messageColor:def.messageColor,transitionMessageColor:def.transitionMessageColor};_usc()}const colorSettingIds=["accent","background","menu","text","messageColor","transitionMessageColor"];let colorMenuSnapshot=null;function colorMenuOpen(){return !$('colorMenuOverlay').classList.contains('hidden')}function openColorMenu(){if(colorMenuOpen())return;clearTimeout(autosaveTimer);save();colorMenuSnapshot={values:Object.fromEntries(colorSettingIds.map(id=>[id,$(id).value])),custom:scp?{...scp}:null,preset:slp};$('colorMenuOverlay').classList.remove('hidden');$('colorMenuBtn').setAttribute('aria-expanded','true');$('accent').focus()}function closeColorMenu(confirm=false){if(!colorMenuOpen())return;if(!confirm&&colorMenuSnapshot){for(const id of colorSettingIds){s[id]=colorMenuSnapshot.values[id];$(id).value=colorMenuSnapshot.values[id]}slp=colorMenuSnapshot.preset;scp=colorMenuSnapshot.custom?{...colorMenuSnapshot.custom}:null;if(scp)q41(COLORKEY,scp);_usc();fill();render()}clearTimeout(autosaveTimer);save();colorMenuSnapshot=null;$('colorMenuOverlay').classList.add('hidden');$('colorMenuBtn').setAttribute('aria-expanded','false');if(!$('settings').classList.contains('hidden'))$('colorMenuBtn').focus()}function _scc(){read();scp={accent:s.accent,background:s.background,menu:s.menu,text:s.text,messageColor:s.messageColor,transitionMessageColor:s.transitionMessageColor};q41(COLORKEY,scp);slp="saved";_usc();_rtt()}
-let audioCtx=null;function q2d(){if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;audioCtx=new AC()}return audioCtx}function q49(){try{const a=q2d();if(a&&a.state==="suspended")a.resume()}catch(e){}}function beep(freq=880,d=.35,force=false){if(!force&&!s.sound)return;try{const a=q2d();if(!a)return;if(a.state==="suspended")a.resume();const o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.07,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.connect(g);g.connect(a.destination);o.onended=()=>{try{o.disconnect();g.disconnect()}catch(e){}};o.start();o.stop(a.currentTime+d)}catch(e){}}function q14(){q49();beep(880,.35,true);setTimeout(()=>beep(1100,.35,true),280)}function q1a(){beep(880);setTimeout(()=>beep(1100),280)}/* Anti-veille: active TOURNAMENT, even when the clock is paused.
+/* Web Audio lifecycle. Keep the approved pair of tones:
+   880 Hz for 350 ms, then 1100 Hz for 350 ms starting 280 ms later.
+   Schedule BOTH on AudioContext's clock (not a throttled JS setTimeout).
+   Rebuild a closed / interrupted context if necessary, without replaying
+   alerts after the event or after a delayed resume. */
+let audioCtx=null,audioContextEpoch=0,audioLastProblem="";
+function audioProblem(reason){
+ audioLastProblem=String(reason||"Sortie audio indisponible.");
+ console.warn("Bridge Timer - audio :",audioLastProblem);
+}
+function audioDropContext(reason="devicechange"){
+ const previous=audioCtx;
+ audioCtx=null;
+ audioContextEpoch++;
+ if(previous&&typeof previous.close==="function"&&previous.state!=="closed"){
+  // Do not cut off a 630-ms two-tone alert that may still be playing.
+  setTimeout(()=>{try{Promise.resolve(previous.close()).catch(()=>{})}catch(e){}},750);
+ }
+ if(reason!=="devicechange")audioProblem(reason);
+}
+function q2d(){
+ if(audioCtx&&audioCtx.state==="closed")audioDropContext("Contexte audio fermé");
+ if(!audioCtx){
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC){audioProblem("Aucune API Web Audio disponible");return null}
+  try{
+   const created=new AC();
+   audioCtx=created;
+   audioContextEpoch++;
+   if(typeof created.addEventListener==="function"){
+    created.addEventListener("statechange",()=>{
+     if(created===audioCtx&&created.state==="closed")
+      audioDropContext("Contexte audio fermé");
+    });
+   }
+  }catch(e){audioProblem(e?.message||"Initialisation audio impossible");return null}
+ }
+ return audioCtx;
+}
+async function audioReady(context,deadline){
+ if(context.state==="running")return true;
+ if(!["suspended","interrupted"].includes(context.state))return false;
+ const remaining=deadline-performance.now();
+ if(remaining<=0)return false;
+ try{
+  if(typeof context.resume!=="function")return false;
+  let timeoutId;
+  try{
+   const resumed=Promise.resolve(context.resume()).then(()=>true,()=>false);
+   const timeout=new Promise(resolve=>{timeoutId=setTimeout(()=>resolve(false),remaining)});
+   if(!await Promise.race([resumed,timeout]))return false;
+  }finally{clearTimeout(timeoutId)}
+  return context.state==="running"&&performance.now()<deadline;
+ }catch(e){audioProblem(e?.message||"Impossible de reprendre la sortie audio");return false}
+}
+function audioSchedule(context,tones){
+ // The two oscillators are constructed on ONE context and share a single
+ // reference time, avoiding JS timer drift and double playback on resume.
+ const base=context.currentTime;
+ for(const [freq,offset,duration] of tones){
+  const oscillator=context.createOscillator(),gain=context.createGain();
+  oscillator.frequency.value=freq;
+  gain.gain.setValueAtTime(.07,base+offset);
+  gain.gain.exponentialRampToValueAtTime(.001,base+offset+duration);
+  oscillator.connect(gain);gain.connect(context.destination);
+  oscillator.onended=()=>{try{oscillator.disconnect();gain.disconnect()}catch(e){}};
+  oscillator.start(base+offset);
+  oscillator.stop(base+offset+duration);
+ }
+}
+async function audioPlay(tones,force=false){
+ if(!force&&!s.sound)return false;
+ const deadline=performance.now()+1000;
+ for(let attempt=0;attempt<2;attempt++){
+  const context=q2d();
+  if(!context)return false;
+  const epoch=audioContextEpoch;
+  if(await audioReady(context,deadline)&&context===audioCtx&&epoch===audioContextEpoch){
+   if(performance.now()>=deadline)return false;
+   try{audioSchedule(context,tones);audioLastProblem="";return true}
+   catch(e){audioDropContext(e?.message||"Lecture audio échouée")}
+  }else if(context===audioCtx&&epoch===audioContextEpoch){
+   audioDropContext("Sortie audio interrompue, tentative de réinitialisation");
+  }else return false;
+ }
+ return false;
+}
+function q49(){return audioPlay([],true)}
+function beep(freq=880,d=.35,force=false){return audioPlay([[freq,0,d]],force)}
+function q14(){return audioPlay([[880,0,.35],[1100,.28,.35]],true)}
+function q1a(){return audioPlay([[880,0,.35],[1100,.28,.35]])}
+// Device changes cannot prove which speaker is audible. Refresh the
+// context silently; a manual test is needed to validate the new output.
+if(navigator.mediaDevices&&typeof navigator.mediaDevices.addEventListener==="function"){
+ navigator.mediaDevices.addEventListener("devicechange",()=>audioDropContext());
+}
+/* Anti-veille: active TOURNAMENT, even when the clock is paused.
    Response generations protect against late native / Wake Lock operations. */
 let awakeGeneration=0;
 const tournamentNeedsAwake=()=>!!st.started&&st.phase!=="ended";
