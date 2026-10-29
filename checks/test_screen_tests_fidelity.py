@@ -40,7 +40,9 @@ def metrics(context):
 def compare(kind,actual,preview):
  for selector in SELECTORS:
   a,b=actual[selector],preview[selector]
-  assert a["text"]==b["text"],f"{kind} {selector} text differs: {a['text']!r} / {b['text']!r}"
+  # Wall-clock time advances while each preview opens; the snapshot is frozen.
+  if selector not in (".bottom","#localTime"):
+   assert a["text"]==b["text"],f"{kind} {selector} text differs: {a['text']!r} / {b['text']!r}"
   if not a["shown"] or not b["shown"]:
    assert a["shown"]==b["shown"],f"{kind} {selector} visible parent differs: {a} / {b}"
    continue
