@@ -1572,7 +1572,142 @@ await recoveryDiscard();
 if(window.nativeExit){const ok=await window.nativeExit();if(ok)return;throw new Error("La fermeture Windows a échoué.")}
 window.close();throw new Error("La fermeture automatique nécessite BridgeTimer sous Windows.")}catch(e){recoveryClosing=false;exitClosing=false;recoveryAutoSave(true);alert(e.message||"Impossible de fermer l'application.")}}function q24(){$("diagOverlay").classList.remove("on");$("diagOverlay").setAttribute("aria-hidden","true")}async function q30(){const txt=$("diagText").value;try{await navigator.clipboard.writeText(txt)}
 catch(e){$("diagText").focus();$("diagText").select();document.execCommand("copy")}}async function q19(){try{if(window.nativeExportDiagnostics)await window.nativeExportDiagnostics($("diagText").value)}catch(e){}}function q35(){const d=new Date();$("localTime").textContent=`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;}
-q35();setInterval(()=>{if(!st.running)q35();if((st.phase==="roundEnd"||st.phase==="ended")&&!_sps)render()},200);function zclean(){try{localStorage.removeItem("bridgeTimerV2.activeSession")}catch(e){}try{if(window.nativeStateDelete)window.nativeStateDelete("bridgeTimerV2.activeSession").catch(()=>{})}catch(e){}}
-async function initializeBridgeTimer(){await q13();load();q33();_upu();activeFormat="4";formatSession["4"]=q12("4");st.pos=s.startPosition;qa();st.remaining=_crd();render();syncNativeView("settings");zclean();}
+q35();setInterval(()=>{if(!st.running)q35();if((st.phase==="roundEnd"||st.phase==="ended")&&!_sps)render()},200);
+/* Versioned checkpoint of the live tournament: written every 5 seconds
+   and immediately after state transitions. Recovery always starts PAUSED. */
+const RECOVERY_KEY="bridgeTimerV2.activeSession";
+var recoveryArmed=false,recoveryDecisionOpen=false,recoveryClosing=false;
+var recoveryPending=null,recoveryLastSignature="",recoveryLastMon=-Infinity;
+var recoveryNativeQueue=Promise.resolve();
+function recoveryEnqueue(action){
+ recoveryNativeQueue=recoveryNativeQueue.catch(()=>{}).then(action).catch(e=>{
+  console.warn("Sauvegarde native de secours :",e);return false
+ });
+ return recoveryNativeQueue;
+}
+function recoveryDiscard(){
+ recoveryLastSignature="";
+ try{localStorage.removeItem(RECOVERY_KEY);localStorage.removeItem(backupKey(RECOVERY_KEY))}catch(e){}
+ return recoveryEnqueue(async()=>window.nativeStateDelete?window.nativeStateDelete(RECOVERY_KEY):true);
+}
+function recoverySnapshot(){
+ if(!st.started||st.phase==="ended")return null;
+ const now=performance.now();
+ const remaining=st.running&&Number.isFinite(st.endAt)
+  ?Math.max(0,(st.endAt-now)/1000):Math.max(0,Number(st.remaining)||0);
+ const state={
+  phase:st.phase,pos:st.pos,remaining,running:!!st.running,
+  roundDuration:st.roundDuration,roundBetween:st.roundBetween,
+  roundBoardDuration:st.roundBoardDuration,roundBoards:st.roundBoards,
+  breakDuration:st.breakDuration,jumpReminderRound:st.jumpReminderRound,
+  longClockAtStart:!!st.longClockAtStart
+ };
+ // Club logos are already stored with preferences: omitting them ensures
+ // the recovery payload is within the native storage limit (100 KB).
+ return {schema:1,savedAt:Date.now(),settings:{...s,logoData:""},state};
+}
+function recoveryAutoSave(force=false){
+ if(!recoveryArmed||recoveryDecisionOpen||recoveryClosing||_sps)return;
+ if(!st.started||st.phase==="ended"){
+  if(recoveryLastSignature)recoveryDiscard();
+  return;
+ }
+ const now=performance.now();
+ const signature=[st.phase,st.pos,st.running,st.started,st.roundDuration,
+  st.roundBetween,st.roundBoardDuration,st.roundBoards,st.breakDuration,
+  st.jumpReminderRound,st.longClockAtStart].join("|");
+ if(!force&&signature===recoveryLastSignature&&now-recoveryLastMon<5000)return;
+ const snapshot=recoverySnapshot();
+ if(!snapshot)return;
+ const payload=JSON.stringify(snapshot);
+ recoveryLastSignature=signature;recoveryLastMon=now;
+ try{
+  const prior=localStorage.getItem(RECOVERY_KEY);
+  if(prior)localStorage.setItem(backupKey(RECOVERY_KEY),prior);
+  localStorage.setItem(RECOVERY_KEY,payload);
+ }catch(e){console.warn("Sauvegarde locale de secours :",e)}
+ recoveryEnqueue(async()=>window.nativeStateWrite?window.nativeStateWrite(RECOVERY_KEY,payload):true);
+}
+function recoveryValidate(raw){
+ try{
+  if(typeof raw!=="string"||raw.length>100000)return null;
+  const snapshot=JSON.parse(raw),v=snapshot?.state;
+  if(snapshot?.schema!==1||!q26(snapshot.settings)||!q26(v)||
+   !Number.isFinite(snapshot.savedAt)||snapshot.savedAt<=0)return null;
+  const settings=q6(snapshot.settings);
+  if(!["2","4"].includes(settings.mode))return null;
+  if(!["round","break","jump","roundEnd"].includes(v.phase)||
+   typeof v.running!=="boolean"||typeof v.longClockAtStart!=="boolean")return null;
+  const good=(n,min,max)=>typeof n==="number"&&Number.isFinite(n)&&n>=min&&n<=max;
+  if(!Number.isInteger(v.pos)||!good(v.pos,1,99)||
+   !good(v.remaining,0,43200)||!good(v.roundDuration,0,43200)||
+   !good(v.roundBetween,0,99)||!good(v.roundBoardDuration,0,43200)||
+   !good(v.roundBoards,1,99)||!good(v.breakDuration,0,99)||
+   !good(v.jumpReminderRound,0,99))return null;
+  if(v.phase==="roundEnd"&&v.running)return null;
+  return {savedAt:snapshot.savedAt,settings,state:v};
+ }catch(e){return null}
+}
+async function recoveryReadPending(){
+ const candidates=[];
+ for(const key of [RECOVERY_KEY,backupKey(RECOVERY_KEY)]){
+  try{const v=recoveryValidate(localStorage.getItem(key));if(v)candidates.push(v)}catch(e){}
+ }
+ try{
+  if(window.nativeStateReadAll){
+   const disk=await window.nativeStateReadAll();
+   const v=recoveryValidate(disk?.[RECOVERY_KEY]);if(v)candidates.push(v);
+  }
+ }catch(e){}
+ candidates.sort((a,b)=>b.savedAt-a.savedAt);
+ return candidates[0]||null;
+}
+function recoveryShow(snapshot){
+ recoveryPending=snapshot;recoveryDecisionOpen=true;
+ const v=snapshot.state;
+ $("recoveryRound").textContent="Tour "+v.pos+" sur "+snapshot.settings.positions;
+ $("recoveryTime").textContent=fmt(v.remaining);
+ $("recoveryState").textContent=v.phase==="roundEnd"?"Fin de tour":v.running?"En marche":"En pause";
+ $("recoveryDate").textContent=new Date(snapshot.savedAt).toLocaleString("fr-FR");
+ $("recoveryOverlay").classList.remove("hidden");
+ $("recoveryResume").focus();
+}
+function recoveryResume(){
+ const snapshot=recoveryPending;if(!snapshot)return;
+ const v=snapshot.state;
+ s={...s,...snapshot.settings,logoData:s.logoData||"",resumeTime:""};
+ clearInterval(st.interval);st.interval=null;
+ st.started=true;st.running=false;st.endAt=null;
+ st.pos=v.pos;st.phase=v.phase;st.remaining=v.remaining;
+ st.roundDuration=v.roundDuration;st.roundBetween=v.roundBetween;
+ st.roundBoardDuration=v.roundBoardDuration;st.roundBoards=v.roundBoards;
+ st.breakDuration=v.breakDuration;st.jumpReminderRound=v.jumpReminderRound;
+ st.longClockAtStart=v.longClockAtStart;
+ st.roundEndSince=v.phase==="roundEnd"?performance.now():null;
+ st.syncHoldUntil=0;st.syncDisplayCeiling=0;
+ activeFormat=s.mode;fill();formatSession[s.mode]=q12(s.mode);
+ recoveryPending=null;recoveryDecisionOpen=false;
+ $("recoveryOverlay").classList.add("hidden");
+ showTimer();recoveryAutoSave(true);
+}
+async function recoveryNew(){
+ recoveryPending=null;recoveryDecisionOpen=false;
+ $("recoveryOverlay").classList.add("hidden");
+ await recoveryDiscard();
+}
+$("recoveryResume").onclick=recoveryResume;
+$("recoveryNew").onclick=recoveryNew;
+$("settings").addEventListener("change",()=>{
+ if(recoveryArmed&&st.started)setTimeout(()=>recoveryAutoSave(true),0)
+});
+
+async function initializeBridgeTimer(){
+ await q13();load();q33();_upu();activeFormat="4";formatSession["4"]=q12("4");
+ st.pos=s.startPosition;qa();st.remaining=_crd();render();syncNativeView("settings");
+ const pending=await recoveryReadPending();
+ recoveryArmed=true;
+ if(pending)recoveryShow(pending);
+ else await recoveryDiscard();
+}
 initializeBridgeTimer();let closeRequestPollBusy=false;setInterval(async()=>{if(closeRequestPollBusy||!window.nativeConsumeCloseRequest||exitClosing)return;closeRequestPollBusy=true;try{if(await window.nativeConsumeCloseRequest())q34()}catch(e){}finally{closeRequestPollBusy=false}},200);</script>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </body>                                                                    </html>
