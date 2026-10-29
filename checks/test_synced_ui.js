@@ -255,13 +255,12 @@ assert.ok(.78/.68>1.14,'Subhour 0.68 line-height allows more font growth than be
 // HH:MM:SS font size and transform remain unchanged, including after returning from MM:SS.
 assert.ok(html.includes("F=Math.min(620,maxW*100/wideW,(h-435)/.78);"));
 assert.ok(html.includes("z.fontSize=F+'px';z.transform='translateY(10px)';"));
-// October 27: user explicitly requests identical native 16:9 WINDOW geometry
-// for BOTH Settings and Timer, with scrollable Settings and a fixed footer.
-// The caption height is compensated using the actual Win32 client rectangle.
+// October 29: ONE permanent windowed rectangle for Settings and Timer.
+// Default height reveals the Tournament card; other settings stay scrollable.
 // These are native logical dimensions, not physical screenshot pixels.
 const nativeSource=fs.readFileSync('main.go','utf8');
 assert.ok(/defaultWindowWidth\s*=\s*812/.test(nativeSource),'Restored opening/minimum window must be 812 pixels wide');
-assert.ok(/defaultWindowHeight\s*=\s*680/.test(nativeSource),'Settings opening/minimum must match the 680px reference');
+assert.ok(/defaultWindowHeight\s*=\s*520/.test(nativeSource),'Settings and Timer must both open in the 520px-high native frame');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),
   'Native minimum must equal initial window dimensions');
 assert.ok(nativeSource.includes('nativeCloseRequestHandler()') &&
@@ -1006,13 +1005,16 @@ assert.ok(html.includes('tm.classList.remove("spa","spm");')&&html.includes('tm.
  'Gallery captures must isolate and restore preview mode classes');
 assert.ok(html.includes('$("timer").classList.remove("spm","spa");'),
  'Returning from screen tests must restore the standard stage classes');
-// Updated contract: Settings opens at 812x680; Timer uses a shorter 812x490
-// native frame without changing fullscreen rendering.
+// Updated contract: BOTH screens use the same native window in windowed mode.
+// Normal view changes NEVER call SetWindowPos; native fullscreen stays separate.
 assert.ok(!nativeSource.includes('func timerWindowOuterHeight('),'Obsolete 16:9 outer-window calibration returned');
 assert.ok(nativeSource.includes('w.Bind("nativeSetView"'),'Missing JS/native screen-mode binding');
 assert.ok(nativeSource.includes('w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)'),'Native min must equal opening size');
-assert.ok(nativeSource.includes('timerViewActive.Store(isTimer)') && nativeSource.includes('timerWindowHeight = 490'),'Timer needs a distinct minimum and height of 490px');
-assert.ok(nativeSource.includes('msg == wmGetMinMaxInfo') && nativeSource.includes('minimum.Y = int32(timerWindowHeight)') && nativeSource.includes('rtlMoveMemory.Call(lp+24'), 'Native minimum must follow the active screen');
+assert.ok(nativeSource.includes('timerViewActive.Store(requested == "timer")'),'Native view state must follow the active screen');
+const setViewBody=nativeSource.slice(nativeSource.indexOf('func setNativeView('),nativeSource.indexOf('func darkTitleWndProc('));
+assert.ok(!setViewBody.includes('setWindowPos.Call')&&!setViewBody.includes('getWindowRect.Call'),
+  'Switching between Settings and Timer must never move or resize the native frame');
+assert.ok(nativeSource.includes('msg == wmGetMinMaxInfo') && nativeSource.includes('minimum := point{X: int32(defaultWindowWidth), Y: int32(defaultWindowHeight)}') && nativeSource.includes('rtlMoveMemory.Call(lp+24'), 'Both screens must share exactly one native minimum');
 assert.ok(html.includes('syncNativeView("timer")')&&html.includes('syncNativeView("settings")'),'Both screens must notify the native window of their active mode');
 assert.ok(html.includes('if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer")'),'Synchronize native mode after fullscreen');
 assert.equal((html.match(/syncNativeView\("timer"\)/g)||[]).length,1,'Timer must not change geometry on phase transitions');
@@ -1057,8 +1059,7 @@ assert.ok(!html.includes('st.remaining=newDuration;if(wasRunning)_ses()'),
  'Debug live duration changes must never restart the running clock');
 assert.ok(!html.includes('st.remaining=newBetween;if(wasRunning)_ses()'),
  'Debug changes of the inter-round setting must not restart an active break');
-// Preserve the 812x680 Settings startup; dynamic 812x490 is applied only
-// when Timer is activated.
+// Preserve the 812x520 shared startup; no automatic resizing during screen changes.
 assert.ok(!nativeSource.includes('nativeClientCalibrated=true'),
  'Native window must not be resized to a 16:9 client aspect at startup');
 assert.ok(!nativeSource.includes('target = settingsWindowRect'), 'Legacy native view-based frame resizing must remain absent');
