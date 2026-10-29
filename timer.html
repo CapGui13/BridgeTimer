@@ -1030,7 +1030,12 @@ async function audioPlay(tones,force=false){
   if(await audioReady(context,deadline)&&context===audioCtx&&epoch===audioContextEpoch){
    if(performance.now()>=deadline)return false;
    try{audioSchedule(context,tones);audioLastProblem="";return true}
-   catch(e){audioDropContext(e?.message||"Lecture audio échouée")}
+   catch(e){
+    // At least one oscillator may already have started: never retry
+    // this same event or two overlapping copies could be heard.
+    audioDropContext(e?.message||"Lecture audio échouée");
+    return false;
+   }
   }else if(context===audioCtx&&epoch===audioContextEpoch){
    audioDropContext("Sortie audio interrompue, tentative de réinitialisation");
   }else return false;
