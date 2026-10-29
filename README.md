@@ -1,8 +1,12 @@
 # Bridge Timer
 
-> **Essai isolé 16:9 :** cette branche teste une fenêtre plus large et une
-> scène unique 1600×900 pour le mode fenêtré et le plein écran. La version
-> stable reste sur `main`. Ne pas fusionner avant vérification sur Windows.
+> **Version de référence validée le 29 octobre 2026 (Windows 10).**
+> Les bandeaux des paramètres, les dimensions adaptatives de fenêtre et les
+> transitions Paramètres/Timer ont été validés en essai utilisateur.
+> Les tests automatisés de géométrie, de chrono, d'alertes et de fenêtre
+> Windows sont obligatoires dans GitHub Actions. L'audibilité réelle des
+> alarmes et la tenue d'une séance prolongée restent à confirmer sur PC.
+> Revenir à `sauvegarde-bridge-timer-valide-20261029` en cas de régression.
 
 > **RÈGLES VISUELLES IMPÉRATIVES — NE PAS INTRODUIRE DE RÉGRESSION :**
 > lire [UI_LAYOUT_CONTRACT.md](UI_LAYOUT_CONTRACT.md) et préserver les tests.
@@ -54,7 +58,17 @@ Run `BridgeTimer.exe`. No installer is required.
 
 Official Windows builds are produced from this repository on GitHub-hosted Windows runners.
 
+Before distributing a build, the CI workflow executes:
+- JavaScript syntax and regression checks;
+- Microsoft Edge visual, windowed-band and 15-scenario functional tests;
+- 10 long-countdown, sound and anti-sleep tests;
+- Windows native geometry tests (including a real hidden HWND) and Win32 anti-sleep tests;
+- `go vet`, Windows GUI compilation, and an embedded-HTML consistency check.
+
 The dependency versions are pinned in `go.mod` and `go.sum`.
+The last tested build can be downloaded from the GitHub Actions run artifacts.
+See [STABILISATION_2026-10-29.md](STABILISATION_2026-10-29.md) for
+reference commits, verification boundaries, and safe rollback instructions.
 
 ## License
 
