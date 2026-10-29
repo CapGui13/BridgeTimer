@@ -50,7 +50,21 @@ def compare(kind,actual,preview):
    # The live wall clock may have different digits than its frozen preview.
    # Compare its anchor, baseline and typography, not intrinsic text width.
    if selector=="#localTime" and key=="w":continue
-   assert abs(a[key]-b[key])<=1.4,f"{kind} {selector} {key}: real {a[key]:.2f} vs gallery {b[key]:.2f}"
+   # Footer controls are centered in the LIVE free span between the
+   # current wall-clock label and the TOUR label. The two snapshots are
+   # taken at different instants; clock glyph widths can change. Accept
+   # exactly that derived center displacement, not arbitrary motion.
+   center_delta=0
+   if key=="x" and selector in ("#pause","#minus","#next"):
+    clock_real=actual["#localTime"]
+    clock_gallery=preview["#localTime"]
+    round_real=actual["#round"]
+    round_gallery=preview["#round"]
+    center_delta=(
+      (clock_real["x"]+clock_real["w"])-(clock_gallery["x"]+clock_gallery["w"])
+      + round_real["x"]-round_gallery["x"]
+    )/2
+   assert abs((a[key]-b[key])-center_delta)<=1.4,f"{kind} {selector} {key}: real {a[key]:.2f} vs gallery {b[key]:.2f}; expected clock-dependent shift {center_delta:.2f}"
 
 with sync_playwright() as pw:
  if os.name=="nt": browser=pw.chromium.launch(channel="msedge",headless=True)
