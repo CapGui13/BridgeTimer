@@ -112,5 +112,64 @@ with sync_playwright() as pw:
    page.evaluate("showTimer()")
   assert not errors,errors
   page.close()
+
+ # The live timer is hidden in Settings. Never font-fit the hidden source:
+ # previously q40() measured a 0x0 message and replaced 112px with 30px.
+ # The iframe miniature then faithfully displayed that WRONG size.
+ for phase in ("jump","break"):
+  for fullscreen in (False,True):
+   page=browser.new_page(viewport={"width":1600,"height":900})
+   errors=[]
+   page.on("pageerror",lambda e:errors.append(str(e)))
+   page.set_content(html,wait_until="domcontentloaded")
+   page.wait_for_function("typeof recoveryArmed !== 'undefined'&&recoveryArmed")
+   page.evaluate("""phase=>{
+     Object.assign(s,{mode:"2",positions:7,between:30,jumpDisplaySecs:60,sound:false,
+       jumpSplashBodySetting:"À cette position, les EO sautent une table",
+       betweenSplashBodySetting:"Changez de table"});
+     st.started=true;showTimer();q25(phase==="jump" ? false : true);
+     st.phase=phase;st.pos=3;st.remaining=15;st.breakDuration=30;
+     st.running=true;st.endAt=null;render();
+   }""",phase)
+   page.evaluate("(fs)=>q25(fs)",fullscreen)
+   page.evaluate("render()")
+   before=page.evaluate("""()=>{
+     const title=document.querySelector('#jumpSplashTitle');
+     const body=document.querySelector('#jumpSplashText');
+     return {title:parseFloat(getComputedStyle(title).fontSize),
+       body:parseFloat(getComputedStyle(body).fontSize),style:body.style.fontSize};
+   }""")
+   assert before["body"]>=40,(phase,fullscreen,"main transition text is too small",before)
+   page.evaluate("showSettings(false)")
+   page.wait_for_function("!!document.querySelector('#faithfulMiniFrame')?.contentDocument?.querySelector('#jumpSplashText')")
+   page.evaluate("syncFaithfulMini(true)")
+   after=page.evaluate("""()=>{
+     const frame=document.querySelector('#faithfulMiniFrame');
+     const mini=frame.contentDocument;
+     const body=document.querySelector('#jumpSplashText');
+     const title=document.querySelector('#jumpSplashTitle');
+     const miniBody=mini.querySelector('#jumpSplashText');
+     const miniTitle=mini.querySelector('#jumpSplashTitle');
+     return {sourceBody:parseFloat(getComputedStyle(body).fontSize),
+       miniBody:parseFloat(getComputedStyle(miniBody).fontSize),
+       sourceTitle:parseFloat(getComputedStyle(title).fontSize),
+       miniTitle:parseFloat(getComputedStyle(miniTitle).fontSize),
+       miniStyle:miniBody.style.fontSize};
+   }""")
+   assert abs(after["sourceBody"]-before["body"])<.01,(phase,fullscreen,"hidden source was resized",before,after)
+   assert abs(after["miniBody"]-before["body"])<.01,(phase,fullscreen,"mini message differs",before,after)
+   assert abs(after["miniTitle"]-before["title"])<.01,(phase,fullscreen,"mini title differs",before,after)
+   assert after["miniStyle"]==before["style"],(phase,fullscreen,"mini lost actual fitted inline font",before,after)
+   # Re-render while Settings is shown, the original failure path.
+   page.evaluate("render();syncFaithfulMini(true)")
+   after_again=page.evaluate("""()=>{
+     const s=document.querySelector('#jumpSplashText');
+     const m=document.querySelector('#faithfulMiniFrame').contentDocument.querySelector('#jumpSplashText');
+     return [parseFloat(getComputedStyle(s).fontSize),parseFloat(getComputedStyle(m).fontSize)];
+   }""")
+   assert all(abs(x-before["body"])<.01 for x in after_again),(phase,fullscreen,"render destroyed font",after_again,before)
+   assert not errors,(phase,fullscreen,errors)
+   checks+=1
+   page.close()
  browser.close()
 print(f"Fullscreen miniature immediate-geometry and double-click: {checks} checks passed (2 modes, {len(SIZES)} sizes, rapid transitions)")
