@@ -63,7 +63,15 @@ def assert_stable_settings_slots(a,b,label):
             assert abs(a_center-b_center)<=1.1, f"{label}: fresh center moved"
             dimensions=("y","h")
         else:
-            dimensions=("x","y","w","h")
+            # Subsequent buttons follow the first label's RIGHT edge;
+            # when "Lancer" becomes "Timer", the centered row contracts
+            # symmetrically but each internal gap remains unchanged.
+            first_a=a["fresh"]["x"]+a["fresh"]["w"]
+            first_b=b["fresh"]["x"]+b["fresh"]["w"]
+            gap_a=a[id]["x"]-first_a
+            gap_b=b[id]["x"]-first_b
+            assert abs(gap_a-gap_b)<=1.1, f"{label}: {id} relative position changed"
+            dimensions=("y","w","h")
         for dimension in dimensions:
             delta=abs(a[id][dimension]-b[id][dimension])
             assert delta<=1.1, f"{label}: {id}.{dimension} shifted by {delta:.2f}: {a[id]} -> {b[id]}"
