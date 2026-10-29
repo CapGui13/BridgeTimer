@@ -140,7 +140,7 @@ with sync_playwright() as pw:
        body:parseFloat(getComputedStyle(body).fontSize),style:body.style.fontSize};
    }""")
    assert before["body"]>=40,(phase,fullscreen,"main transition text is too small",before)
-   page.evaluate("showSettings(false)")
+   page.evaluate("showSettings(false);syncFaithfulMini(true)")
    page.wait_for_function("!!document.querySelector('#faithfulMiniFrame')?.contentDocument?.querySelector('#jumpSplashText')")
    page.evaluate("syncFaithfulMini(true)")
    after=page.evaluate("""()=>{
