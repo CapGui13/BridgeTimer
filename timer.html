@@ -255,7 +255,7 @@ body.fs #settings .wrap>.head{
  transform-origin:top left;z-index:800;box-sizing:border-box;
  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px;
  align-items:center;padding:13px 22px;border-bottom:1px solid var(--line);
- background:var(--band);
+ background:var(--panel)!important;
 }
 body.fs #settings .wrap>.head h1{
  margin:0;font-size:40px;line-height:var(--settings-title-height,55px);font-weight:950;
@@ -293,7 +293,14 @@ body.fs.settingsLive #miniTimer.spView{
  height:auto!important;aspect-ratio:16/9!important;
  left:0!important;right:auto!important;
  bottom:0!important;top:auto!important;
- border-radius:0!important;pointer-events:none!important;
+ /* The container itself handles the previously working double-click. */
+ border-radius:0!important;pointer-events:auto!important;
+}
+
+/* Match the last card's gap to the fixed footer with the first card's
+   gap below the fixed header. Exact physical pixels are measured at runtime. */
+body.fs.settingsLive #settings .wrap{
+ padding-bottom:var(--settings-fullscreen-bottom-padding,100px)!important;
 }
 
 /* 27 Oct 2026 — SETTINGS FOOTER, FULLSCREEN ONLY.
@@ -1392,13 +1399,33 @@ function syncFullscreenMiniWidth(){
   holder.style.removeProperty("--fullscreen-mini-width");
   return;
  }
- const card=$("settings")?.querySelector(".tournamentCard");
- const cardLeft=card?.getBoundingClientRect().left;
+ const settings=$("settings");
+ const card=settings?.querySelector(".tournamentCard");
+ const header=settings?.querySelector(".wrap>.head");
+ const footer=settings?.querySelector(".actions");
+ const cardRect=card?.getBoundingClientRect();
  // The card is centered and may move with a resize. Read its actual
  // rendered border (in viewport pixels), never a guessed width.
+ const cardLeft=cardRect?.left;
  const width=Number.isFinite(cardLeft)&&cardLeft>0
   ? Math.min(innerWidth,cardLeft) : Math.min(260,innerWidth);
- holder.style.setProperty("--fullscreen-mini-width",width.toFixed(2)+"px");
+ const miniWidth=width.toFixed(2)+"px";
+ if(holder.style.getPropertyValue("--fullscreen-mini-width")!==miniWidth)
+  holder.style.setProperty("--fullscreen-mini-width",miniWidth);
+ // The first card scrolls with the document; header and footer are fixed.
+ // Subtracting the current scroll offset yields a stable top-gap measure.
+ const headerRect=header?.getBoundingClientRect();
+ const footerRect=footer?.getBoundingClientRect();
+ if(cardRect&&headerRect&&footerRect){
+  const topGap=cardRect.top+window.scrollY-headerRect.bottom;
+  const footerHeight=Math.max(0,innerHeight-footerRect.top);
+  if(Number.isFinite(topGap)&&Number.isFinite(footerHeight)){
+   const pad=Math.max(0,footerHeight+Math.max(0,topGap)).toFixed(2)+"px";
+   const rootStyle=document.documentElement.style;
+   if(rootStyle.getPropertyValue("--settings-fullscreen-bottom-padding")!==pad)
+    rootStyle.setProperty("--settings-fullscreen-bottom-padding",pad);
+  }
+ }
 }
 let faithfulMiniBusy=false,faithfulMiniLast=0;
 function syncFaithfulMini(force=false){
