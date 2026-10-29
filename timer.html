@@ -737,11 +737,13 @@ body:not(.fs) #timer:not(.spm):not(.spa) .controls .btn{
   box-sizing:border-box!important;
 }
 
-/* Compact native window only. Shorten lateral padding on buttons with
-   natural width to keep time / TOUR labels clear. The +/- buttons retain
-   their fixed slots; 1600x900 stage, fullscreen and previews stay untouched. */
+/* Compact native viewport only. Reduce lateral padding of naturally
+   sized footer buttons to clear the clock and tour labels. The SAME CSS
+   applies to 812px Screen Tests previews for pixel-accurate parity.
+   Wide windows, native fullscreen, +/- fixed slots and the independent
+   Settings miniature (1600x900 iframe) remain unchanged. */
 @media (max-width:850px){
- body:not(.fs) #timer:not(.spm):not(.spa) .controls .btn:not(#minus):not(#plus){
+ body:not(.fs) #timer .controls .btn:not(#minus):not(#plus){
   padding-left:7px!important;padding-right:7px!important;
  }
 }
