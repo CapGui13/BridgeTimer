@@ -51,16 +51,47 @@ def verify():
   page.keyboard.press("Space")
   assert not page.evaluate("st.running"),"Second Space must pause clock"
 
-  # F7/F8 with and without key repeat, and aliases - / +.
+  # Non-destructive +/- keys must work on EVERY held-key repeat again.
+  # This regression was introduced by blanket repeat suppression.
   page.evaluate("st.remaining=900;st.endAt=null")
   page.keyboard.press("F8")
   assert round(page.evaluate("st.remaining"))==960
-  assert repeat(page,"F8")
-  assert round(page.evaluate("st.remaining"))==960,"Held F8 modified timer"
+  for _ in range(4):
+   assert repeat(page,"F8"),"Held F8 should suppress browser action"
+  assert round(page.evaluate("st.remaining"))==1200,"Held F8 must add 4 minutes"
   page.keyboard.press("F7")
-  assert round(page.evaluate("st.remaining"))==900
-  assert repeat(page,"F7")
-  assert round(page.evaluate("st.remaining"))==900,"Held F7 modified timer"
+  for _ in range(3):
+   assert repeat(page,"F7"),"Held F7 should suppress browser action"
+  assert round(page.evaluate("st.remaining"))==960,"Held F7 must subtract 4 minutes"
+  # Main keyboard aliases and keypad must share the same repeat semantics.
+  for key,code,delta in (("+","Equal",60),("-","Minus",-60),
+                         ("+","NumpadAdd",60),("-","NumpadSubtract",-60)):
+   before=page.evaluate("st.remaining")
+   assert repeat(page,key,code)
+   assert round(page.evaluate("st.remaining")-before)==delta,(key,code)
+  # A held real key is also reported by Edge as event.repeat=true after
+  # the first keydown, rather than only via synthetic KeyboardEvent.
+  page.evaluate("st.remaining=900;document.body.focus()")
+  page.keyboard.down("F8")
+  page.keyboard.down("F8")
+  page.keyboard.down("F8")
+  page.keyboard.up("F8")
+  assert round(page.evaluate("st.remaining"))==1080,"Real held F8 must repeat"
+  # The current 59:59 ceiling must still apply to a short-start match,
+  # including repeated increments (and no negative countdown on F7).
+  page.evaluate("""()=>{st.phase="round";st.longClockAtStart=false;
+    st.started=true;st.running=false;st.remaining=3580;st.endAt=null;}""")
+  for _ in range(5):repeat(page,"F8")
+  assert page.evaluate("st.remaining")==3599,"Held F8 bypassed short-start cap"
+  page.evaluate("st.remaining=30")
+  for _ in range(5):repeat(page,"F7")
+  assert page.evaluate("st.remaining")==0,"Held F7 went below zero"
+  # Jump phase must retain its 15-second step even during a long hold.
+  page.evaluate("st.phase='jump';st.remaining=75;st.running=false")
+  for _ in range(3):repeat(page,"F7")
+  assert page.evaluate("st.remaining")==30,"Jump repeat must decrement by 15s"
+  page.evaluate("st.phase='round';st.remaining=900;st.longClockAtStart=false")
+
 
   # Position/round and restart are one-shot, especially after a long hold.
   page.keyboard.press("ArrowRight")
@@ -192,6 +223,6 @@ def verify():
 
   assert not errors,errors
   page.close();browser.close()
- print("Keyboard E2E OK: 7 one-shot keys, editing, browser modifiers, 5 modals, focused buttons, F9, diagnostics and gallery")
+ print("Keyboard E2E OK: held F7/F8/+/-/numpad, short 59:59 cap, jump 15s, one-shot destructive commands, editors, 5 modals, F9")
 
 verify()
