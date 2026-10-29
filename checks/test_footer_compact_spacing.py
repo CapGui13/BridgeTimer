@@ -54,6 +54,10 @@ with sync_playwright() as pw:
        st.started=true;st.roundDuration=3600;st.remaining=67;st.breakDuration=10;
        st.endAt=null;render();
      }""",{"mode":mode,"count":count,"phase":phase})
+     # Edge can finish font and flex measurements after the synchronous
+     # render. Re-run the production positioning calculation once on the
+     # final DOM rectangles, without changing any layout rules.
+     page.evaluate("alignTimerFooterControls()")
      d=metrics(page)
      assert_spacing(f"{width}x{height} {mode} {count} {phase}",d)
      n+=1
