@@ -32,8 +32,7 @@ const (
 	host = "127.0.0.1"
 	port = 43831
 	defaultWindowWidth = 812
-	defaultWindowHeight = 680
-	timerWindowHeight = 490
+	defaultWindowHeight = 520
 
 	wsCaption = 0x00C00000
 	wsThickFrame = 0x00040000
@@ -137,12 +136,9 @@ var (
 
 	fullscreenMu sync.Mutex
 	fullscreen bool
-	// Settings keeps its original native height. Timer needs a 16:9 CLIENT
-	// area; resizing the native window is the only way to avoid letterboxing
-	// without distorting the same 1600x900 timer layout.
+	// Track which view is shown, without altering the chosen native geometry.
 	timerViewActive atomic.Bool
 	viewRequestSerial int64
-	settingsWindowHeight int32 = defaultWindowHeight
 	nativeClientCalibrated bool
 	settingsWindowRect rect
 	settingsWindowRectValid bool
@@ -333,110 +329,23 @@ func applyDarkTitleBar(hwnd uintptr) {
 }
 
 /*
- * Settings and Timer have different native heights but retain the same
- * USER-CHOSEN WIDTH. The timer's height grows with width from the validated
- * 812x490 baseline (16:9 client projection); Settings restores the last
- * user-sized settings height (minimum 680). Both modes use the same HWND.
- * A work-area clamp prevents transitions from moving the window offscreen.
- * The fullscreen path deliberately does not resize the native frame.
+ * Windowed Settings and Timer share one real Win32 window, with a single
+ * user-controlled size and position. No resizing on view changes.
+ *
+ * The 812x520 launch height shows the complete Tournament module above the
+ * permanently anchored Settings footer at 100% browser zoom on Windows 10.
+ * Advanced settings remain reachable by scrolling. Native fullscreen uses
+ * a separate save/restore path and must not alter the windowed rectangle.
  */
-func timerOuterHeight(width int32) int32 {
-	if width < defaultWindowWidth { width = defaultWindowWidth }
-	delta := width - defaultWindowWidth
-	return timerWindowHeight + (delta*9+8)/16
-}
-
-// Pure geometry calculation, independently tested without a real HWND.
-func planNativeViewRect(current, work rect, requested string, settingsHeight int32) rect {
-	width := current.Right-current.Left
-	if width < defaultWindowWidth { width = defaultWindowWidth }
-	height := settingsHeight
-	if height < defaultWindowHeight { height = defaultWindowHeight }
-	if requested == "timer" { height = timerOuterHeight(width) }
-
-	left, top := current.Left, current.Top
-	workWidth := work.Right-work.Left
-	workHeight := work.Bottom-work.Top
-	if workWidth > 0 && workHeight > 0 {
-		// Preserve the chosen width unless it does not fit the monitor.
-		// Small displays may be unable to contain the application's minima.
-		if workWidth >= defaultWindowWidth && width > workWidth { width = workWidth }
-		if requested == "timer" { height = timerOuterHeight(width) }
-		if workHeight >= defaultWindowHeight || requested == "timer" && workHeight >= timerWindowHeight {
-			if height > workHeight { height = workHeight }
-		}
-		if width <= workWidth {
-			if left < work.Left { left = work.Left }
-			if left+width > work.Right { left = work.Right-width }
-		} else { left = work.Left }
-		if height <= workHeight {
-			if top < work.Top { top = work.Top }
-			if top+height > work.Bottom { top = work.Bottom-height }
-		} else { top = work.Top }
-	}
-	return rect{Left:left,Top:top,Right:left+width,Bottom:top+height}
-}
-
-func monitorWorkArea(hwnd uintptr) (rect, bool) {
-	monitor, _, _ := monitorFromWindow.Call(hwnd, monitorDefaultToNearest)
-	if monitor == 0 { return rect{}, false }
-	mi := monitorInfo{CbSize:uint32(unsafe.Sizeof(monitorInfo{}))}
-	ok, _, _ := getMonitorInfoW.Call(monitor,uintptr(unsafe.Pointer(&mi)))
-	if ok == 0 { return rect{}, false }
-	return mi.RcWork, true
-}
-
 func setNativeView(hwnd uintptr, requested string, serial int64) bool {
 	if requested != "timer" && requested != "settings" { return false }
 	fullscreenMu.Lock()
 	defer fullscreenMu.Unlock()
 	if serial <= viewRequestSerial { return false }
 	viewRequestSerial = serial
-	isTimer := requested == "timer"
-	wasTimer := timerViewActive.Load()
-
-	// The test-only zero-HWND path validates state transitions.
-	// Never resize maximized or native-fullscreen windows.
-	if hwnd == 0 || fullscreen {
-		timerViewActive.Store(isTimer)
-		return true
-	}
-	zoomed, _, _ := isZoomed.Call(hwnd)
-	if zoomed != 0 {
-		timerViewActive.Store(isTimer)
-		return true
-	}
-
-	var current rect
-	ok, _, _ := getWindowRect.Call(hwnd,uintptr(unsafe.Pointer(&current)))
-	if ok == 0 { log.Printf("native view %s: GetWindowRect failed",requested); return false }
-	work, hasWork := monitorWorkArea(hwnd)
-	if !hasWork {
-		log.Printf("native view %s: monitor work area unavailable",requested)
-		return false
-	}
-
-	preferredSettingsHeight := settingsWindowHeight
-	if !wasTimer {
-		preferredSettingsHeight = current.Bottom-current.Top
-		if preferredSettingsHeight < defaultWindowHeight {
-			preferredSettingsHeight = defaultWindowHeight
-		}
-	}
-	target := planNativeViewRect(current,work,requested,preferredSettingsHeight)
-	timerViewActive.Store(isTimer) // WM_GETMINMAXINFO uses the NEW view minimum.
-	result, _, err := setWindowPos.Call(hwnd,0,
-		uintptr(int64(target.Left)),uintptr(int64(target.Top)),
-		uintptr(target.Right-target.Left),uintptr(target.Bottom-target.Top),
-		swpNoZOrder|swpNoOwnerZOrder|0x0010)
-	if result == 0 {
-		timerViewActive.Store(wasTimer)
-		log.Printf("native view resize %s: %v",requested,err)
-		return false
-	}
-	settingsWindowHeight = preferredSettingsHeight
-	log.Printf("native view: %s %dx%d at (%d,%d)",requested,
-		target.Right-target.Left,target.Bottom-target.Top,target.Left,target.Top)
+	timerViewActive.Store(requested == "timer")
+	// Deliberately no SetWindowPos, even after returning from fullscreen.
+	// The normal OS maximize/restore path also preserves the chosen rectangle.
 	return true
 }
 
@@ -449,8 +358,8 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		nativeCloseRequestHandler()
 		return 0
 	}
-	// WebView2's initial HINT_MIN is overridden *after* the original
-	// procedure handles WM_GETMINMAXINFO, so each view has its own minimum.
+	// Enforce the SAME minimum for Settings and Timer after WebView2's
+	// WM_GETMINMAXINFO handler, without resizing when the view changes.
 	switch msg {
 	case wmActivate:
 		if wp&0xFFFF != waInactive {
@@ -468,9 +377,6 @@ func darkTitleWndProc(hwnd, msg, wp, lp uintptr) uintptr {
 			// Copy into the OS-supplied memory using a Windows API, rather
 			// than converting an unmanaged uintptr into a Go unsafe.Pointer.
 			minimum := point{X: int32(defaultWindowWidth), Y: int32(defaultWindowHeight)}
-			if timerViewActive.Load() {
-				minimum.Y = int32(timerWindowHeight)
-			}
 			rtlMoveMemory.Call(lp+24, uintptr(unsafe.Pointer(&minimum)), unsafe.Sizeof(minimum))
 			runtime.KeepAlive(&minimum)
 		}
@@ -755,8 +661,8 @@ func main() {
 		showStartupError("Bridge Timer ne peut pas initialiser Microsoft Edge WebView2.\n\nVérifie que le runtime WebView2 est installé sur Windows.")
 		return
 	}
-	// Settings opens at 812x680, while timer switches to 812x490.
-	// WM_GETMINMAXINFO adjusts the native minimum during each view switch.
+	// The window opens at 812x520 in both Settings and Timer; the normal
+	// native minimum remains identical across switches.
 	// The window may be enlarged freely in either dimension.
 	w.SetSize(defaultWindowWidth, defaultWindowHeight, webview.HintMin)
 	defer w.Destroy()
