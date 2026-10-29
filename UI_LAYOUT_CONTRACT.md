@@ -621,3 +621,29 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - Tests Edge à 960×600, 1280×720, 1650×928 et 1920×1080,
   Paires et MP4 : double-clic réel, opacité CSS, marge haute/basse
   en scroll max, aller-retour plein écran.
+
+## Reprise d'une séance interrompue — essai du 29/10/2026
+
+- Branche d'expérimentation : `essai-reprise-seance-interrompue-20261029`. Version d'ergonomie
+  précédente = `essai-mini-doubleclic-bandeau-scroll-20261029` ; `main`
+  et les branches de sauvegarde restent intacts.
+- Checkpoint JSON versionné de la séance en cours : position, phase,
+  état marche/pause, temps restant réel (horloge monotone), configuration
+  et instant de sauvegarde. Sauvegarde toutes les 5 secondes et à chaque
+  transition significative ; persistance localStorage + fichier natif
+  `native-session.json` (écriture temporaire synchronisée puis remplacement).
+- Les paramètres généraux et l'image du logo restent dans leur stockage
+  historique ; le gros logo n'entre pas dans le checkpoint.
+- Au démarrage, vérifier copie locale, copie de secours et copie native.
+  Écarter les documents invalides et retenir le dernier valide. Le dialogue
+  « Séance interrompue détectée » propose Reprendre / Nouvelle séance.
+- Reprendre rétablit la configuration, la phase et le temps **sans soustraire
+  le temps écoulé pendant l'arrêt**, et **toujours en pause**. C'est au
+  responsable du tournoi de reprendre le décompte.
+- Un arrêt explicitement confirmé, un bouton Arrêter ou la fin normale de
+  la séance suppriment le checkpoint de récupération.
+- Jamais de modification du chrono principal, de la mise à l'échelle,
+  de la miniature, des paramètres, des fonds opaques ou du scroll.
+- Vérifier l'EXE réel et son alarme, puis au minimum un redémarrage après
+  fermeture forcée, une reprise en Paires et une reprise en Match par 4,
+  en plus des tests Edge et Windows automatisés.
