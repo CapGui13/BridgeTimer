@@ -25,7 +25,9 @@ with sync_playwright() as pw:
       __awakeHistory.push({on,serial});return true;
     };
     Object.assign(s,{mode,positions:3,between:15,minutes:1,seconds:0,hours:0,sound:false});
-    st.started=true;st.running=false;q4a(1,false);showTimer();
+    // Match Settings controls to program state before showTimer() commits
+    // their values. Otherwise the default MP4 dropdown overwrites Paires.
+    fill();st.started=true;st.running=false;q4a(1,false);showTimer();
   }""",mode)
   page.evaluate("start()")
   page.wait_for_function("__awakeHistory.length >= 1")
@@ -37,6 +39,7 @@ with sync_playwright() as pw:
   page.evaluate("start();pause()")
   assert all(x["on"] for x in page.evaluate("__awakeHistory")), ("Resume must keep anti-sleep",mode)
   # End of an MP4 round is an active tournament; end of a Pairs event isn't.
+  assert page.evaluate("s.mode")==mode, ("test setup changed tournament format",mode,page.evaluate("s.mode"))
   page.evaluate("""mode=>{
     st.running=false;st.phase="round";st.pos=mode==="2"?s.positions:1;
     qe();
