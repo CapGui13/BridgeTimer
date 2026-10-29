@@ -35,11 +35,17 @@ jobs:
       - name: Updated legacy regression guards
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           node checks/test_state_machine.js
           python checks/check_regressions.py
       - name: Browser geometry and screen-transition tests
         shell: pwsh
         run: |
+          # A failed Python test must fail the entire Actions step (PowerShell
+          # otherwise reports the exit code of only the LAST command).
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           python -m pip install --disable-pip-version-check playwright==1.56.0 pillow==11.3.0
           python checks/test_visual_transitions.py
           python checks/test_functional_end_to_end.py
