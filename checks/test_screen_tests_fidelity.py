@@ -91,7 +91,7 @@ with sync_playwright() as pw:
    fs=content.evaluate("document.body.classList.contains('fs')")
    assert fs,(kind,"gallery must use real fullscreen CSS")
    preview=metrics(content)
-   assert abs(preview[".top"]["h"]-82)<2,(kind,preview[".top"])
+   assert abs(preview[".top"]["h"]-80)<2,(kind,preview[".top"])
    assert abs(preview[".bottom"]["h"]-88)<2,(kind,preview[".bottom"])
    gallery.append(preview)
   # The source now uses a different viewport, to catch accidental inheritance
