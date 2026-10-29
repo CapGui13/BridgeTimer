@@ -854,7 +854,11 @@ function projectedMp4MatchEnd(){
 function syncResumeAfterMatch(){
  const delay=Number(s.resumeDelayMinutes)||0;
  if(s.mode!=="4"||!Number.isInteger(delay)||delay<1||delay>99)return;
- const at=new Date(projectedMp4MatchEnd()+delay*60000);
+ // A finished match can be read a few milliseconds after its
+ // recorded end. Round the end to the nearest minute to avoid
+ // 13:00:00 -> 12:59 -> 13:14 due to sub-second measurement noise.
+ const alignedEnd=Math.round(projectedMp4MatchEnd()/60000)*60000;
+ const at=new Date(alignedEnd+delay*60000);
  const hh=String(at.getHours()).padStart(2,"0"),mm=String(at.getMinutes()).padStart(2,"0");
  const value=hh+":"+mm;
  if(s.resumeTime!==value){s.resumeTime=value;$("resumeTime").value=value}
