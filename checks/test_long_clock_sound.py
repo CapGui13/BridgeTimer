@@ -120,12 +120,25 @@ def forced_preview(p):
 def native_awake_handoff(p):
  p.evaluate(SETUP)
  p.evaluate("""window.__awakeCalls=[];
- window.nativeSetAwake=async on=>{__awakeCalls.push(on);return true};start()""")
+ window.nativeSetAwake=async (on,serial)=>{__awakeCalls.push([on,serial]);return true};start()""")
  p.wait_for_timeout(70)
  p.evaluate("pause()")
  p.wait_for_timeout(70)
  calls=p.evaluate("__awakeCalls")
- assert calls[:2]==[True,False],calls
+ assert len(calls)>=2 and all(x[0] is True for x in calls),calls
+ assert calls[-1][1]>calls[0][1],calls
+ # A PAUSED tournament remains protected. Switching to Settings also
+ # must not release Windows' per-thread sleep prevention request.
+ p.evaluate("showSettings(false);showTimer()")
+ p.wait_for_timeout(60)
+ calls=p.evaluate("__awakeCalls")
+ assert all(x[0] is True for x in calls),calls
+ # Once explicitly stopped, the most recent request must release protection.
+ p.evaluate("q22()")
+ p.wait_for_timeout(70)
+ calls=p.evaluate("__awakeCalls")
+ assert calls[-1][0] is False,calls
+ assert all(b[1]>a[1] for a,b in zip(calls,calls[1:])),calls
 
 def missing_audio_device(p):
  p.evaluate("window.AudioContext=undefined;window.webkitAudioContext=undefined;audioCtx=null;s.sound=true;beep(880);q1a()")
