@@ -10,7 +10,7 @@ html=Path("timer.html").read_text(encoding="utf8")
 native=Path("main.go").read_text(encoding="utf8")
 css=html.split("<style>",1)[1].split("</style>",1)[0]
 markup=html.split("</style></head><body>",1)[1].split("<script>",1)[0]
-ids=Counter(re.findall(r'\\bid="([A-Za-z][A-Za-z0-9_-]*)"',markup))
+ids=Counter(re.findall(r'\bid="([A-Za-z][A-Za-z0-9_-]*)"',markup))
 for key in ("mode","positions","startPosition","boards","boardMinutes","boardSeconds",
  "warnEnabled","jumpDisplaySecs","accent","background","menu","text",
  "miniTimer","faithfulMiniFrame","recoveryOverlay","recoveryResume",
@@ -22,7 +22,7 @@ for name in ("start","pause","tick","qe","zadvance","q4a","updateStage",
  "fc","showTimer","showSettings","syncFullscreenMiniWidth",
  "syncFaithfulMini","recoveryAutoSave","recoveryReadPending",
  "recoveryResume","syncTournamentAwake"):
- assert re.search(r'\\b(?:async\\s+)?function\\s+'+name+r'\\s*\\(',html),name
+ assert re.search(r'\b(?:async\s+)?function\s+'+name+r'\s*\(',html),name
 for needle in ('#miniTimer.spView','body.fs.settingsLive #miniTimer.spView',
  'aspect-ratio:16/9!important',
  'bottom:0!important;top:auto!important',
