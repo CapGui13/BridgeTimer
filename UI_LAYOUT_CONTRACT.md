@@ -869,3 +869,33 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - N'altérer aucune taille, bande, position ou transition
   du chrono, ni les formats court/long : modification
   du seul routeur `keydown` et des tests de comportement.
+
+## 29 octobre 2026 — Reprise MP4 : choix exclusifs et unité M
+
+- Branche d'essai `essai-reprise-choix-exclusifs-20261029`, base de retour arrière :
+  `essai-repetition-plus-moins-clavier-20261029`.
+- Modifier uniquement la zone « Reprise à » en paramètres MP4.
+  Remplacer « min » par la lettre **M**, en réutilisant la classe
+  `.unitField` et le style `.unit` communs aux autres réglages,
+  avec le même écart entre champ numérique et unité.
+- **Nouvelle règle impérative :** saisir un nombre de minutes
+  de 1 à 99 dans le second champ **efface l'heure de la première
+  case HH:MM et la laisse vide**. Aucun recalcul ne doit inscrire
+  d'heure dans cette case, y compris au rendu du timer, au retour
+  dans les paramètres ou à la fin de match.
+- L'affichage public de fin de match continue, lui, de déterminer
+  l'heure de reprise à partir de l'heure effective de fin + délai
+  lorsque la deuxième case est renseignée. Exemple : 13:00 + 15 M
+  montre « REPRISE À 13:15 » **sur le timer seulement** ; la case
+  de paramètres HH:MM demeure vide.
+- Saisir manuellement une heure HH:MM annule le délai et vide la
+  deuxième case. Effacer le délai ne restaure **pas** d'heure calculée
+  automatiquement ; l'heure manuelle reste vide.
+- Une HH:MM vide avec un délai actif constitue une option valable :
+  l'état HTML `required` doit être désactivé pour ce cas seulement ;
+  en Paires ou sans délai, le champ horaire reste requis.
+- Ne rien changer en Paires, au format court ou long, à l'homothétie,
+  aux raccourcis, aux transitions ni aux réglages d'autres champs.
+- Valider les entrées et le rendu 13:00 + 15, passage à minuit + 99,
+  délai ajouté après heure manuelle, effacement des deux cases, bascule
+  Paires/MP4 et alignement / unité en plusieurs tailles de fenêtre.
