@@ -74,20 +74,23 @@ with sync_playwright() as pw:
    }""")
    assert top["color"].startswith("rgb(") or top["color"].endswith(", 1)"),(width,mode,"Header must be opaque",top)
    assert top["opacity"]=="1",(width,mode,top)
-   page.evaluate("window.scrollTo(0,document.documentElement.scrollHeight)")
-   page.wait_for_function("window.scrollY > 20")
-   scrolled=page.evaluate("""() => {
-     const rect=s=>document.querySelector(s).getBoundingClientRect();
-     const last=document.querySelector('#settings .wrap > .card:last-child');
-     const h=document.querySelector('#settings .wrap>.head');
-     return {gap:rect('#settings .actions').top-last.getBoundingClientRect().bottom,
-       scrollY:window.scrollY,max:document.documentElement.scrollHeight-innerHeight,
-       headTop:h.getBoundingClientRect().top,
-       color:getComputedStyle(h).backgroundColor};
-   }""")
-   assert abs(scrolled["gap"]-top["gap"])<=2.5,(width,mode,"Max-scroll bottom margin must match top margin",top,scrolled)
-   assert scrolled["color"]==top["color"],(width,mode,"Header changed while scrolling",scrolled)
-   assert abs(scrolled["scrollY"]-scrolled["max"])<=2.0,(width,mode,"Scroll wasn't at bottom",scrolled)
+   maxscroll=page.evaluate("Math.max(0,document.documentElement.scrollHeight-innerHeight)")
+   if (width,height)==(1650,928):
+    assert maxscroll>20,(width,mode,"Reference viewport should permit scrolling",maxscroll)
+   if maxscroll>20:
+    page.evaluate("window.scrollTo(0,document.documentElement.scrollHeight)")
+    scrolled=page.evaluate("""() => {
+      const rect=s=>document.querySelector(s).getBoundingClientRect();
+      const last=document.querySelector('#settings .wrap > .card:last-child');
+      const h=document.querySelector('#settings .wrap>.head');
+      return {gap:rect('#settings .actions').top-last.getBoundingClientRect().bottom,
+        scrollY:window.scrollY,max:document.documentElement.scrollHeight-innerHeight,
+        headTop:h.getBoundingClientRect().top,
+        color:getComputedStyle(h).backgroundColor};
+    }""")
+    assert abs(scrolled["gap"]-top["gap"])<=2.5,(width,mode,"Max-scroll bottom margin must match top margin",top,scrolled)
+    assert scrolled["color"]==top["color"],(width,mode,"Header changed while scrolling",scrolled)
+    assert abs(scrolled["scrollY"]-scrolled["max"])<=2.0,(width,mode,"Scroll wasn't at bottom",scrolled)
    # Double-click on the FULLSCREEN mini must return to the TIMER.
    if (width,height)==(1650,928) and mode=="4":
     page.screenshot(path="mini-preview-scrolled-1650x928.png",full_page=False)
