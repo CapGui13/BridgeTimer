@@ -509,10 +509,10 @@ def main():
                 timerFooter=page.evaluate("""() => {
                   const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
                     return {x:r.x,y:r.y,w:r.width,h:r.height};};
-                  // Timer hidden; its previous projected geometry matches
-                  // the stage scale and 88px virtual footer height.
-                  const k=innerWidth/1600;
-                  return {height:88*k,buttonHeight:Number(document.documentElement.style.getPropertyValue("--settings-bottom-button-height").replace("px",""))*k};
+                  // Current approved WINDOWED footer dimensions are
+                  // 59px high with 40px buttons in BOTH screens. The old
+                  // 88px virtual size belongs exclusively to fullscreen.
+                  return {height:59,buttonHeight:40};
                 }""")
                 assert abs(settingsHeader["footer"]["h"]-timerFooter["height"])<=1.1, f"Windowed live Settings footer must be same height as timer: {width}x{height} {mode}"
                 assert abs(settingsHeader["footerButton"]["h"]-timerFooter["buttonHeight"])<=1.1, "Windowed settings buttons must match timer button height"
