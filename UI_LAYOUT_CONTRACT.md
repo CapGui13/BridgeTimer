@@ -595,3 +595,29 @@ référence stable.
 - Vérifier la géométrie en Paires et MP4, en 960×600, 1280×720, 1650×928
   et 1920×1080, la réversibilité fenêtré ↔ plein écran, et une capture Edge
   à 1650×928. Le test navigateur ne remplace pas la validation de l'EXE Windows.
+
+## Correctifs ergonomie paramètres plein écran (29/10/2026, essai)
+
+Après validation par capture de la taille et de l'alignement de la miniature :
+
+- **Double-clic de la miniature restauré** : le gestionnaire
+  `#miniTimer.ondblclick=showTimer` existait, mais un
+  `pointer-events:none!important` plein écran empêchait de l'utiliser.
+  Restaurer `pointer-events:auto` seulement pour cette miniature ;
+  iframe interne en lecture seule.
+- **Barre supérieure opaque** comme l'inférieure :
+  `body.fs #settings .wrap>.head` doit avoir un fond opaque
+  `var(--panel)`. Les cartes qui défilent ne sont jamais visibles
+  à travers l'en-tête, qui reste fixé.
+- **Limite de défilement** : en paramètres plein écran avec minuterie
+  active, le bas du dernier bloc doit se placer à la même distance
+  du haut de la barre fixe inférieure que le premier bloc du bas de la
+  barre fixe supérieure (écarts mesurés en pixels natifs).
+  On remplace l'ancien `padding-bottom:230px` par un padding mesuré,
+  correspondant à la hauteur visible du pied de page + marge supérieure.
+- **À préserver** : miniature à l'angle inférieur gauche, bord droit
+  à la limite gauche des blocs, ratio 16:9, mode fenêtré, géométrie
+  du timer et raccourcis. `main` inchangée.
+- Tests Edge à 960×600, 1280×720, 1650×928 et 1920×1080,
+  Paires et MP4 : double-clic réel, opacité CSS, marge haute/basse
+  en scroll max, aller-retour plein écran.
