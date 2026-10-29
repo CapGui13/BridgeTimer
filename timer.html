@@ -839,10 +839,9 @@ function qc(live){
 <div style="text-align:right">TOUR 3 sur 6</div>
 </div>
 <button class="themeApply" ${key==="current"?"disabled":'data-apply-theme="'+key+'"'}>${key==="current"?"Couleurs en cours":"Appliquer ce thème"}</button>
-</article>`).join("");grid.querySelectorAll("[data-apply-theme]").forEach(btn=>btn.onclick=()=>btn.dataset.applyTheme==="current"?null:_acp(btn.dataset.applyTheme))}const _spch=new Set(["prejump","jump","between","orange","red","pause","roundend","ended","temporary"]);function _bsp(kind){const cfg={...s};const isJump=["prejump","jump","between"].includes(kind);const pos=isJump?(s.mode==="2"&&s.jumpRound>0?s.jumpRound:7):Math.min(1,s.positions);if(isJump){cfg.mode="2";cfg.positions=Math.max(8,s.positions,pos+1);cfg.jumpRound=pos;cfg.movement="mitchell";}const baseDuration=Math.max(600,q4e());const v={pos,phase:"round",remaining:Math.round(baseDuration*.45),running:true,started:true,endAt:null,interval:null,roundDuration:baseDuration,roundBetween:Math.max(30,Number(s.between)||0),roundBoardDuration:_bds(),roundBoards:Math.max(1,Number(s.boards)||1),breakDuration:0,jumpReminderRound:0,syncHoldUntil:0,syncDisplayCeiling:0};switch(kind){case "prejump":cfg.jumpAdvanceNotice=true;cfg.warnEnabled=true;cfg.dangerMinutes=1;cfg.dangerSeconds=0;cfg.warnMinutes=2;cfg.warnSeconds=0;cfg.jumpMessage=cfg.jumpMessage||def.jumpMessage;v.remaining=40;break;case "jump":v.phase="jump";v.remaining=Math.min(10,clamp(Number(cfg.jumpDisplaySecs)||15,1,99));break;case "between":v.phase="break";v.breakDuration=Math.max(30,Number(s.between)||0);v.remaining=Math.min(20,v.breakDuration);break;case "orange":cfg.warnEnabled=true;cfg.warnMinutes=2;cfg.warnSeconds=0;cfg.dangerMinutes=1;cfg.dangerSeconds=0;cfg.jumpAdvanceNotice=false;cfg.jumpRound=0;v.remaining=90;break;case "red":cfg.warnEnabled=true;cfg.warnMinutes=2;cfg.warnSeconds=0;cfg.dangerMinutes=1;cfg.dangerSeconds=0;cfg.jumpAdvanceNotice=false;cfg.jumpRound=0;v.remaining=30;break;case "pause":v.running=false;v.remaining=Math.min(240,baseDuration);break;case "roundend":cfg.mode="4";v.phase="roundEnd";v.remaining=0;break;case "ended":cfg.mode="2";v.phase="ended";v.remaining=0;break;case "temporary":cfg.quickMessage=cfg.quickMessage||"Saisir les scores";v.remaining=Math.min(240,baseDuration);break;}return {cfg,v}}function q1b(value) {
-return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}/* A gallery snapshot inherits the source timer's inline text-size, which was
-   measured in an off-screen layout. Re-fit the cloned text at its own 778 px
-   viewport after iframe load; the iframe remains script-sandboxed. */
+</article>`).join("");grid.querySelectorAll("[data-apply-theme]").forEach(btn=>btn.onclick=()=>btn.dataset.applyTheme==="current"?null:_acp(btn.dataset.applyTheme))}const _spch=new Set(["prejump","jump","between","orange","red","pause","roundend","ended","temporary"]);function _bsp(kind){const cfg={...s};const isJump=["prejump","jump","between"].includes(kind);const pos=isJump?(s.mode==="2"&&s.jumpRound>0?s.jumpRound:7):Math.min(1,s.positions);if(isJump){cfg.mode="2";cfg.positions=Math.max(8,s.positions,pos+1);cfg.jumpRound=pos;cfg.movement="mitchell";}const baseDuration=Math.max(600,q4e());const v={pos,phase:"round",remaining:Math.round(baseDuration*.45),running:true,started:true,endAt:null,interval:null,roundDuration:baseDuration,roundBetween:Math.max(30,Number(s.between)||0),roundBoardDuration:_bds(),roundBoards:Math.max(1,Number(s.boards)||1),longClockAtStart:baseDuration>=3600,breakDuration:0,jumpReminderRound:0,syncHoldUntil:0,syncDisplayCeiling:0};switch(kind){case "prejump":cfg.jumpAdvanceNotice=true;cfg.warnEnabled=true;cfg.dangerMinutes=1;cfg.dangerSeconds=0;cfg.warnMinutes=2;cfg.warnSeconds=0;cfg.jumpMessage=cfg.jumpMessage||def.jumpMessage;v.remaining=40;break;case "jump":v.phase="jump";v.remaining=Math.min(10,clamp(Number(cfg.jumpDisplaySecs)||15,1,99));break;case "between":v.phase="break";v.breakDuration=Math.max(30,Number(s.between)||0);v.remaining=Math.min(20,v.breakDuration);break;case "orange":cfg.warnEnabled=true;cfg.warnMinutes=2;cfg.warnSeconds=0;cfg.dangerMinutes=1;cfg.dangerSeconds=0;cfg.jumpAdvanceNotice=false;cfg.jumpRound=0;v.remaining=90;break;case "red":cfg.warnEnabled=true;cfg.warnMinutes=2;cfg.warnSeconds=0;cfg.dangerMinutes=1;cfg.dangerSeconds=0;cfg.jumpAdvanceNotice=false;cfg.jumpRound=0;v.remaining=30;break;case "pause":v.running=false;v.remaining=Math.min(240,baseDuration);break;case "roundend":cfg.mode="4";v.phase="roundEnd";v.remaining=0;break;case "ended":cfg.mode="2";v.phase="ended";v.remaining=0;break;case "temporary":cfg.quickMessage=cfg.quickMessage||"Saisir les scores";v.remaining=Math.min(240,baseDuration);break;}return {cfg,v}}function q1b(value) {
+return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}/* Each gallery sample is measured in the original 1600x900 fullscreen stage.
+   Snapshot iframes never execute application JS or re-fit text independently. */
 /* PERMANENT VISUAL CONTRACT: gallery thumbnails use the SAME 1600x900
  * stage as the real timer, rendered at full-size and scaled with ONE factor.
  * DO NOT use a 778x595 reflow or separately re-fit any message/clock font.
@@ -859,29 +858,36 @@ function _rspg(){
  const names={prejump:"Pré-alerte saut",jump:"Saut de table",between:"Temps entre tours",orange:"Alerte orange",red:"Alerte rouge",pause:"Pause",roundend:"Fin du tour (Match par 4)",ended:"Fin de la séance (Paires)",temporary:"Message temporaire"};
  const prev=[_sps,_spset,spk],tm=$("timer"),toolbar=$("sptb");
  const toolbarDisplay=toolbar.style.display,gridDisplay=target.style.display;
- // No visible flash: synchronous sample collection before the next paint.
- // Force normal stage geometry while measuring every screen; spm/spa would
- // otherwise reflow the timer and generate incorrect giant font sizes.
+ const prevStageStyle=tm.getAttribute("style");
+ const wasFs=document.body.classList.contains("fs");
+ // Gallery snapshots must be rendered at the SAME 1600x900 layout as the
+ // real fullscreen Timer, not sized for the small window and stretched later.
+ // We do this synchronously before painting, preserving the live session.
  tm.classList.remove("spa","spm");
  toolbar.style.display="none";target.style.display="none";
+ document.body.classList.add("fs");
+ for(const [key,value] of Object.entries({
+  "--stage-left":"0px","--stage-top":"0px","--stage-scale":"1",
+  "--stage-width":"1600px","--stage-height":"900px",
+  "--timer-vw":"16px","--timer-vh":"9px"
+ }))tm.style.setProperty(key,value);
  const css=document.querySelector("style").textContent;
  target.replaceChildren();
  try{
   for(const kind of _spch){
    const sample=_bsp(kind);_sps=sample.v;_spset=sample.cfg;spk=kind;
-   C=null;longClockKey="";render();
+   // Recompute BOTH the clock and the special-message font in the final
+   // virtual canvas; otherwise the iframe inherits a 812px-window font.
+   C=null;longClockKey="";lrf="";lsf="";render();
    const clone=tm.cloneNode(true);clone.classList.remove("spa","spm","hidden");
    for(const id of ["sptb","spg"])clone.querySelector("#"+id)?.remove();
-   // Normalize the OS viewport scale for the independent iframe stage.
-   for(const [key,value] of Object.entries({
-    "--stage-left":"0px","--stage-top":"0px","--stage-scale":"1",
-    "--stage-width":"1600px","--stage-height":"900px",
-    "--timer-vw":"16px","--timer-vh":"9px"
-   }))clone.style.setProperty(key,value);
+   // The gallery iframe is always a virtual FULLSCREEN view.
+   // body.fs is necessary: without it the old windowed 55/59px band rules
+   // accidentally apply to the 1600x900 cloned source.
    const rootstyle=document.documentElement.getAttribute("style")||"";
-   const doc='<!doctype html><html style="'+rootstyle+'"><head><meta charset=utf-8><style>'+css+'</style><style>html,body{margin:0!important;width:1600px!important;height:900px!important;overflow:hidden!important}#timer{display:grid!important;position:relative!important;left:0!important;top:0!important;transform:none!important;width:1600px!important;height:900px!important;min-height:0!important}</style></head><body>'+clone.outerHTML+'</body></html>';
+   const doc='<!doctype html><html style="'+rootstyle+'"><head><meta charset=utf-8><style>'+css+'</style><style>html,body{margin:0!important;width:1600px!important;height:900px!important;overflow:hidden!important}#timer{display:grid!important;position:relative!important;left:0!important;top:0!important;transform:none!important;width:1600px!important;height:900px!important;min-height:0!important}</style></head><body class="fs">'+clone.outerHTML+'</body></html>';
    const card=document.createElement("article");card.className="screenPreviewCard";
-   card.innerHTML='<div class=spHeader><h3>'+names[kind]+'</h3><span class=screenPreviewContext>Vrai rendu</span></div><div class=pv></div><div class=spFooter><span>Simulation — chrono réel inchangé</span><button type=button>Voir en grand</button></div>';
+   card.innerHTML='<div class=spHeader><h3>'+names[kind]+'</h3><span class=screenPreviewContext>Rendu plein écran</span></div><div class=pv></div><div class=spFooter><span>Simulation — chrono réel inchangé</span><button type=button>Voir en grand</button></div>';
    const frame=document.createElement("iframe");frame.setAttribute("sandbox","allow-same-origin");frame.setAttribute("aria-hidden","true");frame.tabIndex=-1;
    frame.onload=()=>requestAnimationFrame(fitGalleryFrames);
    frame.srcdoc=doc;card.querySelector(".pv").appendChild(frame);
@@ -891,7 +897,12 @@ function _rspg(){
  }finally{
   [_sps,_spset,spk]=prev;
   toolbar.style.display=toolbarDisplay;target.style.display=gridDisplay;
+  if(prevStageStyle===null)tm.removeAttribute("style");else tm.setAttribute("style",prevStageStyle);
+  document.body.classList.toggle("fs",wasFs);
   tm.classList.add("spm","spa");
+  // All cached visual measurements are now invalid (the preview may return
+  // to a different live viewport). Restore with ONE shared layout routine.
+  updateStage();C=null;longClockKey="";lrf="";lsf="";
  }
  fitGalleryFrames();requestAnimationFrame(fitGalleryFrames);
 }
