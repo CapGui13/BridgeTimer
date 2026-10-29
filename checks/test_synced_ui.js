@@ -151,7 +151,7 @@ for(const needed of [
  'cell.clientWidth/1600',
  'tm.classList.remove("spa","spm");',
  'toolbar.style.display="none";target.style.display="none";',
- 'C=null;longClockKey="";render();',
+ 'C=null;longClockKey="";lrf="";lsf="";render();',
  'clone.classList.remove("spa","spm","hidden");',
  '"--stage-scale":"1"',
  '"--stage-width":"1600px","--stage-height":"900px"',
@@ -159,7 +159,12 @@ for(const needed of [
  'transform:none!important',
  'frame.setAttribute("sandbox","allow-same-origin")',
  'frame.onload=()=>requestAnimationFrame(fitGalleryFrames)',
- 'tm.classList.add("spm","spa");'
+ 'tm.classList.add("spm","spa");',
+ 'document.body.classList.add("fs");',
+ 'document.body.classList.toggle("fs",wasFs);',
+ 'prevStageStyle=tm.getAttribute("style")',
+ '<body class="fs">',
+ 'longClockAtStart:baseDuration>=3600'
 ])assert.ok(html.includes(needed),'Screen Tests homothetic thumbnails regression: '+needed);
 assert.ok(!html.includes('cell.clientWidth/778'),'Obsolete 778px gallery scaling must never return');
 assert.ok(!html.includes('function fitGalleryNotice(frame){'),'Never resize thumbnail fonts differently from native timer');
