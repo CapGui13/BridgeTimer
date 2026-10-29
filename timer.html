@@ -1551,7 +1551,7 @@ function transitionSplashModel(state,settings,temporaryBreakText=""){
   percent:visible?clamp(state.remaining/duration*100,0,100):100
  };
 }
-let lsf="";function q40(){const parent=$("jumpSplash"),el=$("jumpSplashText");if(!parent.classList.contains("on")){lsf="";el.style.fontSize="";return}const key=el.textContent+"|"+el.clientWidth+"|"+el.clientHeight;if(key===lsf)return;lsf=key;const max=Math.min(112,Math.max(30,Math.floor(el.clientWidth*.075))),min=20;let lo=min,hi=max;for(let i=0;i<10&&lo<hi;i++){const mid=Math.ceil((lo+hi)/2);el.style.fontSize=mid+"px";if(el.scrollHeight<=el.clientHeight+2&&el.scrollWidth<=el.clientWidth+2)lo=mid;else hi=mid-1}
+let lsf="";function q40(){const parent=$("jumpSplash"),el=$("jumpSplashText");if(!parent.classList.contains("on")){lsf="";el.style.fontSize="";return}if(!el.getClientRects().length)return;const key=el.textContent+"|"+el.clientWidth+"|"+el.clientHeight;if(key===lsf)return;lsf=key;const max=Math.min(112,Math.max(30,Math.floor(el.clientWidth*.075))),min=20;let lo=min,hi=max;for(let i=0;i<10&&lo<hi;i++){const mid=Math.ceil((lo+hi)/2);el.style.fontSize=mid+"px";if(el.scrollHeight<=el.clientHeight+2&&el.scrollWidth<=el.clientWidth+2)lo=mid;else hi=mid-1}
 el.style.fontSize=lo+"px";}/* Stable footer centering in MP4 and TPP.
  * Measure BOTH permanent labels after the text for this phase has been
  * rendered. The free span is [localTime.right, round.left], regardless of
