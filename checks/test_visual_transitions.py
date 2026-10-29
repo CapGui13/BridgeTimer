@@ -106,10 +106,16 @@ def assert_same_stage_geometry(a,b,label,cross_viewport=False):
             # widths/center positions are expected, but virtual font sizes
             # and the HEIGHTS of both persistent bands remain unchanged.
             dimensions=("h","font")
-            if sel=="#clock":
-                # The extra vertical space is part of the central main
-                # area; the clock is allowed to grow while all typography
-                # stays uniformly scaled (never stretched differently X/Y).
+            if sel in ("#timer .top","#timer .bottom",
+                       "#timer .controls","#minus","#pause","#plus","#next",
+                       "#resetRound","#settingsBtn","#fsBtn"):
+                # The approved compact windowed UI uses FIXED physical
+                # 55/59px bars and 34/40px buttons. Their VIRTUAL sizes
+                # necessarily vary with viewport scale. These dimensions
+                # are independently checked by test_windowed_timer_band_parity.
+                dimensions=()
+            elif sel=="#clock":
+                # The central clock can grow into extra vertical space.
                 dimensions=()
             elif sel=="#status":
                 dimensions=("font",)
