@@ -59,6 +59,15 @@ with sync_playwright() as pw:
      # final DOM rectangles, without changing any layout rules.
      page.evaluate("alignTimerFooterControls()")
      d=metrics(page)
+     # The wall-clock text changes independently every second. If a digit
+     # changes between centering and reading its bounding box, repeat the
+     # real alignment measurement. Do not relax the 1.2px assertion.
+     for _ in range(3):
+      left=d["controls"]["left"]-d["clock"]["right"]
+      right=d["round"]["left"]-d["controls"]["right"]
+      if abs(left-right)<=1.2:break
+      page.evaluate("alignTimerFooterControls()")
+      d=metrics(page)
      assert_spacing(f"{width}x{height} {mode} {count} {phase}",d)
      n+=1
   # Fullscreen must not adopt any newly introduced compact-window CSS.
