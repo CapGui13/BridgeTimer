@@ -51,7 +51,7 @@ def four_hours(p):
  p.evaluate(SETUP)
  p.evaluate("start();clearInterval(st.interval);st.interval=null")
  for milliseconds,remaining in [(3600000,10800),(7200000,3600),(3599000,1)]:
-  p.evaluate("__advance(arguments[0])", milliseconds) if False else p.evaluate("ms=>__advance(ms)",milliseconds)
+  p.evaluate("ms=>__advance(ms)",milliseconds)
   a=p.evaluate("__state()")
   assert a["running"] and abs(a["remaining"]-remaining)<.01,a
  p.evaluate("__advance(1000)")
@@ -117,6 +117,16 @@ def forced_preview(p):
  a=p.evaluate("__audioLog")
  assert a["freqs"]==[880,1100] and len(a["stops"])==2,a
 
+def native_awake_handoff(p):
+ p.evaluate(SETUP)
+ p.evaluate("""window.__awakeCalls=[];
+ window.nativeSetAwake=async on=>{__awakeCalls.push(on);return true};start()""")
+ p.wait_for_timeout(70)
+ p.evaluate("pause()")
+ p.wait_for_timeout(70)
+ calls=p.evaluate("__awakeCalls")
+ assert calls[:2]==[True,False],calls
+
 def missing_audio_device(p):
  p.evaluate("window.AudioContext=undefined;window.webkitAudioContext=undefined;audioCtx=null;s.sound=true;beep(880);q1a()")
  p.wait_for_timeout(320)
@@ -130,7 +140,8 @@ tests=[
  ("audio_disabled",muted),
  ("double_beep",double_beep),
  ("preview_while_muted",forced_preview),
- ("audio_unavailable",missing_audio_device)
+ ("audio_unavailable",missing_audio_device),
+ ("native_awake_start_pause",native_awake_handoff)
 ]
 with sync_playwright() as pw:
  if os.name=="nt":
@@ -152,4 +163,4 @@ with sync_playwright() as pw:
   finally:
    page.close()
  browser.close()
-print("Long-running clock/audio audit passed: 9 / 9 tests")
+print("Long-running clock/audio audit passed: 10 / 10 tests")
