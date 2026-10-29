@@ -459,7 +459,11 @@ def main():
                 settings_scale=width/1600
                 ratio=settings_scale/stage_scale
                 assert abs(timerHeader["height"]*ratio-settingsHeader["height"])<=1.1, f"Windowed Settings header height drift: {width}x{height} {mode}"
-                assert abs(timerHeader["title"]*ratio-settingsHeader["title"])<=4, f"Windowed title font sizing drift: {width}x{height}"
+                # The club name is deliberately smaller than the
+                # "Bridge Timer" Settings title to accommodate long clubs;
+                # their band heights match but their text heights need not.
+                assert timerHeader["title"]<=timerHeader["height"]+1.1, "Club title overflows timer band"
+                assert settingsHeader["title"]<=settingsHeader["height"]+1.1, "Bridge Timer heading overflows Settings band"
                 assert abs(settingsHeader["parentPaddingTop"]-settingsHeader["height"])<1.1, "Settings content must start below fixed title band"
                 assert abs(settingsHeader["band"]["y"])<=1.1 and abs(settingsHeader["band"]["x"])<=1.1, "Settings header must touch native top-left"
                 assert abs(settingsHeader["band"]["w"]-width)<=1.1, "Settings header must fill native width"
