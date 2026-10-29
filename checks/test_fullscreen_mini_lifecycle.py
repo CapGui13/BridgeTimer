@@ -42,7 +42,7 @@ def aligned(page,context):
  assert abs(a["right"]-r["cardLeft"])<1.5,(context,"right",r)
  assert abs(a["width"]/a["height"]-16/9)<.035,(context,"ratio",r)
  assert r["pointerEvents"]=="auto",(context,"pointer-events",r)
- assert a["width"]>30,(context,"collapsed",r)
+ assert a["width"]>5,(context,"collapsed",r) # 812px simulated FS: centered card starts at x=20
  return r
 
 def setup(page,mode):
