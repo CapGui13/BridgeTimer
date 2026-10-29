@@ -21,23 +21,6 @@ SELECTORS=[".top",".bottom","#status","#clock","#msg","#jumpSplash",
            "#finishBig","#pauseOverlay","#localTime","#round","#pause",
            "#minus","#next","#bar"]
 
-# Snapshot normalized within the actual timer's stage.
-SCRIPT="""() => {
- const stage=document.querySelector('#timer').getBoundingClientRect();
- const selectors=JSON.parse(arguments[0]);
- const out={};
- for(const selector of selectors){
-  const el=document.querySelector(selector.startsWith('.')?'#timer '+selector:selector);
-  if(!el)continue;
-  const cs=getComputedStyle(el),r=el.getBoundingClientRect();
-  out[selector]={x:r.left-stage.left,y:r.top-stage.top,
-   w:r.width,h:r.height,display:cs.display,visibility:cs.visibility,
-   font:parseFloat(cs.fontSize),shown:el.getClientRects().length>0,
-   text:el.textContent.trim().replace(/\\s+/g,' ').slice(0,200)};
- }
- return out;
-}"""
-
 # A Page or Frame supports eval with (selector list) as the argument.
 def metrics(context):
  return context.evaluate("""sels=>{
@@ -49,7 +32,8 @@ def metrics(context):
    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
    out[selector]={x:r.left-stage.left,y:r.top-stage.top,
     w:r.width,h:r.height,display:cs.display,visibility:cs.visibility,
-    font:parseFloat(cs.fontSize),text:el.textContent.trim().replace(/\\s+/g,' ').slice(0,200)};
+    font:parseFloat(cs.fontSize),shown:el.getClientRects().length>0,
+     text:el.textContent.trim().replace(/\\s+/g,' ').slice(0,200)};
   }return out;
  }""",SELECTORS)
 
