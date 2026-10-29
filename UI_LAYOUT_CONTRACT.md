@@ -671,3 +671,33 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - L'anti-veille empêche la mise en veille automatique ; elle ne peut
   pas empêcher une fermeture volontaire du capot ou une veille forcée
   selon les politiques de Windows.
+
+## 29 octobre 2026 — fiabilisation des alertes audio (essai)
+
+- Branche `essai-alertes-audio-fiables-20261029` ; retour arrière
+  `essai-maintenance-css-tests-perf-20261029`.
+- **Son inchangé** : 880 Hz puis 1100 Hz, chacun 350 ms, départ de
+  la seconde note 280 ms après la première, niveau Web Audio initial 0,07.
+- Programmer le double bip sur **l'horloge d'un même AudioContext**
+  plutôt qu'avec `setTimeout` dans le fil JavaScript. Les retards de rendu
+  ou les interruptions du navigateur ne décalent plus les deux notes
+  indépendamment.
+- Tenter `resume()` si l'état est `suspended` ou `interrupted` ;
+  reconstruire un contexte fermé / en panne. Les tentatives sont
+  bornées : ne **pas** jouer tardivement une ancienne alarme.
+- Sur `navigator.mediaDevices.devicechange`, invalider le contexte
+  précédent sans déclencher d'alarme, et reprendre avec la sortie
+  par défaut lors du prochain bip réel.
+- La case `Son` continue d'activer/désactiver les alertes du tournoi et
+  de déclencher le double bip de vérification. Un bouton localisé
+  `Test son` permet aussi une vérification volontaire **sans modifier**
+  la case Son. C'est la seule addition graphique approuvée.
+- Les tests CI vérifient les deux fréquences, 280 ms d'écart, la
+  répétition de 500 alertes sans doublon, l'échec de sortie, les changements
+  de périphérique et la suppression d'un bip devenu trop tardif.
+- Comparaisons visuelles : pixels strictement identiques hors de la
+  zone `.soundOption` modifiée ; conserver le rendu du timer,
+  des écrans spéciaux, de la miniature et des bandeaux.
+- Aucun logiciel ne peut confirmer par API si le son a été entendu
+  physiquement : contrôler le bouton Test son avec les enceintes/casque
+  du poste Windows avant une séance, puis après changement de sortie.
