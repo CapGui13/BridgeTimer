@@ -60,9 +60,9 @@ with sync_playwright() as pw:
   page.evaluate("""()=>{
     s.mode="2";s.positions=6;s.jumpDisplaySecs=45;s.between=45;
     s.sound=false;s.hours=0;s.minutes=5;s.seconds=0;
-    fill();showTimer();
+    fill();st.started=true;st.pos=1;st.roundDuration=300;
+    showTimer();
     document.body.tabIndex=-1;document.body.focus();
-    st.started=true;st.pos=1;st.roundDuration=300;
     st.longClockAtStart=false;st.endAt=null;st.running=false;
   }""")
   for fullscreen in (False,True):
