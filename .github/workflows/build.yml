@@ -2,7 +2,7 @@ name: Build Bridge Timer
 
 on:
   push:
-    branches: [main]
+    branches: [main, essai-fenetre-unique-tournoi-20261029]
   pull_request:
   workflow_dispatch:
 
