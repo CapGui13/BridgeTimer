@@ -54,7 +54,17 @@ def settings_button_slots(page):
 
 def assert_stable_settings_slots(a,b,label):
     for id in FIXED_BUTTON_IDS:
-        for dimension in ("x","y","w","h"):
+        # The main button legitimately changes its label from "Lancer"
+        # to "Timer" when a session starts; its center and baseline must
+        # stay fixed, but its intrinsic text width is allowed to change.
+        if id=="fresh":
+            a_center=a[id]["x"]+a[id]["w"]/2
+            b_center=b[id]["x"]+b[id]["w"]/2
+            assert abs(a_center-b_center)<=1.1, f"{label}: fresh center moved"
+            dimensions=("y","h")
+        else:
+            dimensions=("x","y","w","h")
+        for dimension in dimensions:
             delta=abs(a[id][dimension]-b[id][dimension])
             assert delta<=1.1, f"{label}: {id}.{dimension} shifted by {delta:.2f}: {a[id]} -> {b[id]}"
 
