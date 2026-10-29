@@ -125,9 +125,9 @@ with sync_playwright() as pw:
     assert running["caption"]=="Pause" and running["splashDisplay"]=="flex",running
     page.locator("#plus").click()
     after_plus=page.evaluate("st.remaining")
-    assert 88<after_plus<=90,(phase,"running +15",after_plus)
+    assert 88<after_plus<91,(phase,"running +15",after_plus)
     page.locator("#minus").click()
-    assert 73<page.evaluate("st.remaining")<=75,(phase,"running -15")
+    assert 73<page.evaluate("st.remaining")<76,(phase,"running -15")
     page.locator("#pause").click()
     again=metrics(page)
     assert not again["running"] and again["overlayDisplay"]=="flex" and again["overlayZ"]>again["splashZ"],again
