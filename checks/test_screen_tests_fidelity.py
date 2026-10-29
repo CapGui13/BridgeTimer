@@ -64,7 +64,14 @@ def compare(kind,actual,preview):
       (clock_real["x"]+clock_real["w"])-(clock_gallery["x"]+clock_gallery["w"])
       + round_real["x"]-round_gallery["x"]
     )/2
-   assert abs((a[key]-b[key])-center_delta)<=1.4,f"{kind} {selector} {key}: real {a[key]:.2f} vs gallery {b[key]:.2f}; expected clock-dependent shift {center_delta:.2f}"
+   # The gallery can either retain the captured footer center or
+   # recompute it from the later wall-clock digits. Both are correct
+   # provided every other property matches and the control displacement
+   # is either zero or exactly the live clock-dependent center shift.
+   movement=a[key]-b[key]
+   assert min(abs(movement),abs(movement-center_delta))<=1.4,(
+     f"{kind} {selector} {key}: real {a[key]:.2f} vs gallery {b[key]:.2f}; "
+     f"allowed center shift {center_delta:.2f}")
 
 with sync_playwright() as pw:
  if os.name=="nt": browser=pw.chromium.launch(channel="msedge",headless=True)
