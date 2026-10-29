@@ -32,7 +32,8 @@ SCRIPT="""() => {
   const cs=getComputedStyle(el),r=el.getBoundingClientRect();
   out[selector]={x:r.left-stage.left,y:r.top-stage.top,
    w:r.width,h:r.height,display:cs.display,visibility:cs.visibility,
-   font:parseFloat(cs.fontSize),text:el.textContent.trim().replace(/\\s+/g,' ').slice(0,200)};
+   font:parseFloat(cs.fontSize),shown:el.getClientRects().length>0,
+   text:el.textContent.trim().replace(/\\s+/g,' ').slice(0,200)};
  }
  return out;
 }"""
@@ -56,8 +57,8 @@ def compare(kind,actual,preview):
  for selector in SELECTORS:
   a,b=actual[selector],preview[selector]
   assert a["text"]==b["text"],f"{kind} {selector} text differs: {a['text']!r} / {b['text']!r}"
-  if a["display"]=="none" or b["display"]=="none":
-   assert a["display"]==b["display"],f"{kind} {selector} visibility differs: {a['display']} / {b['display']}"
+  if not a["shown"] or not b["shown"]:
+   assert a["shown"]==b["shown"],f"{kind} {selector} visible parent differs: {a} / {b}"
    continue
   for key in ("x","y","w","h","font"):
    assert abs(a[key]-b[key])<=1.4,f"{kind} {selector} {key}: real {a[key]:.2f} vs gallery {b[key]:.2f}"
