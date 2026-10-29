@@ -1068,7 +1068,7 @@ assert.ok(!html.includes('st.remaining=newBetween;if(wasRunning)_ses()'),
 assert.ok(!nativeSource.includes('nativeClientCalibrated=true'),
  'Native window must not be resized to a 16:9 client aspect at startup');
 assert.ok(!nativeSource.includes('target = settingsWindowRect'), 'Legacy native view-based frame resizing must remain absent');
-assert.ok(html.includes('render();syncNativeView("settings");zclean()'), 'Initial Settings must sync native view without changing size');
+assert.ok(html.includes('render();syncNativeView("settings");') && html.includes('await recoveryReadPending()'), 'Initial Settings must sync native view and inspect interrupted sessions without changing size');
 assert.ok(html.includes('#settings .actions,\nbody.settingsLive #settings .actions,'), 'Opaque footer must cover Settings in both modes');
 assert.ok(html.includes('background:var(--panel)!important;\n backdrop-filter:none!important;'), 'Settings footer must be opaque and not backdrop-filtered');
 
