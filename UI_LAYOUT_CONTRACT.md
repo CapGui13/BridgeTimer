@@ -701,3 +701,32 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - Aucun logiciel ne peut confirmer par API si le son a été entendu
   physiquement : contrôler le bouton Test son avec les enceintes/casque
   du poste Windows avant une séance, puis après changement de sortie.
+
+## 29 octobre 2026 — raccourcis clavier fiables (essai)
+
+- Branche `essai-raccourcis-clavier-securises-20261029`, issue de
+  `essai-alertes-audio-fiables-20261029` (retour arrière simple).
+- Conserver absolument les affectations : Espace Pause/Reprise,
+  F7/F8 ou +/- ajustement du temps, F9 Paramètres/Timer, F/F11 plein écran,
+  flèche droite position suivante, R recommencer, M message,
+  F1 aide, Échap retour/fermeture, Ctrl+Maj+D diagnostic.
+- **Empêcher les déclenchements répétés par maintien de touche** :
+  Espace, F7/F8, +/- , F9, flèche droite, R, M, F/F11, F1 et
+  Ctrl+Maj+D ne doivent traiter qu'un véritable nouvel appui.
+- Ne pas intercepter le texte dans input/select/textarea ou les zones
+  contenteditable, sauf F9 (ancien raccourci volontairelement global).
+  Espace sur un bouton avec focus exécute le bouton, pas Pause.
+- Ne pas voler les combinaisons Ctrl/Alt/Meta du navigateur et de Windows,
+  sauf Ctrl+Maj+D explicitement attribué au diagnostic.
+- En présence de modales (reprise après crash, confirmation Quitter,
+  réglage CHGT/MSG, thèmes, diagnostic), ne pas laisser une commande
+  au clavier modifier le chrono derrière elles ; Échap continue de
+  fermer les fenêtres où une annulation est définie. La reprise
+  après crash exige une décision explicite, sans fermeture par Échap.
+- Pendant les écrans de test, ne pas transmettre les raccourcis
+  d'exploitation au timer réel.
+- Vérifier via Edge les appuis normaux/répétés, les champs en édition,
+  les combinaisons système et les différents écrans. Même code et
+  apparence : comparer huit scénarios visuels pixel par pixel.
+- Les points 5 et 6 de l'audit ont été reportés par l'utilisatrice :
+  **ne pas modifier la confirmation Arrêter ni les sauvegardes de réglages**.
