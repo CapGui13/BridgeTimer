@@ -284,17 +284,15 @@ body.settingsLive #miniTimer.spView{
  border-radius:0;z-index:650;box-sizing:border-box;
 }
 
-/* Fullscreen Settings live preview reaches the action-menu column, minus
-   a narrow gap. The target is measured in DOM, never a fixed 260px guess.
-   Aspect ratio is retained and windowed Settings rules remain untouched. */
+/* Live fullscreen miniature: bottom-left of the REAL window. Its right
+   border touches the left border of the centered Tournament/settings cards.
+   Never align it with footer buttons or the shortcuts grid. */
 body.fs.settingsLive #miniTimer.spView{
  width:var(--fullscreen-mini-width,260px)!important;
+ max-width:100vw!important;
  height:auto!important;aspect-ratio:16/9!important;
- max-width:calc(100vw - 12px)!important;
- /* The large preview cannot cover the footer controls: anchor it to
-    the lower-left of the SETTINGS CONTENT, directly above that footer. */
  left:0!important;right:auto!important;
- bottom:var(--fullscreen-mini-bottom,0px)!important;top:auto!important;
+ bottom:0!important;top:auto!important;
  border-radius:0!important;pointer-events:none!important;
 }
 
@@ -1383,40 +1381,24 @@ phaseMain.classList.toggle("phasePage",transition.visible);
 if(firstPhaseFrame)phasePage.style.visibility="";$("bar").style.width=(total?clamp(st.remaining/total*100,0,100):0)+"%";const paused=st.started&&!st.running&&st.phase!=="ended"&&st.phase!=="roundEnd"&&!$("timer").classList.contains("hidden");$("pauseOverlay").classList.toggle("on",paused);const finished=st.phase==="roundEnd"||st.phase==="ended";
 $("finishOverlay").classList.toggle("on",finished);$("finishBig").textContent=st.phase==="ended"?"FIN DE LA SÉANCE":"FIN DU TOUR";
 $("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+(s.resumeTime||"--:--");const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd&&!isJump;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();alignTimerFooterControls();fc();q38();q40();syncFaithfulMini()}
-/* Align the right edge of the 16:9 live preview with the LEFT edge of
-   the first Settings footer command. Preserves the single virtual canvas.
-   A height cap only matters on unusually short / narrow monitors. */
+/* Align the mini-timer's RIGHT EDGE to the settings cards' LEFT BORDER,
+   not the footer controls or the keyboard-shortcuts grid.
+   Its left and bottom stay at the window edges; CSS derives 16:9 height. */
 function syncFullscreenMiniWidth(){
  const holder=$("miniTimer");
  if(!holder)return;
  const root=document.body;
  if(!root.classList.contains("fs")||!root.classList.contains("settingsLive")){
   holder.style.removeProperty("--fullscreen-mini-width");
-  holder.style.removeProperty("--fullscreen-mini-bottom");
   return;
  }
- const keys=$("settings")?.querySelector(".shortcuts");
- const first=keys?.querySelector(".shortcut:nth-child(1)");
- const second=keys?.querySelector(".shortcut:nth-child(2)");
- const footer=$("settings")?.querySelector(".actions");
- if(!footer)return;
- const firstRect=first?.getBoundingClientRect();
- const secondRect=second?.getBoundingClientRect();
- const footerRect=footer.getBoundingClientRect();
- // The "right menu column" is the SECOND shortcuts column (Espace/F8),
- // NOT the first bottom-footer button (Timer). Compare row-one x positions
- // to avoid mistaking a single-column mobile layout for a right column.
- const twoColumns=firstRect&&secondRect&&
-  secondRect.left-firstRect.left>Math.max(120,firstRect.width*.35);
- const columnX=twoColumns?secondRect.left:null;
- const fallback=$("fresh")?.getBoundingClientRect().left||260;
- const targetRight=columnX||fallback;
- const roomAboveFooter=Math.max(100,footerRect.top-12);
- const maxWidthByHeight=roomAboveFooter*16/9;
- const width=Math.max(80,Math.min(targetRight-12,innerWidth-12,maxWidthByHeight));
- const bottom=twoColumns?Math.max(0,innerHeight-footerRect.top):0;
+ const card=$("settings")?.querySelector(".tournamentCard");
+ const cardLeft=card?.getBoundingClientRect().left;
+ // The card is centered and may move with a resize. Read its actual
+ // rendered border (in viewport pixels), never a guessed width.
+ const width=Number.isFinite(cardLeft)&&cardLeft>0
+  ? Math.min(innerWidth,cardLeft) : Math.min(260,innerWidth);
  holder.style.setProperty("--fullscreen-mini-width",width.toFixed(2)+"px");
- holder.style.setProperty("--fullscreen-mini-bottom",bottom.toFixed(2)+"px");
 }
 let faithfulMiniBusy=false,faithfulMiniLast=0;
 function syncFaithfulMini(force=false){
