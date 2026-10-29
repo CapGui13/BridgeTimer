@@ -63,6 +63,11 @@ with sync_playwright() as pw:
    # The 1px preview border clips the scaled iframe by 2px in width.
    assert a["frame"] is not None and abs(a["frame"]["w"]-(a["mini"]["w"]-2))<1.5,(width,mode,a)
    assert abs(a["frame"]["h"]-(a["mini"]["h"]-2))<1.5,(width,mode,a)
+   # Chromium/Edge screenshot at the user's exact reference resolution;
+   # CI publishes it separately for visual inspection, not as a substitute
+   # for the native Windows executable check.
+   if (width,height)==(1650,928) and mode=="4":
+    page.screenshot(path="mini-preview-1650x928.png",full_page=False)
    page.evaluate("q25(false);render()")
    b=metric(page)
    assert not b["fullscreen"] and b["live"],(width,mode,b)
