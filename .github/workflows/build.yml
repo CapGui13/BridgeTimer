@@ -2,7 +2,7 @@ name: Build Bridge Timer
 
 on:
   push:
-    branches: [main, essai-fenetre-unique-tournoi-20261029, essai-bandeaux-identiques-fenetre-20261029, essai-teleportation-saut-20261029 , essai-plein-ecran-sans-saut-20261029, essai-entree-plein-ecran-dwm-20261029 , fix-scrollbar-flash-fullscreen-20261029, essai-ecrans-test-fideles-20261029, essai-mini-timer-agrandi-plein-ecran-20261029, essai-mini-jusqua-colonne-raccourcis-20261029, essai-mini-bas-gauche-bordure-menus-20261029, essai-mini-doubleclic-bandeau-scroll-20261029, essai-reprise-seance-interrompue-20261029, essai-anti-veille-tournoi-actif-20261029]
+    branches: [main, essai-fenetre-unique-tournoi-20261029, essai-bandeaux-identiques-fenetre-20261029, essai-teleportation-saut-20261029 , essai-plein-ecran-sans-saut-20261029, essai-entree-plein-ecran-dwm-20261029 , fix-scrollbar-flash-fullscreen-20261029, essai-ecrans-test-fideles-20261029, essai-mini-timer-agrandi-plein-ecran-20261029, essai-mini-jusqua-colonne-raccourcis-20261029, essai-mini-bas-gauche-bordure-menus-20261029, essai-mini-doubleclic-bandeau-scroll-20261029, essai-reprise-seance-interrompue-20261029, essai-anti-veille-tournoi-actif-20261029, essai-maintenance-css-tests-perf-20261029]
   pull_request:
   workflow_dispatch:
 
@@ -14,6 +14,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      # Immutable source of the user-approved visuals, before maintenance.
+      - uses: actions/checkout@v4
+        with:
+          ref: 960de57047e19d59242c87ca00352b96695f7a3d
+          path: baseline_for_compare
+          persist-credentials: false
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24.x'
@@ -26,10 +32,15 @@ jobs:
         run: python checks/check_js_syntax.py
       - name: Production UI regression tests
         run: node checks/test_synced_ui.js
+      - name: Updated legacy regression guards
+        shell: pwsh
+        run: |
+          node checks/test_state_machine.js
+          python checks/check_regressions.py
       - name: Browser geometry and screen-transition tests
         shell: pwsh
         run: |
-          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m pip install --disable-pip-version-check playwright==1.56.0 pillow==11.3.0
           python checks/test_visual_transitions.py
           python checks/test_functional_end_to_end.py
           python checks/test_long_clock_sound.py
@@ -42,6 +53,19 @@ jobs:
           python checks/test_fullscreen_settings_mini_width.py
           python checks/test_session_recovery.py
           python checks/test_awake_lifecycle.py
+          python checks/test_visual_equivalence.py
+          python checks/profile_render_performance.py
+      - name: Maintenance performance report and visual diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BridgeTimer-maintenance-report
+          path: |
+            render-performance.json
+            visual-baseline-before.png
+            visual-baseline-after.png
+            visual-baseline-diff.png
+          if-no-files-found: ignore
       - name: Screenshot fullscreen settings mini at 1650x928
         uses: actions/upload-artifact@v4
         with:
