@@ -228,6 +228,63 @@ func isNativeAwake() bool {
 	return nativeAwake
 }
 
+/* Windows SetThreadExecutionState is scoped to the CALLING OS THREAD.
+   WebView2's bound functions can run on different Go threads. Keep one
+   dedicated locked goroutine alive for the entire app lifetime so the
+   ES_CONTINUOUS request cannot disappear when a callback returns. */
+type awakeCommand struct {
+	on bool
+	serial int64
+	reply chan bool
+}
+type awakeController struct {
+	mu sync.Mutex
+	closed bool
+	commands chan awakeCommand
+	done chan struct{}
+}
+func newAwakeController() *awakeController {
+	c := &awakeController{
+		commands: make(chan awakeCommand),
+		done: make(chan struct{}),
+	}
+	go func() {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+		defer close(c.done)
+		var lastSerial int64
+		for req := range c.commands {
+			if req.serial <= lastSerial {
+				req.reply <- isNativeAwake()
+				continue
+			}
+			lastSerial = req.serial
+			req.reply <- setNativeAwake(req.on)
+		}
+		// Release on exactly the thread that acquired the request.
+		setNativeAwake(false)
+	}()
+	return c
+}
+func (c *awakeController) set(on bool, serial int64) bool {
+	if serial <= 0 { return false }
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed { return false }
+	reply := make(chan bool, 1)
+	c.commands <- awakeCommand{on:on,serial:serial,reply:reply}
+	return <-reply
+}
+func (c *awakeController) close() {
+	c.mu.Lock()
+	if !c.closed {
+		c.closed = true
+		close(c.commands)
+	}
+	c.mu.Unlock()
+	<-c.done
+}
+
 func logPath() string {
 	return filepath.Join(appDataPath(), "BridgeTimer.log")
 }
@@ -664,7 +721,9 @@ func main() {
 		return
 	}
 	defer releaseSingleInstance()
-	defer setNativeAwake(false)
+	// The controller owns a persistent OS thread, unlike WebView callbacks.
+	awakeControl := newAwakeController()
+	defer awakeControl.close()
 
 	stopLogging := initLogging()
 	defer stopLogging()
@@ -743,8 +802,8 @@ func main() {
 	}); err != nil {
 		log.Printf("fullscreen bind: %v", err)
 	}
-	if err := w.Bind("nativeSetAwake", func(on bool) bool {
-		return setNativeAwake(on)
+	if err := w.Bind("nativeSetAwake", func(on bool, serial int64) bool {
+		return awakeControl.set(on, serial)
 	}); err != nil {
 		log.Printf("awake bind: %v", err)
 	}
