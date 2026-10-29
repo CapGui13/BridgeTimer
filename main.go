@@ -589,6 +589,20 @@ func nativeStateWrite(key, value string) bool {
 	stateFileMu.Lock()
 	defer stateFileMu.Unlock()
 	path := filepath.Join(appDataPath(), name)
+	// A crash must never leave a partially written recovery journal.
+	// Write the new checkpoint to a sibling temporary file first and
+	// atomically replace the old one only after syncing and closing it.
+	if key == "bridgeTimerV2.activeSession" {
+		tmp, err := os.CreateTemp(appDataPath(), ".bridge-session-*.tmp")
+		if err != nil { log.Printf("recovery temp create: %v", err); return false }
+		tmpPath := tmp.Name()
+		defer os.Remove(tmpPath)
+		if _, err = tmp.WriteString(value); err != nil { _ = tmp.Close(); log.Printf("recovery temp write: %v", err); return false }
+		if err = tmp.Sync(); err != nil { _ = tmp.Close(); log.Printf("recovery temp sync: %v", err); return false }
+		if err = tmp.Close(); err != nil { log.Printf("recovery temp close: %v", err); return false }
+		if err = os.Rename(tmpPath, path); err != nil { log.Printf("recovery replace: %v", err); return false }
+		return true
+	}
 	if err := os.WriteFile(path, []byte(value), 0600); err != nil {
 		log.Printf("native state write %s: %v", name, err)
 		return false
