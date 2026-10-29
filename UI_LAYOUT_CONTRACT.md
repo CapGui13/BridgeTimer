@@ -847,3 +847,25 @@ Après validation par capture de la taille et de l'alignement de la miniature :
   manuelle prioritaire, heures de fin 13h00 et 23h50,
   délai 15 et 99, espace entre les libellés et les cases,
   sauvegarde et régression visuelle.
+
+## 29 octobre 2026 — rétablissement des maintiens F7/F8 et +/−
+
+- Branche `essai-repetition-plus-moins-clavier-20261029`; repli vers
+  `essai-reprise-relative-mp4-20261029` (version précédente).
+- Correction explicite de l'essai de protection des raccourcis :
+  **F7/F8, +/− et les touches numériques Add/Subtract doivent
+  exécuter un ajustement à chaque répétition native de touche**,
+  exactement comme avant le durcissement. L'OS pilote la cadence
+  et sa durée initiale d'auto-répétition ; aucun minuteur parallèle.
+- Le pas reste identique à celui des boutons : 60 secondes pour un
+  tour normal, 15 secondes pour l'écran de saut.
+- Conserver **strictement un seul déclenchement par appui maintenu**
+  pour Espace, F9, R, M, flèche droite, F/F11, F1, Échap,
+  Ctrl+Maj+D et les dialogues ; aucun déclenchement depuis
+  les champs de saisie.
+- Conserver la limite des manches commencées à moins d'une heure
+  (maximum 59:59), le plancher zéro et la synchronisation du
+  compte à rebours en marche.
+- N'altérer aucune taille, bande, position ou transition
+  du chrono, ni les formats court/long : modification
+  du seul routeur `keydown` et des tests de comportement.
