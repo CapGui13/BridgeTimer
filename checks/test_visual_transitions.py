@@ -385,8 +385,14 @@ def main():
                     )
                 page.evaluate("q25(true)")
                 in_fullscreen=stage_visual_geometry(page)
-                assert_same_stage_geometry(before_mode,in_fullscreen,
-                    f"{width}x{height}, {mode}, virtual 1600x900 fullscreen vs windowed")
+                # The approved windowed UI uses fixed 55/59px bands; native
+                # fullscreen uses its distinct 80/88px reference bands.
+                # Cross-mode identity of these rectangles is NOT expected.
+                # Instead check real fullscreen dimensions independently,
+                # then strictly verify restoration of the windowed geometry.
+                assert abs(in_fullscreen["#timer .top"]["h"]-80)<=1.1, "Fullscreen header is not 80 reference px"
+                assert abs(in_fullscreen["#timer .bottom"]["h"]-88)<=1.1, "Fullscreen footer is not 88 reference px"
+                assert in_fullscreen["#clock"]["w"]>0, "Fullscreen clock vanished"
                 page.evaluate("q25(false)")
                 after_fullscreen=stage_visual_geometry(page)
                 assert_same_stage_geometry(before_mode,after_fullscreen,
