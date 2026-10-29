@@ -62,8 +62,12 @@ func TestNativeFullscreenEntryFrameAndReturn(t *testing.T) {
 			t.Fatalf("native exit %d failed",pass)
 		}
 		restoredStyle,_,_:=getWindowLongPtrW.Call(hwnd,^uintptr(15))
-		if restoredStyle!=originalStyle {
-			t.Fatalf("exit changed original window style: before %#x, after %#x",originalStyle,restoredStyle)
+		// SetWindowPlacement can add WS_VISIBLE to a test window that was
+		// deliberately created hidden. The actual app is always visible.
+		// Compare frame/decorations, not the test HWND visibility bit.
+		const wsVisible = uintptr(0x10000000)
+		if (restoredStyle^originalStyle)&^wsVisible != 0 {
+			t.Fatalf("exit changed original frame style: before %#x, after %#x",originalStyle,restoredStyle)
 		}
 		var after rect
 		getWindowRect.Call(hwnd,uintptr(unsafe.Pointer(&after)))
