@@ -23,12 +23,12 @@ func TestNativeViewSwitchOnRealHiddenWindow(t *testing.T) {
   overlappedWindow,20,20,920,680,0,0,0,0)
  runtime.KeepAlive(className)
  runtime.KeepAlive(windowTitle)
- if hwnd==0 { t.Skipf("test HWND unavailable on this Windows runner: %v",err) }
+ if hwnd==0 { t.Fatalf("test HWND unavailable on Windows runner: %v",err) }
  defer destroy.Call(hwnd)
  work,ok:=monitorWorkArea(hwnd)
  if !ok { t.Fatal("a real test window has no monitor work area") }
  if work.Right-work.Left<920 || work.Bottom-work.Top<680 {
-  t.Skipf("test monitor too small: %+v",work)
+  t.Fatalf("test monitor too small to validate native geometry: %+v",work)
  }
  oldSerial,oldHeight,oldFullscreen:=viewRequestSerial,settingsWindowHeight,fullscreen
  oldTimer:=timerViewActive.Load()
