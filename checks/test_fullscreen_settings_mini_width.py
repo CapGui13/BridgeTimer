@@ -61,8 +61,9 @@ with sync_playwright() as pw:
    if height>=720 and a["first"]["x"]>250:
     assert gap<=15.5,(width,mode,"does not reach menu commands",a)
     assert a["mini"]["w"]>pre["mini"]["w"]*1.08,(width,mode,"not enlarged",a)
-   assert a["frame"] is not None and abs(a["frame"]["w"]-a["mini"]["w"])<1.5,(width,mode,a)
-   assert abs(a["frame"]["h"]-a["mini"]["h"])<1.5,(width,mode,a)
+   # The 1px preview border clips the scaled iframe by 2px in width.
+   assert a["frame"] is not None and abs(a["frame"]["w"]-(a["mini"]["w"]-2))<1.5,(width,mode,a)
+   assert abs(a["frame"]["h"]-(a["mini"]["h"]-2))<1.5,(width,mode,a)
    page.evaluate("q25(false);render()")
    b=metric(page)
    assert not b["fullscreen"] and b["live"],(width,mode,b)
