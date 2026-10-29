@@ -2,7 +2,7 @@ name: Build Bridge Timer
 
 on:
   push:
-    branches: [main, essai-fenetre-unique-tournoi-20261029, essai-bandeaux-identiques-fenetre-20261029, essai-teleportation-saut-20261029]
+    branches: [main, essai-fenetre-unique-tournoi-20261029, essai-bandeaux-identiques-fenetre-20261029, essai-teleportation-saut-20261029 , essai-plein-ecran-sans-saut-20261029]
   pull_request:
   workflow_dispatch:
 
@@ -36,6 +36,7 @@ jobs:
           python checks/test_windowed_settings_bands.py
           python checks/test_windowed_timer_band_parity.py
           python checks/test_phase_screen_teleport.py
+          python checks/test_fullscreen_no_jump.py
       - name: Generate Windows resources
         shell: pwsh
         run: |
