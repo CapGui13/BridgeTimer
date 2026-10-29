@@ -1804,13 +1804,16 @@ document.addEventListener("keydown",e=>{
  // Space must activate a focused native button, not also pause the timer.
  if(e.key===" "&&(tag==="button"||active?.getAttribute?.("role")==="button"))return;
  let tv=!$("timer").classList.contains("hidden");
- // Ignore auto-repeated commands, especially Pause, next round, restart,
- // time +/- and F9 toggling. Keep their browser defaults suppressed.
- const command=e.key==="F9"||(tv&&(e.key===" "||e.key==="F7"||e.key==="F8"||
+ // Held +/- is intentionally repeatable, as before keyboard hardening:
+ // F7/F8, -/+, and keypad subtract/add adjust once per OS key repeat.
+ // Destructive/toggle shortcuts remain one-shot (Pause, R, ->, F9, M, F11).
+ const timeDown=tv&&(e.key==="F7"||e.code==="NumpadSubtract"||e.key==="-");
+ const timeUp=tv&&(e.key==="F8"||e.code==="NumpadAdd"||e.key==="+");
+ const command=e.key==="F9"||(tv&&(e.key===" "||timeDown||timeUp||
   e.key==="ArrowRight"||e.key==="r"||e.key==="R"||e.key==="m"||e.key==="M"||
-  e.key==="f"||e.key==="F"||e.key==="F11"||e.key==="+"||e.key==="-"||
-  e.code==="NumpadAdd"||e.code==="NumpadSubtract"));
- if(e.repeat&&command){e.preventDefault();return}if(tv&&(e.key==="F7"||e.code==="NumpadSubtract"||e.key==="-")){e.preventDefault();zshift(-adjustmentStep())}else if(tv&&(e.key==="F8"||e.code==="NumpadAdd"||e.key==="+")){e.preventDefault();zshift(adjustmentStep())}else if(e.key==="F9"){e.preventDefault();if(st.started&&document.body.classList.contains("settingsLive"))showTimer();else showSettings(false)}else if(tv&&e.key===" "){e.preventDefault();toggle()}else if(tv&&(e.key==="f"||e.key==="F"||e.key==="F11")){e.preventDefault();if(!e.repeat)fs()}else if(tv&&e.key==="ArrowRight"){e.preventDefault();next()}else if(tv&&(e.key==="r"||e.key==="R")){e.preventDefault();q48()}else if(tv&&(e.key==="m"||e.key==="M")){e.preventDefault();if(!e.repeat)toggleTemporaryMessageEditor()}},true);async function q8(){let native={};try{if(window.nativeDiagnostics)native=await window.nativeDiagnostics()}catch(e){}const lines=[
+  e.key==="f"||e.key==="F"||e.key==="F11"));
+ if(e.repeat&&command&&!timeDown&&!timeUp){e.preventDefault();return}
+ if(timeDown){e.preventDefault();zshift(-adjustmentStep())}else if(timeUp){e.preventDefault();zshift(adjustmentStep())}else if(e.key==="F9"){e.preventDefault();if(st.started&&document.body.classList.contains("settingsLive"))showTimer();else showSettings(false)}else if(tv&&e.key===" "){e.preventDefault();toggle()}else if(tv&&(e.key==="f"||e.key==="F"||e.key==="F11")){e.preventDefault();if(!e.repeat)fs()}else if(tv&&e.key==="ArrowRight"){e.preventDefault();next()}else if(tv&&(e.key==="r"||e.key==="R")){e.preventDefault();q48()}else if(tv&&(e.key==="m"||e.key==="M")){e.preventDefault();if(!e.repeat)toggleTemporaryMessageEditor()}},true);async function q8(){let native={};try{if(window.nativeDiagnostics)native=await window.nativeDiagnostics()}catch(e){}const lines=[
 "BridgeTimer diagnostic","Version : "+(native.version||"1.7.8"),"Date : "+new Date().toLocaleString(),"","[Tournoi]","started="+st.started,"running="+st.running,"phase="+st.phase,"tour="+st.pos+"/"+s.positions,"remaining="+fmt(st.remaining),"temporaryMessage="+q16(),"","[Affichage]","fullscreen="+!!native.fullscreen,"window="+[native.windowLeft,native.windowTop,native.windowRight,native.windowBottom].join(","),"nativeAntiSleep="+!!native.nativeAwake,"webWakeLock="+!!wakeLock,"devicePixelRatio="+window.devicePixelRatio,"viewport="+window.innerWidth+"x"+window.innerHeight,"","[Stockage]","settings="+(localStorage.getItem(KEY)?"OK":"absent")+" / backup="+(localStorage.getItem(backupKey(KEY))?"OK":"absent"),"savedColors="+(localStorage.getItem(COLORKEY)?"OK":"absent")+" / backup="+(localStorage.getItem(backupKey(COLORKEY))?"OK":"absent"),"appData="+(native.appData||""),"log="+(native.logPath||""),"","[Journal récent]",native.recentLog||"(vide)","","[Navigateur]",navigator.userAgent
 ];return lines.join("\n")}async function q2b(){const report=await q8();$("diagText").value=report;$("diagOverlay").classList.add("on");$("diagOverlay").setAttribute("aria-hidden","false")}let exitPreviousFocus=null,exitClosing=false;function q1d(){return !$("exitConfirmOverlay").classList.contains("hidden")}function q34(){
  if(exitClosing||q1d())return;
