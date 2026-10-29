@@ -2,7 +2,7 @@ name: Build Bridge Timer
 
 on:
   push:
-    branches: [main, essai-fenetre-unique-tournoi-20261029, essai-bandeaux-identiques-fenetre-20261029, essai-teleportation-saut-20261029 , essai-plein-ecran-sans-saut-20261029, essai-entree-plein-ecran-dwm-20261029 , fix-scrollbar-flash-fullscreen-20261029, essai-ecrans-test-fideles-20261029]
+    branches: [main, essai-fenetre-unique-tournoi-20261029, essai-bandeaux-identiques-fenetre-20261029, essai-teleportation-saut-20261029 , essai-plein-ecran-sans-saut-20261029, essai-entree-plein-ecran-dwm-20261029 , fix-scrollbar-flash-fullscreen-20261029, essai-ecrans-test-fideles-20261029, essai-mini-timer-agrandi-plein-ecran-20261029]
   pull_request:
   workflow_dispatch:
 
@@ -39,6 +39,7 @@ jobs:
           python checks/test_fullscreen_no_jump.py
           python checks/test_fullscreen_scrollbar.py
           python checks/test_screen_tests_fidelity.py
+          python checks/test_fullscreen_settings_mini_width.py
       - name: Generate Windows resources
         shell: pwsh
         run: |
