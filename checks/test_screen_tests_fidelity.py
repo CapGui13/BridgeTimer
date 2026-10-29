@@ -47,6 +47,9 @@ def compare(kind,actual,preview):
    assert a["shown"]==b["shown"],f"{kind} {selector} visible parent differs: {a} / {b}"
    continue
   for key in ("x","y","w","h","font"):
+   # The live wall clock may have different digits than its frozen preview.
+   # Compare its anchor, baseline and typography, not intrinsic text width.
+   if selector=="#localTime" and key=="w":continue
    assert abs(a[key]-b[key])<=1.4,f"{kind} {selector} {key}: real {a[key]:.2f} vs gallery {b[key]:.2f}"
 
 with sync_playwright() as pw:
