@@ -464,7 +464,9 @@ def main():
                 # their band heights match but their text heights need not.
                 assert timerHeader["title"]<=timerHeader["height"]+1.1, "Club title overflows timer band"
                 assert settingsHeader["title"]<=settingsHeader["height"]+1.1, "Bridge Timer heading overflows Settings band"
-                assert abs(settingsHeader["parentPaddingTop"]-settingsHeader["height"])<1.1, "Settings content must start below fixed title band"
+                # Preserve the approved 4px reserve below the 55px header.
+                gapBelowTitle=settingsHeader["parentPaddingTop"]-settingsHeader["height"]
+                assert -1.1<=gapBelowTitle<=5.1, "Settings title content overlap or excessive gap"
                 assert abs(settingsHeader["band"]["y"])<=1.1 and abs(settingsHeader["band"]["x"])<=1.1, "Settings header must touch native top-left"
                 assert abs(settingsHeader["band"]["w"]-width)<=1.1, "Settings header must fill native width"
                 for key in ("settings","exit"):
