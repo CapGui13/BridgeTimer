@@ -83,6 +83,35 @@ with sync_playwright() as pw:
       st.breakDuration=45;render();
     }""",phase)
     o=metrics(page)
+    # Enlarging transition copy must NEVER reflow the bottom countdown,
+    # progress bar or footer. Text is enlarged visually around its centre.
+    type_layout=page.evaluate("""()=>{
+      const title=document.querySelector('#jumpSplashTitle');
+      const body=document.querySelector('#jumpSplashText');
+      const rect=e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]};
+      const snap=()=>({
+        title:rect(title),body:rect(body),
+        count:rect(document.querySelector('.jumpSplashCountdown')),
+        track:rect(document.querySelector('.jumpSplashTrack')),
+        footer:rect(document.querySelector('#timer .bottom')),
+        main:rect(document.querySelector('#timer .main'))
+      });
+      const enlarged=snap();
+      title.style.transform='none';body.style.transform='none';
+      const natural=snap();
+      title.style.removeProperty('transform');body.style.removeProperty('transform');
+      return {enlarged,natural};
+    }""")
+    large=type_layout["enlarged"]
+    base_layout=type_layout["natural"]
+    for text,ratio in (("title",1.10),("body",1.08)):
+      a=large[text];b=base_layout[text]
+      assert abs(a[2]/b[2]-ratio)<.005 and abs(a[3]/b[3]-ratio)<.005,(size,fullscreen,phase,text,a,b)
+      main=large["main"]
+      assert abs((a[0]+a[2]/2)-(main[0]+main[2]/2))<1,(size,fullscreen,phase,text,"off-centre",a,main)
+    for fixed in ("count","track","footer"):
+      assert all(abs(x-y)<.02 for x,y in zip(large[fixed],base_layout[fixed])),(
+        size,fullscreen,phase,fixed,"countdown/footer moved",large[fixed],base_layout[fixed])
     assert o["phasePage"] and o["splashDisplay"]=="flex",(size,fullscreen,phase,o)
     assert o["overlayDisplay"]=="flex" and o["overlayZ"]>o["splashZ"],(size,fullscreen,phase,o)
     assert o["pauseTitle"]==base["pauseTitle"] and o["pauseSubtitle"]==base["pauseSubtitle"],o
