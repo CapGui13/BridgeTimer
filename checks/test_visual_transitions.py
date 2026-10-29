@@ -122,7 +122,14 @@ def assert_same_stage_geometry(a,b,label,cross_viewport=False):
         for dimension in dimensions:
             delta=abs(a[sel][dimension]-b[sel][dimension])
             assert delta<=1.1, f"{label}: {sel}.{dimension} changed by {delta:.2f}: {a[sel]} -> {b[sel]}"
-        assert a[sel]["padding"]==b[sel]["padding"], f"{label}: {sel} padding changed: {a[sel]} -> {b[sel]}"
+        # N°11: only the natural-width footer controls have smaller
+        # horizontal padding in compact (<=850px) native windows. This
+        # intentional exception MUST NOT permit any other visual drift.
+        compact_footer=(cross_viewport and label.startswith(("812x","850x"))
+            and sel in ("#pause","#next","#resetRound")
+            and a[sel]["padding"]=="0px 12px"
+            and b[sel]["padding"]=="0px 7px")
+        assert compact_footer or a[sel]["padding"]==b[sel]["padding"], f"{label}: {sel} padding changed: {a[sel]} -> {b[sel]}"
 
 
 def test_timer_bands_fill_window(browser):
