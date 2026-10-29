@@ -8,7 +8,7 @@ func TestOpeningAndMinimumWindowDimensions(t *testing.T) {
  }
  x,y,w,h,saved:=startupWindowGeometry()
  if x!=0 || y!=0 || w!=812 || h!=520 || saved {
-  t.Fatalf("startup geometry must be centered at 812x680: %+v",[]any{x,y,w,h,saved})
+  t.Fatalf("startup geometry must be centered at 812x520: %+v",[]any{x,y,w,h,saved})
  }
 }
 
