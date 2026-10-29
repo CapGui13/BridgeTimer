@@ -899,3 +899,29 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - Valider les entrées et le rendu 13:00 + 15, passage à minuit + 99,
   délai ajouté après heure manuelle, effacement des deux cases, bascule
   Paires/MP4 et alignement / unité en plusieurs tailles de fenêtre.
+
+## 29 octobre 2026 — « Reprise à » vide à chaque ouverture
+
+- Nouvelle branche de test : `essai-reprise-vide-au-redemarrage-20261029`, base et retour arrière :
+  `essai-reprise-choix-exclusifs-20261029`.
+- L'**heure HH:MM** et les **minutes après fin de match (OU … M)**
+  doivent être **vides au démarrage de chaque nouvelle instance de
+  Bridge Timer** (relance après fermeture normale, anomalie Windows,
+  stockage navigateur ou restauration depuis une sauvegarde native).
+- Réinitialisation à l'ouverture, y compris lorsque l'arbitre choisit
+  « Reprendre la séance » après interruption : les autres données du
+  tournoi et le temps restant sont conservés, mais les deux paramètres
+  de reprise doivent être effacés.
+- Le stockage des préférences les omet déjà ; les sauvegardes de
+  récupération de séance doivent elles aussi neutraliser les valeurs
+  de reprise, et **ignorer les anciennes valeurs** contenues dans un
+  checkpoint créé par une version précédente.
+- Durant la même exécution, les deux cases restent modifiables comme
+  avant : heure directe et délai sont des alternatives ; un délai
+  affiche le calcul dans l'écran de fin de match sans remplir l'heure.
+- Aucun autre paramètre, raccourci, calcul de chronométrage, bande ou
+  géométrie ne doit changer.
+- Tests Edge : redémarrage avec préférences anciennes venues du
+  navigateur et du disque Windows ; reprise d'une séance sauvegardée
+  par une ancienne version ; conservation des autres paramètres et
+  de la position ; nouvelles sauvegardes sans valeurs résiduelles.
