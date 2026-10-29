@@ -20,12 +20,15 @@ SETUP="""v=>{
  window.__clock=500000;window.__wall=1000000;
  Object.defineProperty(performance,"now",{configurable:true,value:()=>window.__clock});
  Date.now=()=>window.__wall;
+ st.started=true;
+ // Moving from Settings to Timer commits the Settings form. Do this
+ // BEFORE installing deterministic test data (otherwise mode reverts to MP4).
+ showTimer();
  Object.assign(s,{mode:v.mode,positions:v.positions,startPosition:1,
   hours:0,minutes:v.duration//60,seconds:v.duration%60,
   between:v.between,jumpRound:v.jumpRound||0,jumpDisplaySecs:v.jumpSecs||9,
   sound:false,boardProgressNotice:false,quickMessage:"",resumeTime:""});
- st.started=true;q4a(1,false);st.running=false;st.endAt=null;
- showTimer();render();
+ q4a(1,false);st.running=false;st.endAt=null;render();
  window.__step=(ms)=>{__clock+=ms;__wall+=ms;tick()};
  window.__freeze=()=>{clearInterval(st.interval);st.interval=null};
  window.__state=()=>({pos:st.pos,phase:st.phase,running:st.running,
