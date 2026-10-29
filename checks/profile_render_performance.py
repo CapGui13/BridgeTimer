@@ -30,7 +30,7 @@ with sync_playwright() as pw:
   window.__mon=50000;
   Object.defineProperty(performance,"now",{configurable:true,value:()=>__mon});
   start();clearInterval(st.interval);st.interval=null;
-  for(let i=0;i<1440;i++){__mon+=10000;tick()}
+  for(let i=0;i<1441;i++){__mon+=10000;tick()}
   const phase=st.phase,remaining=st.remaining,pos=st.pos;
   delete performance.now;
   let begin=performance.now();
