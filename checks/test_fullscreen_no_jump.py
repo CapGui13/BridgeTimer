@@ -78,13 +78,19 @@ with sync_playwright() as pw:
    assert not complete["switching"] and complete["timerOpacity"]=="1",(show,i,complete)
    assert complete["nativeCalls"]==i+1,(show,i,complete)
    # A genuine stage re-layout has occurred under the cover.
-   scaled=page.evaluate("""()=>({
-     left:document.querySelector('#timer').getBoundingClientRect().left,
-     top:document.querySelector('#timer').getBoundingClientRect().top,
-     width:document.querySelector('#timer').getBoundingClientRect().width,
-     height:document.querySelector('#timer').getBoundingClientRect().height
-   })""")
-   assert abs(scaled["width"]-w)<2 and abs(scaled["height"]-h)<2,(show,i,scaled)
+   scaled=page.evaluate("""()=>{
+     const visibleTimer=!document.querySelector('#timer').classList.contains('hidden');
+     const element=document.querySelector(visibleTimer?'#timer':'#settings .wrap>.head');
+     const r=element.getBoundingClientRect();
+     const footer=document.querySelector('#settings .actions').getBoundingClientRect();
+     return {visibleTimer,x:r.x,y:r.y,width:r.width,height:r.height,
+       footerRight:footer.right,footerBottom:footer.bottom};
+   }""")
+   assert abs(scaled["width"]-w)<2,(show,i,scaled)
+   if scaled["visibleTimer"]:
+    assert abs(scaled["height"]-h)<2,(show,i,scaled)
+   else:
+    assert abs(scaled["footerRight"]-w)<2 and abs(scaled["footerBottom"]-h)<2,(show,i,scaled)
   seen=page.evaluate("window.__nativeBefore")
   assert len(seen)==2 and all(x["veil"] and x["content"] not in ("none","normal") for x in seen),(show,seen)
   # Settings navigation and the jump-screen swap must remain unchanged.
