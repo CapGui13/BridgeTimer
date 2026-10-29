@@ -593,12 +593,6 @@ def main():
                   }
                 }""")
                 page.evaluate("showSettings()")
-                # The faithful mini refresh is intentionally throttled to
-                # 250 ms. Give it one real production repaint before
-                # checking geometry, rather than measuring its stale width
-                # in the same task as the Timer -> Settings transition.
-                page.wait_for_timeout(275)
-                page.evaluate("render()")
                 assert solid_settings_footer(), "Fullscreen Settings footer must be fully opaque"
                 rects2=page.evaluate("""() => {
                   const b=sel=>{const r=document.querySelector(sel).getBoundingClientRect();
@@ -629,7 +623,7 @@ def main():
                 assert rects2["miniInBody"], "Miniature still inside the footer"
                 assert abs(rects2["mini"]["x"])<0.1, "Miniature must remain anchored to the left"
                 assert abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["viewport"]["h"])<1.5, "Fullscreen miniature must touch the BOTTOM of the screen"
-                assert abs(rects2["mini"]["x"]+rects2["mini"]["w"]-rects2["settingsCard"]["x"])<1.5, f"Fullscreen miniature must reach LEFT border of Tournament/settings cards: {width}x{height} {mode} mini={rects2['mini']} card={rects2['settingsCard']}"
+                assert abs(rects2["mini"]["x"]+rects2["mini"]["w"]-rects2["settingsCard"]["x"])<1.5, "Fullscreen miniature must reach LEFT border of Tournament/settings cards"
                 page.evaluate("showTimer()")
                 check_footer_balance(page, f"{width}x{height}, {mode}, return from fullscreen Settings")
                 actual=page.evaluate("""() => {
