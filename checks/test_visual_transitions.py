@@ -603,7 +603,7 @@ def main():
                     footer:b("#settings .actions"),footerButton:b("#fresh"),
                     footerFont:getComputedStyle(document.getElementById("fresh")).fontSize,
                     footerQuit:b("#quitAppBtn"),
-                    mini:b("#miniTimer"),viewport:{h:innerHeight},
+                    mini:b("#miniTimer"),settingsCard:b("#settings .tournamentCard"),viewport:{h:innerHeight},
                     miniInBody:document.getElementById("miniTimer").parentElement===document.body,
                     exitWired:document.getElementById("settingsFullscreenBtn").onclick===fs,
                     closeText:document.getElementById("drawerClose").textContent,
@@ -622,8 +622,8 @@ def main():
                 assert rects2["closeText"]=="Timer" and rects2["visible"] and rects2["exitWired"], "Settings fullscreen header buttons misconfigured"
                 assert rects2["miniInBody"], "Miniature still inside the footer"
                 assert abs(rects2["mini"]["x"])<0.1, "Miniature must remain anchored to the left"
-                if width>=1100:
-                    assert abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["footer"]["y"])<1.5, "Full-sized miniature must sit ABOVE the fixed footer"
+                assert abs(rects2["mini"]["y"]+rects2["mini"]["h"]-rects2["viewport"]["h"])<1.5, "Fullscreen miniature must touch the BOTTOM of the screen"
+                assert abs(rects2["mini"]["x"]+rects2["mini"]["w"]-rects2["settingsCard"]["x"])<1.5, "Fullscreen miniature must reach LEFT border of Tournament/settings cards"
                 page.evaluate("showTimer()")
                 check_footer_balance(page, f"{width}x{height}, {mode}, return from fullscreen Settings")
                 actual=page.evaluate("""() => {
