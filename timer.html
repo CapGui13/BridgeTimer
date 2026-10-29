@@ -1635,11 +1635,11 @@ function recoveryValidate(raw){
   if(snapshot?.schema!==1||!q26(snapshot.settings)||!q26(v)||
    !Number.isFinite(snapshot.savedAt)||snapshot.savedAt<=0)return null;
   const settings=q6(snapshot.settings);
-  if(!["2","4"].includes(settings.mode))return null;
+  if(!["2","4"].includes(settings.mode)||!Number.isInteger(settings.positions)||settings.positions<1||settings.positions>99)return null;
   if(!["round","break","jump","roundEnd"].includes(v.phase)||
    typeof v.running!=="boolean"||typeof v.longClockAtStart!=="boolean")return null;
   const good=(n,min,max)=>typeof n==="number"&&Number.isFinite(n)&&n>=min&&n<=max;
-  if(!Number.isInteger(v.pos)||!good(v.pos,1,99)||
+  if(!Number.isInteger(v.pos)||!good(v.pos,1,settings.positions)||
    !good(v.remaining,0,43200)||!good(v.roundDuration,0,43200)||
    !good(v.roundBetween,0,99)||!good(v.roundBoardDuration,0,43200)||
    !good(v.roundBoards,1,99)||!good(v.breakDuration,0,99)||
@@ -1700,6 +1700,8 @@ $("recoveryNew").onclick=recoveryNew;
 $("settings").addEventListener("change",()=>{
  if(recoveryArmed&&st.started)setTimeout(()=>recoveryAutoSave(true),0)
 });
+// Independently checkpoint paused sessions, including when tick() is idle.
+setInterval(()=>recoveryAutoSave(),1000);
 
 async function initializeBridgeTimer(){
  await q13();load();q33();_upu();activeFormat="4";formatSession["4"]=q12("4");
