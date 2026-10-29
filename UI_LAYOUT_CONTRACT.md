@@ -575,3 +575,23 @@ visible de 633 px sur le PNG, la seconde (ancienne ouverture) 605 px :
 pour empêcher toute réduction au-dessous du format voulu.
 Le rendu du timer, les bandes, la confirmation de sortie, le plein écran
 et la mise à l'échelle restent inchangés dans cette correction.
+
+## Miniature en plein écran — bordure des paramètres (29/10/2026)
+
+**Essai isolé** sur `essai-mini-bas-gauche-bordure-menus-20261029`, après le rejet visuel de
+`essai-mini-jusqua-colonne-raccourcis-20261029`. Conserver `main` comme
+référence stable.
+
+- Quand la séance est lancée et que les paramètres sont en plein écran,
+  `#miniTimer` reste **à gauche = 0 et en bas = 0** du viewport.
+- Sa bordure droite coïncide **exactement** avec la bordure gauche du bloc
+  `#settings .tournamentCard` (« Tournoi »), commune aux cartes du formulaire.
+  La largeur est calculée avec `getBoundingClientRect().left`, pas depuis
+  les boutons du pied de page ni depuis les raccourcis clavier.
+- `aspect-ratio:16/9` détermine la hauteur ; aucune limite de hauteur liée
+  à la barre inférieure, ni remontée artificielle au-dessus de cette barre.
+- La barre d'actions, le timer principal, les transitions, la fenêtre de
+  paramètres fenêtrée et sa miniature existante restent inchangés.
+- Vérifier la géométrie en Paires et MP4, en 960×600, 1280×720, 1650×928
+  et 1920×1080, la réversibilité fenêtré ↔ plein écran, et une capture Edge
+  à 1650×928. Le test navigateur ne remplace pas la validation de l'EXE Windows.
