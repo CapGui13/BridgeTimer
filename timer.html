@@ -880,6 +880,10 @@ function _rspg(){
    // virtual canvas; otherwise the iframe inherits a 812px-window font.
    C=null;longClockKey="";lrf="";lsf="";render();
    const clone=tm.cloneNode(true);clone.classList.remove("spa","spm","hidden");
+   // Fullscreen toggles this label before showing the real screen.
+   // The preview should contain the final label, not the windowed one.
+   const fullscreenButton=clone.querySelector("#fsBtn");
+   if(fullscreenButton)fullscreenButton.textContent="Quitter plein écran";
    for(const id of ["sptb","spg"])clone.querySelector("#"+id)?.remove();
    // The gallery iframe is always a virtual FULLSCREEN view.
    // body.fs is necessary: without it the old windowed 55/59px band rules
