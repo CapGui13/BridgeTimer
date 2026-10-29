@@ -284,6 +284,17 @@ body.settingsLive #miniTimer.spView{
  border-radius:0;z-index:650;box-sizing:border-box;
 }
 
+/* Fullscreen Settings live preview reaches the action-menu column, minus
+   a narrow gap. The target is measured in DOM, never a fixed 260px guess.
+   Aspect ratio is retained and windowed Settings rules remain untouched. */
+body.fs.settingsLive #miniTimer.spView{
+ width:var(--fullscreen-mini-width,260px)!important;
+ height:auto!important;aspect-ratio:16/9!important;
+ max-width:calc(100vw - 12px)!important;
+ left:0!important;right:auto!important;bottom:0!important;top:auto!important;
+ border-radius:0!important;
+}
+
 /* 27 Oct 2026 — SETTINGS FOOTER, FULLSCREEN ONLY.
    Reuse the 1600x900 timer's exact native stage projection. The top edge,
    height and buttons inherit the corresponding timer footer geometry.
@@ -1369,12 +1380,32 @@ phaseMain.classList.toggle("phasePage",transition.visible);
 if(firstPhaseFrame)phasePage.style.visibility="";$("bar").style.width=(total?clamp(st.remaining/total*100,0,100):0)+"%";const paused=st.started&&!st.running&&st.phase!=="ended"&&st.phase!=="roundEnd"&&!$("timer").classList.contains("hidden");$("pauseOverlay").classList.toggle("on",paused);const finished=st.phase==="roundEnd"||st.phase==="ended";
 $("finishOverlay").classList.toggle("on",finished);$("finishBig").textContent=st.phase==="ended"?"FIN DE LA SÉANCE":"FIN DU TOUR";
 $("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+(s.resumeTime||"--:--");const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd&&!isJump;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();alignTimerFooterControls();fc();q38();q40();syncFaithfulMini()}
+/* Align the right edge of the 16:9 live preview with the LEFT edge of
+   the first Settings footer command. Preserves the single virtual canvas.
+   A height cap only matters on unusually short / narrow monitors. */
+function syncFullscreenMiniWidth(){
+ const holder=$("miniTimer"),first=$("fresh");
+ if(!holder)return;
+ if(!document.body.classList.contains("fs")||
+    !document.body.classList.contains("settingsLive")||!first){
+  holder.style.removeProperty("--fullscreen-mini-width");
+  return;
+ }
+ const x=first.getBoundingClientRect().left;
+ if(!Number.isFinite(x)||x<=24)return;
+ const maxByHeight=Math.max(120,(innerHeight-92)*16/9);
+ const target=Math.max(80,Math.min(x-12,innerWidth-12,maxByHeight));
+ const value=target.toFixed(2)+"px";
+ if(holder.style.getPropertyValue("--fullscreen-mini-width")!==value)
+  holder.style.setProperty("--fullscreen-mini-width",value);
+}
 let faithfulMiniBusy=false,faithfulMiniLast=0;
 function syncFaithfulMini(force=false){
  if(!document.body.classList.contains('settingsLive')||faithfulMiniBusy)return;
  const now=performance.now();if(!force&&now-faithfulMiniLast<250)return;faithfulMiniLast=now;
  const holder=$('miniTimer'),source=$('timer');
  if(!holder||!source)return;
+ syncFullscreenMiniWidth();
  const vw=1600,vh=900;
  holder.style.aspectRatio=vw+'/'+vh;
  let f=$('faithfulMiniFrame');
@@ -1416,7 +1447,7 @@ function syncFaithfulMini(force=false){
  * before and after returning from Windows native fullscreen. Main branch
  * remains the rollback target if the user dislikes this experiment.
  */
-let fif=false,fff=0;function q1c(){cancelAnimationFrame(fff);fff=requestAnimationFrame(()=>{C=null;fc()})}function q25(on){document.body.classList.toggle("fs",!!on);$("drawerClose").textContent=on?"Timer":"Retour au timer";if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer");document.body.classList.toggle("showControls",!!on);updateStage();cacheSettingsHeaderGeometry();$("fsBtn").textContent=on?"Quitter plein écran":"Plein écran";$("settingsFullscreenBtn").textContent=on?"Quitter plein écran":"Plein écran";clearTimeout(controlsTimer);if(on)controlsTimer=setTimeout(()=>document.body.classList.remove("showControls"),3500);C=null;fc();q1c()}
+let fif=false,fff=0;function q1c(){cancelAnimationFrame(fff);fff=requestAnimationFrame(()=>{C=null;fc()})}function q25(on){document.body.classList.toggle("fs",!!on);$("drawerClose").textContent=on?"Timer":"Retour au timer";if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer");document.body.classList.toggle("showControls",!!on);updateStage();cacheSettingsHeaderGeometry();syncFullscreenMiniWidth();$("fsBtn").textContent=on?"Quitter plein écran":"Plein écran";$("settingsFullscreenBtn").textContent=on?"Quitter plein écran":"Plein écran";clearTimeout(controlsTimer);if(on)controlsTimer=setTimeout(()=>document.body.classList.remove("showControls"),3500);C=null;fc();q1c()}
 // Paint boundaries bracket the native border/size change. The color veil is
 // fully opaque before Win32 changes the window and is removed only after
 // the NEW stage geometry has been painted. No opacity/tween animation.
