@@ -32,7 +32,7 @@ def metrics(context):
    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
    out[selector]={x:r.left-stage.left,y:r.top-stage.top,
     w:r.width,h:r.height,display:cs.display,visibility:cs.visibility,
-    font:parseFloat(cs.fontSize),shown:el.getClientRects().length>0,
+    font:parseFloat(cs.fontSize),shown:el.getClientRects().length>0&&cs.visibility!=="hidden",
      text:el.textContent.trim().replace(/\\s+/g,' ').slice(0,200)};
   }return out;
  }""",SELECTORS)
