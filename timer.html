@@ -30,7 +30,7 @@ input,textarea,select,[contenteditable="true"],[contenteditable="plaintext-only"
 /* PAUSE : deplacer uniquement ses deux libelles sous le chrono, styles originaux conserves. */
 #timer #pauseOverlay{justify-content:flex-end;padding-bottom:clamp(10px,1.8vh,18px);box-sizing:border-box}
 
-.personalizeCompact{max-width:560px}.personalizeCompact .colorMenuTrigger{width:max-content;max-width:100%;min-height:36px;justify-self:start}#colorMenuOverlay .colorMenuPanel{width:min(810px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:20px 24px}#colorMenuOverlay .personalizeLayout{grid-template-columns:minmax(0,1fr) 215px;gap:24px;align-items:start}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(140px,235px) minmax(70px,120px)}#colorMenuOverlay .personalizeRight{width:215px}@media(max-width:680px){#colorMenuOverlay .colorMenuPanel{padding:16px}#colorMenuOverlay .personalizeLayout{grid-template-columns:1fr;gap:20px}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(140px,1fr) 100px}#colorMenuOverlay .personalizeRight{width:100%;max-width:440px}#colorMenuOverlay .jumpMsgHeader{align-items:start;flex-wrap:wrap}#colorMenuOverlay .jumpMsgActions{margin-left:auto}}#colorMenuOverlay .colorMenuPanel{width:min(710px,calc(100vw - 32px))}#colorMenuOverlay .personalizeLayout{grid-template-columns:minmax(0,1fr) 215px;column-gap:20px}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(140px,235px) minmax(70px,120px);grid-auto-rows:31px;row-gap:9px}#colorMenuOverlay .personalizePresets{gap:9px}#colorMenuOverlay .personalizePresets .btn{height:31px}#colorMenuOverlay .colorMenuFooter{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:28px;padding-top:14px;border-top:1px solid var(--line)}#colorMenuOverlay .colorMenuFooter .btn{min-height:34px;padding:7px 14px;font-size:13px}@media(max-width:680px){#colorMenuOverlay .personalizeLayout{grid-template-columns:1fr;gap:20px}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(150px,1fr) 100px}#colorMenuOverlay .colorMenuFooter{margin-top:18px}}
+.personalizeCompact{max-width:560px}.personalizeCompact .colorMenuTrigger{width:max-content;max-width:100%;min-height:36px;justify-self:start}#colorMenuOverlay .colorMenuPanel{width:min(810px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:20px 24px}#colorMenuOverlay .personalizeLayout{grid-template-columns:minmax(0,1fr) 215px;gap:24px;align-items:start}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(140px,235px) minmax(70px,120px)}#colorMenuOverlay .personalizeRight{width:215px}@media(max-width:680px){#colorMenuOverlay .colorMenuPanel{padding:16px}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(140px,1fr) 100px}#colorMenuOverlay .personalizeRight{width:100%;max-width:440px}#colorMenuOverlay .jumpMsgHeader{align-items:start;flex-wrap:wrap}#colorMenuOverlay .jumpMsgActions{margin-left:auto}}#colorMenuOverlay .colorMenuPanel{width:min(710px,calc(100vw - 32px))}#colorMenuOverlay .personalizeLayout{grid-template-columns:minmax(0,1fr) 215px;column-gap:20px}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(140px,235px) minmax(70px,120px);grid-auto-rows:31px;row-gap:9px}#colorMenuOverlay .personalizePresets{gap:9px}#colorMenuOverlay .personalizePresets .btn{height:31px}#colorMenuOverlay .colorMenuFooter{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:28px;padding-top:14px;border-top:1px solid var(--line)}#colorMenuOverlay .colorMenuFooter .btn{min-height:34px;padding:7px 14px;font-size:13px}@media(max-width:680px){#colorMenuOverlay .personalizeLayout{grid-template-columns:1fr;gap:20px}#colorMenuOverlay .personalizeFields{grid-template-columns:minmax(150px,1fr) 100px}#colorMenuOverlay .colorMenuFooter{margin-top:18px}}
 
 /* Fixed settings footer: keep normal controls on one line at Windows min size. */
 body.settingsLive #settings .wrap{padding-bottom:230px}
@@ -45,10 +45,10 @@ body.settingsLive #settings .actions .settingsActionButtons{grid-column:2;grid-r
 body.settingsLive #settings .actions #quitAppBtn{position:static;grid-column:3;grid-row:1;justify-self:end;min-width:100px}
 @media(max-width:930px){#settings .actions .settingsActionButtons{gap:6px}#settings .actions .settingsActionButtons .btn{padding:7px 8px;font-size:12px}}
 @media(max-width:690px){
- body.settingsLive #settings .actions{grid-template-columns:minmax(0,1fr) 110px;grid-template-rows:140px auto;min-height:210px;padding:8px 12px;row-gap:6px}
+ 
  body.settingsLive #miniTimer.spView{grid-column:1;grid-row:1;width:clamp(93px,18vw,125px);max-width:100%}
- body.settingsLive #settings .actions .settingsActionButtons{grid-column:1/-1;grid-row:2;justify-self:center}
- body.settingsLive #settings .actions #quitAppBtn{grid-column:2;grid-row:1;justify-self:end}
+ 
+ 
 }
 @media(max-width:520px){
  #settings .actions{min-height:110px;padding:8px 8px 42px}
@@ -56,7 +56,7 @@ body.settingsLive #settings .actions #quitAppBtn{position:static;grid-column:3;g
  #settings .actions .settingsActionButtons{gap:4px;flex-wrap:wrap}
  #settings .actions .settingsActionButtons .btn{font-size:11px;padding:6px 7px}
  body.settingsLive #settings .actions{grid-template-rows:140px auto;min-height:210px;padding:8px}
- body.settingsLive #settings .actions .settingsActionButtons{flex-wrap:wrap}
+ 
  body.settingsLive #settings .actions #quitAppBtn{position:static;align-self:center}
 }
 
