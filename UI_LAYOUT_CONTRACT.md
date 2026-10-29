@@ -925,3 +925,32 @@ Après validation par capture de la taille et de l'alignement de la miniature :
   navigateur et du disque Windows ; reprise d'une séance sauvegardée
   par une ancienne version ; conservation des autres paramètres et
   de la position ; nouvelles sauvegardes sans valeurs résiduelles.
+
+## 30 octobre 2026 — Écrans saut et changement de tour, même comportement
+
+- Branche d'essai : `essai-transitions-15s-pause-parite-20261030`.
+  Version de retour arrière : `essai-reprise-vide-au-redemarrage-20261029`.
+- Sur les deux phases `jump` et `break`, **boutons ±15 secondes**
+  et raccourcis F7/F8 / +/− identiques : un pas = 15 secondes,
+  y compris répétition de touche pendant une pression prolongée.
+  Les tours ordinaires restent **±1 minute**.
+- Sur les deux écrans de transition, appuyer sur Pause (bouton
+  ou Espace) fige immédiatement le compte à rebours, affiche le
+  **même** grand panneau `#pauseOverlay` que pendant un tour
+  ordinaire (PAUSE jaune, texte d'aide, fond assombri, flou,
+  position et typographie identiques). Aucun second panneau ;
+  conserver celui de référence et le faire passer devant le
+  `#jumpSplash` de transition.
+- Reprendre retire ce panneau et relance le décompte depuis sa
+  valeur figée ; les transitions naturelles et la géométrie des
+  bandeaux supérieurs et inférieurs ne changent pas.
+- L'écran de transition continue de remplacer le chronomètre
+  central **sans animation ni saut**. Les écrans galerie et
+  l'aperçu miniature doivent reproduire l'état Pause.
+- Ne pas toucher au cadre 1600×900, aux polices de format court
+  ou long, aux valeurs de durée d'origine, à la reprise MP4 ni
+  aux autres raccourcis.
+- Contrôles navigateur requis : affichage réellement visible du
+  panneau au-dessus du saut/changement, même texte/couleurs/flou
+  et position que dans un tour, clics et répétitions des
+  raccourcis, reprise et figement, fenêtres et plein écran.
