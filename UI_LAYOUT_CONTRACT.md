@@ -799,8 +799,12 @@ Après validation par capture de la taille et de l'alignement de la miniature :
 - Le bouton `−` et le bouton `+` conservent leurs cases fixes ;
   les tailles de polices, hauteurs, couleurs, séparations générales,
   alignement du centre libre et les deux libellés restent identiques.
-- Aucun changement CSS au-delà de 850 px, en vrai plein écran
-  (`body.fs`) ou dans les aperçus `spm/spa`. L'alignement
+- Aucun changement CSS au-delà de 850 px ni en vrai plein écran
+  (`body.fs`). Les aperçus Screen Tests en fenêtre étroite
+  suivent volontairement le même ajustement de 7 px que le vrai
+  timer : sinon, le test de fidélité mesure un décalage de
+  plusieurs pixels entre les deux. La miniature des paramètres
+  conserve son rendu 1600 × 900 indépendant. L'alignement
   fonctionne comme précédemment : au centre exact de l'espace libre,
   quel que soit le nombre de tours.
 - Protection automatique en Edge : 6, 12, 18 et 24 tours,
