@@ -410,6 +410,20 @@ type nativeDiagInfo struct {
 	NativeAwake bool   `json:"nativeAwake"`
 }
 
+// DWM can independently animate the non-client frame when Win32 changes
+// WS_CAPTION and enlarges a window. Disable that DWM-only transition while
+// entering fullscreen; the WebView paint veil already handles content frames.
+// HRESULT 0 means success. Unsupported Windows versions use the old path.
+const dwmTransitionsForcedDisabled = uintptr(3)
+
+func setDwmTransitionsDisabled(hwnd uintptr, disabled bool) bool {
+	value := int32(0)
+	if disabled { value = 1 }
+	hr, _, _ := dwmSetWindowAttribute.Call(hwnd, dwmTransitionsForcedDisabled,
+		uintptr(unsafe.Pointer(&value)), unsafe.Sizeof(value))
+	return int32(hr) == 0
+}
+
 func toggleNativeFullscreen(hwnd uintptr) bool {
 	fullscreenMu.Lock()
 	defer fullscreenMu.Unlock()
@@ -417,33 +431,45 @@ func toggleNativeFullscreen(hwnd uintptr) bool {
 	styleIndex := int32(-16)
 
 	if !fullscreen {
-		style, _, _ := getWindowLongPtrW.Call(hwnd, uintptr(styleIndex))
-		savedStyle = style
+		// Read target monitor BEFORE modifying the current window frame.
+		// Otherwise Windows may briefly display an old-sized borderless frame.
+		mon, _, _ := monitorFromWindow.Call(hwnd, monitorDefaultToNearest)
+		if mon == 0 { return false }
+		mi := monitorInfo{CbSize: uint32(unsafe.Sizeof(monitorInfo{}))}
+		ok, _, _ := getMonitorInfoW.Call(mon, uintptr(unsafe.Pointer(&mi)))
+		if ok == 0 { return false }
 
-		savedPlace = windowPlacement{Length: uint32(unsafe.Sizeof(windowPlacement{}))}
-		getWindowPlacement.Call(hwnd, uintptr(unsafe.Pointer(&savedPlace)))
+		style, _, _ := getWindowLongPtrW.Call(hwnd, uintptr(styleIndex))
+		place := windowPlacement{Length: uint32(unsafe.Sizeof(windowPlacement{}))}
+		if success, _, _ := getWindowPlacement.Call(hwnd,
+			uintptr(unsafe.Pointer(&place))); success == 0 { return false }
+
+		// No OS animation for the entering borderless move. Restore the default
+		// DWM transition policy when the native operation has completed.
+		dwmChanged := setDwmTransitionsDisabled(hwnd, true)
+		if dwmChanged { defer setDwmTransitionsDisabled(hwnd, false) }
 
 		newStyle := style &^ uintptr(wsCaption|wsThickFrame|wsMinimizeBox|wsMaximizeBox|wsSysMenu)
 		setWindowLongPtrW.Call(hwnd, uintptr(styleIndex), newStyle)
-
-		mon, _, _ := monitorFromWindow.Call(hwnd, monitorDefaultToNearest)
-		mi := monitorInfo{CbSize: uint32(unsafe.Sizeof(monitorInfo{}))}
-		if mon == 0 {
-			return false
-		}
-		ok, _, _ := getMonitorInfoW.Call(mon, uintptr(unsafe.Pointer(&mi)))
-		if ok == 0 {
-			return false
-		}
-		setWindowPos.Call(
+		resized, _, _ := setWindowPos.Call(
 			hwnd, 0,
 			uintptr(mi.RcMonitor.Left), uintptr(mi.RcMonitor.Top),
 			uintptr(mi.RcMonitor.Right-mi.RcMonitor.Left),
 			uintptr(mi.RcMonitor.Bottom-mi.RcMonitor.Top),
 			swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged,
 		)
+		if resized == 0 {
+			// Never leave a broken borderless window on SetWindowPos failure.
+			setWindowLongPtrW.Call(hwnd, uintptr(styleIndex), style)
+			setWindowPos.Call(hwnd, 0, 0, 0, 0, 0,
+				swpNoMove|swpNoSize|swpNoZOrder|swpNoOwnerZOrder|swpFrameChanged)
+			log.Printf("fullscreen entry: SetWindowPos failed")
+			return false
+		}
+		savedStyle = style
+		savedPlace = place
 		fullscreen = true
-		log.Printf("fullscreen: on")
+		log.Printf("fullscreen: on (DWM transition suppressed: %v)", dwmChanged)
 		return true
 	}
 
