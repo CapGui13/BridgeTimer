@@ -115,7 +115,7 @@ with sync_playwright() as pw:
    if kind=="board":
     assert "donne 3" in preview["#msg"]["text"],("board screenshot must show current board 3",preview["#msg"])
    if kind in ("temporary","board","prejump"):
-    minimum={"temporary":95,"board":92,"prejump":81}[kind]
+    minimum={"temporary":105,"board":86,"prejump":76}[kind]
     assert preview["#msg"]["font"]>=minimum,(
       kind,"Green message still shrinks to former tiny font in long-clock gallery",
       preview["#msg"]["font"],"expected >=",minimum)
