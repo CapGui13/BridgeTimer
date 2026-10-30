@@ -222,9 +222,12 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 /* Locked at the START of each round, not at 59:59 remaining.
    The existing MM:SS format remains byte-for-byte unchanged for
    sessions whose rounds begin under one hour. */
-#timer #clock.longStartClock{display:inline-flex;align-items:baseline;justify-content:center;gap:22px}
+#timer #clock.longStartClock{display:inline-flex;align-items:baseline;justify-content:center;gap:0}
 #timer #clock.longStartClock .clockPrimary{font-size:1em;line-height:1;white-space:nowrap}
 #timer #clock.longStartClock .clockSeconds{font-size:.56em;line-height:1;white-space:nowrap}
+/* A REAL typeface colon, never oversized pseudo-element dots. It occupies
+   its own narrow slot between large minutes and 56%-sized seconds. */
+#timer #clock.longStartClock .clockSeparator{display:inline-block;flex:0 0 70px;width:70px;font-size:.4em;line-height:1;text-align:center;white-space:nowrap;pointer-events:none}
 
 /*
  * NO HEADER JUMP WHEN EDITING THE TEMPORARY MESSAGE.
@@ -1559,7 +1562,7 @@ const longStarted=st.phase==="round"&&(st.started?(st.longClockAtStart??(_crd()>
 cel.classList.toggle("longStartClock",longStarted);
 if(longStarted){
  const x=Math.max(0,Math.ceil(drm)),hr=Math.floor(x/3600),mi=Math.floor((x%3600)/60),sec=x%60;
- cel.innerHTML='<span class="clockPrimary">'+hr+':'+String(mi).padStart(2,"0")+'</span><span class="clockSeconds">'+String(sec).padStart(2,"0")+'</span>';
+ cel.innerHTML='<span class="clockPrimary">'+hr+':'+String(mi).padStart(2,"0")+'</span><span class="clockSeparator">:</span><span class="clockSeconds">'+String(sec).padStart(2,"0")+'</span>';
 }else cel.textContent=ctx;$("round").textContent=`TOUR ${st.pos} sur ${s.positions}`;let total=_crd();if(st.phase==="round"){$("pause").disabled=false;$("pause").textContent=st.running?"Pause":"Reprendre";$("status").textContent=(s.eventName||"").trim();$("submsg").textContent="";let btx="",jtx="";const elapsed=clamp(_crd()-st.remaining,0,_crd());if(s.boardProgressNotice&&zboard()){const per=Math.max(1,Number(st.roundBoardDuration)||1);let board=Math.min(Math.max(1,Number(st.roundBoards)||1),Math.floor(elapsed/per)+1);const sinceBoardStart=elapsed-(board-1)*per;btx=board>1&&sinceBoardStart<15?`Vous êtes censés attaquer la donne ${board}`:`Vous êtes censés jouer la donne ${board}`}
 let ds=s.warnEnabled?q2e(total):0,ws=s.warnEnabled?q3e(total):0;if(ws>0&&ds>ws)ds=ws;const jna=Math.min(60,total);if(s.jumpAdvanceNotice&&s.jumpRound&&st.pos===s.jumpRound&&jna>0&&st.remaining<=jna&&s.jumpMessage)jtx=s.jumpMessage;const tempText=(_sps?spk==="temporary":q16())?(s.quickMessage||""):"";const notice=q17(btx,jtx,tempText);$("msg").textContent=notice.text;$("msg").classList.toggle("roundMessageJump",notice.kind==="jump");$("msg").classList.toggle("roundMessageTemporary",notice.kind==="temporary");if(ds>0&&st.remaining<=ds){t.classList.add("dangerState")}else if(ws>0&&st.remaining<=ws){t.classList.add("warning")}}else if(st.phase==="jump"){$("pause").disabled=false;$("pause").textContent=st.running?"Pause":"Reprendre";total=clamp(Number(s.jumpDisplaySecs)||15,1,99)}else if(st.phase==="break"){$("pause").disabled=false;$("pause").textContent=st.running?"Pause":"Reprendre"; t.classList.add("breakState");$("status").textContent="CHANGEMENT DE TOUR";const temporary=(_sps?spk==="temporary":q16())?(s.quickMessage||""):"";$("msg").textContent=temporary||"Changez de table";$("msg").classList.toggle("roundMessageTemporary",!!temporary);$("submsg").textContent="";total=st.breakDuration||_crb();}else if(st.phase==="roundEnd"){t.classList.add("roundEndState");$("status").textContent=(s.eventName||"").trim();$("round").textContent=`TOUR ${st.pos} sur ${s.positions}`;$("msg").textContent="FIN DU TOUR";$("submsg").textContent="";$("clock").textContent=fmt(Math.max(0,(_mon()-(st.roundEndSince??_mon()))/1000));$("pause").textContent="Tour terminé";$("pause").disabled=true;total=0}
 else{t.classList.add("roundEndState","pairEndState");$("status").textContent=(s.eventName||"").trim();$("round").textContent=`TOUR ${st.pos} sur ${s.positions}`;$("msg").textContent="FIN DE LA SÉANCE";$("submsg").textContent="";$("clock").textContent=fmt(Math.max(0,(_mon()-(st.roundEndSince??_mon()))/1000));$("pause").textContent="Terminé";$("pause").disabled=true;total=0}
