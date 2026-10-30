@@ -114,9 +114,6 @@ with sync_playwright() as pw:
    assert abs(preview[".bottom"]["h"]-88)<2,(kind,preview[".bottom"])
    if kind=="board":
     assert "donne 3" in preview["#msg"]["text"],("board screenshot must show current board 3",preview["#msg"])
-   if kind in ("temporary","board","prejump"):
-    minimum={"temporary":120,"board":90,"prejump":90}[kind]
-    assert preview["#msg"]["font"]>=minimum,(kind,"Green notice not visibly enlarged",preview["#msg"])
    gallery.append(preview)
   # The source now uses a different viewport, to catch accidental inheritance
   # of old windowed font sizes into gallery snapshots.
@@ -129,6 +126,35 @@ with sync_playwright() as pw:
     assert "donne 3" in actual["#msg"]["text"],("live board preview missing",actual["#msg"])
     assert page.evaluate("!!_spset.boardProgressNotice && zboard() && !_spset.jumpAdvanceNotice"),"board sample should enable actual board progress computation"
    compare(kind,actual,gallery[ix])
+   if kind in ("temporary","board","prejump"):
+    # Fit the exact same text first with the previously approved styling,
+    # then compare with the actual new computed font under the same geometry.
+    comparison=page.evaluate("""()=>{
+     const e=$('msg'),c=$('clock'),main=e.parentElement;
+     const now=parseFloat(getComputedStyle(e).fontSize);
+     const scale=Number($('timer').style.getPropertyValue('--stage-scale'))||1;
+     e.style.fontFamily='inherit';
+     e.style.letterSpacing='normal';
+     e.style.lineHeight='.96';
+     e.style.webkitTextStroke='1.25px rgba(0,0,0,.30)';
+     const oldTop=Math.max(main.clientHeight*.65,
+        (c.getBoundingClientRect().bottom-main.getBoundingClientRect().top)/scale+18);
+     e.style.top=oldTop+'px';
+     e.style.height=Math.max(0,main.clientHeight-oldTop-3)+'px';
+     lrf='';q38();
+     const old=parseFloat(getComputedStyle(e).fontSize);
+     e.style.removeProperty('font-family');
+     e.style.removeProperty('letter-spacing');
+     e.style.removeProperty('line-height');
+     e.style.removeProperty('-webkit-text-stroke');
+     placeRoundNoticeBelowClock();lrf='';q38();
+     const restored=parseFloat(getComputedStyle(e).fontSize);
+     return {old,now,restored};
+    }""")
+    assert comparison["old"]>0 and comparison["now"]>=comparison["old"]*1.25,(
+      kind,"New Windows typography did not meaningfully enlarge the message",comparison)
+    assert comparison["restored"]==comparison["now"],(
+      kind,"Message size changed after restoring layout",comparison)
   page.evaluate("q25(false);_csp()")
   assert page.evaluate("!document.querySelector('#settings').classList.contains('hidden')")
   assert not errors,(startwidth,errors)
