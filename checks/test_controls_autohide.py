@@ -138,7 +138,11 @@ with sync_playwright() as pw:
       current=measured[selector]
       assert current["transform"]==expected["transform"],(
        viewport,long_clock,shown,interval,selector,"Transform jumped",expected,current)
-      for a,b in zip(current["box"],expected["box"]):
+      for coordinate,(a,b) in enumerate(zip(current["box"],expected["box"])):
+       # The wall clock's text changes every second, so its intrinsic
+       # width can fluctuate independently of fading buttons. Its anchor,
+       # font height and the positions of all the OTHER elements cannot.
+       if selector=="#localTime" and coordinate==2:continue
        assert abs(a-b)<.25,(
         viewport,long_clock,shown,interval,selector,"Position or size jumped",expected,current)
     assert abs(measured["#timer .topBtns"]["opacity"]-(1 if shown else 0))<.04
