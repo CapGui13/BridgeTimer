@@ -315,6 +315,55 @@ with sync_playwright() as pw:
      prev_clock=measured["clock"]
   assert not errors,(viewport,errors)
   page.close()
+ # THE EVENT NAME IS PURELY DECORATIVE: empty, short and clipped-long
+ # titles must leave the timer digit box, font and vertical transform intact.
+ # Test the real timer, not only the Debug gallery, in both clock modes.
+ for viewport in ((1600,900),(960,720),(1920,1080)):
+  for fullscreen in (False,True):
+   page=browser.new_page(viewport={"width":viewport[0],"height":viewport[1]})
+   errors=[]
+   page.on("pageerror",lambda e:errors.append(str(e)))
+   page.set_content(html,wait_until="domcontentloaded")
+   page.evaluate("(fs)=>q25(fs)",fullscreen)
+   for long_clock in (False,True):
+    observed=[]
+    for event in ("Open de Provence","","UN NOM D ÉVÉNEMENT TRÈS TRÈS LONG QUI DOIT RESTER SUR UNE SEULE LIGNE"):
+     data=page.evaluate("""([longClock,event])=>{
+       Object.assign(s,{eventName:event,mode:'2',positions:8,boards:8,
+         hours:longClock?1:0,minutes:longClock?0:45,seconds:0,
+         boardProgressNotice:false,jumpAdvanceNotice:false});
+       Object.assign(st,{phase:'round',started:true,running:false,pos:2,
+         remaining:longClock?3605:2500,roundDuration:longClock?4500:2700,
+         longClockAtStart:longClock,roundBoards:8,roundBoardDuration:300,endAt:null});
+       document.querySelector('#settings').classList.add('hidden');
+       document.querySelector('#timer').classList.remove('hidden');
+       updateStage();
+       // Force recalculation, so empty title cannot reuse an earlier cache.
+       C=null;longClockKey='';render();
+       const c=$('clock'),t=$('status'),r=c.getBoundingClientRect(),stage=$('timer').getBoundingClientRect();
+       return {event,titleHeight:t.offsetHeight,
+         rect:[r.left-stage.left,r.top-stage.top,r.width,r.height],
+         font:parseFloat(getComputedStyle(c).fontSize),
+         transform:getComputedStyle(c).transform,
+         mainFont:longClock?parseFloat(getComputedStyle(c.querySelector('.clockPrimary')).fontSize):null,
+         secFont:longClock?parseFloat(getComputedStyle(c.querySelector('.clockSeconds')).fontSize):null};
+     }""",[long_clock,event])
+     observed.append(data)
+    reference=observed[0]
+    for candidate in observed[1:]:
+     assert candidate["titleHeight"]==reference["titleHeight"],(
+       viewport,fullscreen,long_clock,"title slot height changed",observed)
+     assert abs(candidate["font"]-reference["font"])<.01,(
+       viewport,fullscreen,long_clock,"clock font changed with event",observed)
+     assert candidate["transform"]==reference["transform"],(
+       viewport,fullscreen,long_clock,"clock transform changed with event",observed)
+     for x,y in zip(candidate["rect"],reference["rect"]):
+      assert abs(x-y)<.3,(viewport,fullscreen,long_clock,"clock box changed with event",observed)
+     if long_clock:
+      assert abs(candidate["mainFont"]-reference["mainFont"])<.01
+      assert abs(candidate["secFont"]-reference["secFont"])<.01
+   assert not errors,(viewport,fullscreen,errors)
+   page.close()
  browser.close()
-print("10 Screen Tests fidelity, Debug-only controls and round notice clearance: browser checks passed")
+print("10 Screen Tests fidelity + 12 event-name-invariant timer scenarios passed")
 
