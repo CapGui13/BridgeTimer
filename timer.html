@@ -708,55 +708,9 @@ body:not(.fs).settingsLive #settings .actions #quitAppBtn {
 }
 
 
-/* 29 Oct 2026: user-approved Settings band dimensions in WINDOWED Timer only.
-   The real fullscreen and screen-previews preserve the historical stage.
-   A single stage scale is still used for all timer content. */
-body:not(.fs) #timer:not(.spm):not(.spa) .top{
-  height:var(--windowed-header-stage-height)!important;
-  min-height:var(--windowed-header-stage-height)!important;
-  max-height:var(--windowed-header-stage-height)!important;
-  box-sizing:border-box!important;
-}
-body:not(.fs) #timer:not(.spm):not(.spa) .bottom{
-  height:var(--windowed-footer-stage-height)!important;
-  min-height:var(--windowed-footer-stage-height)!important;
-  max-height:var(--windowed-footer-stage-height)!important;
-  box-sizing:border-box!important;
-}
-body:not(.fs) #timer:not(.spm):not(.spa) .topBtns .btn{
-  height:var(--windowed-header-button-stage-height)!important;
-  min-height:var(--windowed-header-button-stage-height)!important;
-  max-height:var(--windowed-header-button-stage-height)!important;
-  font-size:var(--windowed-header-button-stage-font)!important;
-  padding:0 11px!important;align-items:center!important;justify-content:center!important;
-  box-sizing:border-box!important;
-}
-body:not(.fs) #timer:not(.spm):not(.spa) .topBtns #fsBtn{
-  font-size:var(--windowed-header-button-stage-font)!important;
-}
-body:not(.fs) #timer:not(.spm):not(.spa) .controls{
-  bottom:var(--windowed-footer-controls-bottom)!important;
-}
-body:not(.fs) #timer:not(.spm):not(.spa) .controls .btn{
-  height:var(--windowed-footer-button-stage-height)!important;
-  min-height:var(--windowed-footer-button-stage-height)!important;
-  max-height:var(--windowed-footer-button-stage-height)!important;
-  font-size:var(--windowed-footer-button-stage-font)!important;
-  padding:0 12px!important;align-items:center!important;justify-content:center!important;
-  box-sizing:border-box!important;
-}
-
-/* Compact native viewport only. Reduce lateral padding of naturally
-   sized footer buttons to clear the clock and tour labels. The SAME CSS
-   applies to 812px Screen Tests previews for pixel-accurate parity.
-   Wide windows, native fullscreen, +/- fixed slots and the independent
-   Settings miniature (1600x900 iframe) remain unchanged. */
-@media (max-width:850px){
- body:not(.fs) #timer .controls .btn:not(#minus):not(#plus){
-  padding-left:7px!important;padding-right:7px!important;
- }
-}
-
+/* 30 Oct 2026: STRICT HOMOTHETY.
+   Timer header, clock and footer use one common 1600x900 virtual reference.
+   No fixed physical font / button / band sizes in windowed timer mode. */
 
 /* Phase screen "teleportation": the saut/changement screen REPLACES the
    central timer, just as Settings replaces Timer. No overlay animation;
@@ -1321,17 +1275,8 @@ function updateStage(){
  root.style.setProperty('--stage-left',singlePreview?(innerWidth-w*k)/2+'px':'0px');
  root.style.setProperty('--stage-top',singlePreview?(innerHeight-(h+previewToolbar)*k)/2+previewToolbar*k+'px':'0px');
  root.style.setProperty('--stage-scale',k);
- // Settings/Timer use identical PHYSICAL bar/button heights in windowed mode.
- // Translate these pixel targets through the same uniform virtual-stage scale.
- // body.fs ignores all the windowed-only CSS above (true fullscreen unchanged).
- const windowPx=x=>(x/k).toFixed(4)+'px';
- root.style.setProperty('--windowed-header-stage-height',windowPx(55));
- root.style.setProperty('--windowed-footer-stage-height',windowPx(59));
- root.style.setProperty('--windowed-header-button-stage-height',windowPx(34));
- root.style.setProperty('--windowed-footer-button-stage-height',windowPx(40));
- root.style.setProperty('--windowed-header-button-stage-font',windowPx(12));
- root.style.setProperty('--windowed-footer-button-stage-font',windowPx(13));
- root.style.setProperty('--windowed-footer-controls-bottom',windowPx((59-40)/2));
+ // Keep the reference-stage typography and bands identical at every size.
+ // Uniform --stage-scale is the ONLY timer view size multiplier.
 
  // Share exactly the stage origin/scale with the full-screen settings header.
  const docRoot=typeof document==="undefined"?null:document.documentElement;
