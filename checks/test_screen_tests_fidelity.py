@@ -118,7 +118,7 @@ with sync_playwright() as pw:
     minimum={"temporary":105,"board":86,"prejump":76}[kind]
     assert preview["#msg"]["font"]>=minimum,(
       kind,"Green message still shrinks to former tiny font in long-clock gallery",
-      preview["#msg"]["font"],"expected >=",minimum)
+      preview["#msg"],"clock",preview["#clock"],"main",preview["#status"],"expected >=",minimum)
    gallery.append(preview)
   # The source now uses a different viewport, to catch accidental inheritance
   # of old windowed font sizes into gallery snapshots.
