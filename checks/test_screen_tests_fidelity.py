@@ -216,11 +216,27 @@ with sync_playwright() as pw:
        viewport,fullscreen,long_clock,kind,"announcement exceeds main",measured)
      assert measured["inkBottom"]<=measured["mainBottom"]+3,(
        viewport,fullscreen,long_clock,kind,"announcement ink cropped at footer",measured)
-     # Long temporary messages previously needed smaller letters; the larger
-     # shared notice area must still fit them at a readable reference size.
+     # Compare against the EXACT former typography at the same displayed
+     # clock/state rather than an absolute font threshold: clock geometry
+     # depends on which digits happen to be shown.
      if kind=="temporary" and viewport==(1600,900):
-      assert measured["font"] >= (79 if long_clock else 89),(
-        viewport,fullscreen,long_clock,kind,"announcement font too small",measured)
+      comparison=page.evaluate("""()=>{
+        const e=$("msg"),newFont=parseFloat(getComputedStyle(e).fontSize);
+        const newHeight=parseFloat(e.style.height);
+        e.style.width="min(1400px,calc(100% - 48px))";
+        e.style.lineHeight="1.08";
+        e.style.height=Math.max(0,newHeight-3).toFixed(2)+"px";
+        lrf="";q38();
+        const oldFont=parseFloat(getComputedStyle(e).fontSize);
+        e.style.removeProperty("width");
+        e.style.removeProperty("line-height");
+        placeRoundNoticeBelowClock();lrf="";q38();
+        return {oldFont,newFont,restored:parseFloat(getComputedStyle(e).fontSize)};
+      }""")
+      assert comparison["newFont"]>=comparison["oldFont"]+1,(
+        viewport,fullscreen,long_clock,kind,"notice was not enlarged",comparison)
+      assert comparison["newFont"]==comparison["restored"],(
+        viewport,fullscreen,long_clock,kind,"new notice size not stable",comparison)
      if prev_clock is not None:
       assert all(abs(x-y)<.15 for x,y in zip(prev_clock,measured["clock"])),(
         viewport,fullscreen,long_clock,kind,"clock moved during notice",prev_clock,measured)
