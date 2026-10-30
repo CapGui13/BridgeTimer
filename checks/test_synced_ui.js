@@ -170,7 +170,7 @@ for(const needed of [
  'document.body.classList.add("fs");',
  'document.body.classList.toggle("fs",wasFs);',
  'prevStageStyle=tm.getAttribute("style")',
- '<body class="fs">',
+ '<body class="fs showControls">',
  'longClockAtStart:baseDuration>=3600'
 ])assert.ok(html.includes(needed),'Screen Tests homothetic thumbnails regression: '+needed);
 assert.ok(!html.includes('cell.clientWidth/778'),'Obsolete 778px gallery scaling must never return');
