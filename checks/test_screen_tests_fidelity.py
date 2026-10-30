@@ -114,6 +114,9 @@ with sync_playwright() as pw:
    assert abs(preview[".bottom"]["h"]-88)<2,(kind,preview[".bottom"])
    if kind=="board":
     assert "donne 3" in preview["#msg"]["text"],("board screenshot must show current board 3",preview["#msg"])
+   if kind in ("temporary","board","prejump") and size==(1600,900):
+    minimum={"temporary":120,"board":90,"prejump":90}[kind]
+    assert preview["#msg"]["font"]>=minimum,(kind,"Green notice not visibly enlarged",preview["#msg"])
    gallery.append(preview)
   # The source now uses a different viewport, to catch accidental inheritance
   # of old windowed font sizes into gallery snapshots.
@@ -282,7 +285,8 @@ with sync_playwright() as pw:
          scale:Number($("timer").style.getPropertyValue("--stage-scale"))||1};
      }""",[long_clock,kind])
      assert measured["text"],(viewport,fullscreen,long_clock,kind,"missing announcement")
-     assert measured["inkTop"]>measured["clockBottom"]+2,(
+     realDigitBottom=measured["clockBottom"]-(60*measured["scale"] if long_clock else 0)
+      assert measured["inkTop"]>realDigitBottom+2,(
        viewport,fullscreen,long_clock,kind,"announcement overlaps timer",measured)
      assert measured["boxBottom"]<=measured["mainBottom"]+1.5,(
        viewport,fullscreen,long_clock,kind,"announcement exceeds main",measured)
