@@ -1509,6 +1509,32 @@ function render(){if(!_sps){const result=q42();recoveryAutoSave();return result;
  * advance jump warning, CHANGEZ DE TABLE. No per-kind fontsize exception.
  * Layout is reference-stage pixels; the stage alone is scaled homothetically.
  */
+/* All round announcements share a safe area BELOW the transformed clock.
+ * The approved clock font/position is never changed; use the single stage
+ * scale to convert visible clock bounds back to 1600x900 stage coordinates.
+ * Keep the original round-message box if no extra clearance is necessary. */
+function placeRoundNoticeBelowClock(){
+ const timer=$("timer"),message=$("msg");
+ if(!timer.classList.contains("roundReading")){
+  message.style.removeProperty("top");
+  message.style.removeProperty("height");
+  return;
+ }
+ if(!message.textContent||!message.getClientRects().length)return;
+ const main=message.parentElement;
+ const scale=Number(timer.style.getPropertyValue("--stage-scale"))||1;
+ const mainRect=main.getBoundingClientRect(),clockRect=$("clock").getBoundingClientRect();
+ const originalTop=main.clientHeight*.70;
+ const safeTop=(clockRect.bottom-mainRect.top)/scale+18;
+ if(safeTop<=originalTop){
+  message.style.removeProperty("top");
+  message.style.removeProperty("height");
+  return;
+ }
+ const top=Math.max(originalTop,safeTop);
+ message.style.top=top.toFixed(2)+"px";
+ message.style.height=Math.max(0,main.clientHeight-top-6).toFixed(2)+"px";
+}
 let lrf="";
 function q38(){
  const e=$("msg"),timer=$("timer");
@@ -1606,7 +1632,7 @@ if(transition.visible)q40(); // compute size before any visible frame
 phaseMain.classList.toggle("phasePage",transition.visible);
 if(firstPhaseFrame)phasePage.style.visibility="";$("bar").style.width=(total?clamp(st.remaining/total*100,0,100):0)+"%";const paused=st.started&&!st.running&&st.phase!=="ended"&&st.phase!=="roundEnd"&&!$("timer").classList.contains("hidden");$("pauseOverlay").classList.toggle("on",paused);const finished=st.phase==="roundEnd"||st.phase==="ended";
 $("finishOverlay").classList.toggle("on",finished);$("finishBig").textContent=st.phase==="ended"?"FIN DE LA SÉANCE":"FIN DU TOUR";
-$("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+resumeDisplayTime();const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();alignTimerFooterControls();fc();q38();q40();syncFaithfulMini()}
+$("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+resumeDisplayTime();const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();alignTimerFooterControls();fc();placeRoundNoticeBelowClock();q38();q40();syncFaithfulMini()}
 /* Align the mini-timer's RIGHT EDGE to the settings cards' LEFT BORDER,
    not the footer controls or the keyboard-shortcuts grid.
    Its left and bottom stay at the window edges; CSS derives 16:9 height. */
