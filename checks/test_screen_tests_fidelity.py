@@ -206,7 +206,7 @@ with sync_playwright() as pw:
        const ink=range.getBoundingClientRect();
        return {clock:[clock.x,clock.y,clock.width,clock.height],
          clockBottom:clock.bottom,boxTop:msg.top,boxBottom:msg.bottom,
-         inkTop:ink.top,mainBottom:main.bottom,text:$("msg").textContent,
+         inkTop:ink.top,inkBottom:ink.bottom,font:parseFloat(getComputedStyle($("msg")).fontSize),mainBottom:main.bottom,text:$("msg").textContent,
          scale:Number($("timer").style.getPropertyValue("--stage-scale"))||1};
      }""",[long_clock,kind])
      assert measured["text"],(viewport,fullscreen,long_clock,kind,"missing announcement")
@@ -214,6 +214,13 @@ with sync_playwright() as pw:
        viewport,fullscreen,long_clock,kind,"announcement overlaps timer",measured)
      assert measured["boxBottom"]<=measured["mainBottom"]+1.5,(
        viewport,fullscreen,long_clock,kind,"announcement exceeds main",measured)
+     assert measured["inkBottom"]<=measured["mainBottom"]+3,(
+       viewport,fullscreen,long_clock,kind,"announcement ink cropped at footer",measured)
+     # Long temporary messages previously needed smaller letters; the larger
+     # shared notice area must still fit them at a readable reference size.
+     if kind=="temporary" and viewport==(1600,900):
+      assert measured["font"] >= (79 if long_clock else 89),(
+        viewport,fullscreen,long_clock,kind,"announcement font too small",measured)
      if prev_clock is not None:
       assert all(abs(x-y)<.15 for x,y in zip(prev_clock,measured["clock"])),(
         viewport,fullscreen,long_clock,kind,"clock moved during notice",prev_clock,measured)
