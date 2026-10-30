@@ -146,7 +146,7 @@ assert.ok(html.includes('#timer.roundReading #msg{left:50%;right:auto;transform:
 assert.ok(!html.includes('#timer #msg.roundMessageTemporary{text-shadow:'),'No duplicate styling for temporary notices');
 // Gallery thumbnails are exactly scaled copies of the 1600x900 timer stage.
 // No separate typography, no 778x595 alternate reflow, and no stage re-scaling
-// inside the iframe. These properties must apply to ALL 9 special screens.
+// inside the iframe. These properties must apply to ALL 10 special screens.
 for(const needed of [
  '.pv{position:relative;width:100%;aspect-ratio:16/9;',
  '.pv iframe{display:block;position:absolute;left:0;top:0;width:1600px;height:900px;',
@@ -186,15 +186,16 @@ assert.ok(!html.includes('function fitGalleryNotice(frame){'),'Never resize thum
    'scale('+(cell.clientWidth/1600)+')',
    'Gallery preview must scale the whole stage uniformly');
 }
-// Screen Tests 'Voir en grand' MUST preserve the same stage geometry as
-// 'Tous': the toolbar is outside the 1600x900 reference canvas and scaled
-// along with it, never a fourth grid row compressing the main area.
+// Gallery and individual previews MUST use identical stage geometry.
+// The toolbar sits OUTSIDE the stage, and gallery scrolling belongs to #spg;
+// switching between Tous and one test must not reposition any screen band.
 for(const required of [
  '#timer.spm:not(.spa){grid-template-rows:auto minmax(0,1fr) auto;overflow:visible}',
- '#timer.spm:not(.spa) #sptb{position:absolute;left:0;right:0;top:-56px;height:56px;',
- "const singlePreview=!!root.classList?.contains('spm')&&!root.classList?.contains('spa');",
+ '#timer.spm #sptb{position:absolute;left:0;right:0;top:-56px;height:56px;',
+ "const singlePreview=!!root.classList?.contains('spm');",
  'const k=singlePreview?Math.min(innerWidth/w,innerHeight/(h+previewToolbar)):standardScale;',
  'const previewToolbar=56;',
+  '#timer.spa #spg{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain}',
  'if(isAll)_rspg();updateStage();',
  'false);updateStage();C=null;showSettings(false);'
 ])assert.ok(html.includes(required),'Single-preview vs gallery stage mismatch: '+required);
@@ -211,12 +212,12 @@ for(const required of [
    };
    const sandbox={innerWidth:w,innerHeight:h,$:()=>root,Math,C:3};
    vm.runInNewContext('(function updateStage(){'+body[1]+'\n})',sandbox)();
-   const preview=mode==='single',factor=Math.min(w/1600,h/(preview?956:900));
+   const preview=mode!=='normal',factor=Math.min(w/1600,h/(preview?956:900));
    const y=preview?(h-956*factor)/2+56*factor:0;
    assert.ok(Math.abs(Number(variables.get('--stage-scale'))-factor)<1e-12,
      'Single shared uniform scale, including native non-16:9 windows');
    assert.ok(Math.abs(parseFloat(variables.get('--stage-top'))-y)<1e-8,
-     'Timer bands flush with viewport edges except isolated screen preview');
+     'Timer normal mode fills viewport; all test modes share the same stage anchor');
    assert.ok(Math.abs(parseFloat(variables.get('--stage-left'))-(preview?(w-1600*factor)/2:0))<1e-8,
      'Timer uses full window width, preview uses original 1600x900');
    assert.ok(Math.abs(parseFloat(variables.get('--stage-width'))-(preview?1600:w/factor))<1e-7,
@@ -226,6 +227,22 @@ for(const required of [
   }
  }
 }
+
+// The requested two-column gallery order is the same as the selector order.
+// Cards use double-click, NEVER a fullscreen command or extra gallery buttons.
+const order=['temporary','pause','board','prejump','jump','between','orange','red','roundend','ended'];
+assert.ok(html.includes('const _spch=new Set(['+order.map(x=>'"'+x+'"').join(',')+']);'),
+ 'Gallery card order must be the requested order');
+const combo=html.match(/<select id="sps"[^>]*>([\s\S]*?)<\/select>/);
+assert.ok(combo,'Screen Tests selector must remain available');
+const actual=[...combo[1].matchAll(/<option value="([^"]+)"/g)].map(m=>m[1]);
+assert.deepEqual(actual,['all',...order],'Screen Tests selector ordering must match gallery');
+assert.ok(!html.includes('class=screenPreviewContext>Rendu plein écran'),'Redundant fullscreen caption must be absent');
+assert.ok(!html.includes('class=spFooter><button type=button>Voir en grand'),'Gallery button must be removed');
+assert.ok(html.includes('card.ondblclick=()=>_ssp(kind)'),'Gallery double-click must use exact selector preview, not fullscreen');
+assert.ok(!html.includes('card.querySelector("button").onclick=()=>{_ssp(kind);fs()}'),
+ 'A gallery card must never toggle native fullscreen');
+
 // EXPERIMENTAL 16:9 LAYOUT — protected by this test, main remains stable.
 // This is a distinct design experiment, NOT a removal of the user's contract.
 for(const required of [
