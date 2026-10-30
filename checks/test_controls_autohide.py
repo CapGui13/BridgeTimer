@@ -21,7 +21,7 @@ def controls(page):
     pointer:getComputedStyle(e).pointerEvents,inert:e.inert});
   return {shown:document.body.classList.contains('showControls'),
     fullscreen:document.body.classList.contains('fs'),
-    top:report(top),bottom:report(bottom),preview:document.querySelector('#timer').classList.contains('spm')};
+    top:report(top),bottom:report(bottom),bottomBandInert:document.querySelector('#timer .bottom').inert,preview:document.querySelector('#timer').classList.contains('spm')};
  }""")
 
 def prepare(page,debug=False):
@@ -77,7 +77,7 @@ with sync_playwright() as pw:
    # Test screens keep the header/bottom visible but inactive.
    page.evaluate("showSettings(false);q25(true);_osp();_ssp('board')")
    preview=controls(page)
-   assert preview["preview"] and preview["top"]["inert"] and preview["bottom"]["inert"],preview
+   assert preview["preview"] and preview["top"]["inert"] and preview["bottomBandInert"],preview
    assert preview["top"]["pointer"]=="none" and preview["bottom"]["pointer"]=="none",preview
   assert not errors,(debug,errors)
   page.close()
