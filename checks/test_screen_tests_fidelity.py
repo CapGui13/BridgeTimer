@@ -88,7 +88,7 @@ with sync_playwright() as pw:
    s.eventName="Test visuel";s.mode="2";s.positions=6;
    s.minutes=75;s.hours=1;s.seconds=0;
    s.jumpDisplaySecs=15;s.between=20;
-   showSettings(false);_osp();
+   showSettings(false);document.body.classList.add("debugMode");_osp();
   }""")
   page.wait_for_function("document.querySelectorAll('#spg .screenPreviewCard iframe').length===9")
   page.wait_for_function("""()=>[...document.querySelectorAll('#spg iframe')]
