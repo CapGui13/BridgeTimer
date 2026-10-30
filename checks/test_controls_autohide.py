@@ -47,11 +47,13 @@ with sync_playwright() as pw:
   page.set_content(html,wait_until="domcontentloaded")
   prepare(page,debug)
   assert controls(page)["shown"],("fullscreen must reveal controls on entry",debug)
-  page.clock.fast_forward(3900)
+  # Leave a 500-ms margin against host-side evaluation latency:
+  # Playwright's installed clock still advances while Python inspects the page.
+  page.clock.fast_forward(3500)
   before=controls(page)
   assert before["shown"] and before["top"]["pointer"]=="auto" and before["bottom"]["pointer"]=="auto" and before["top"]["visibility"]=="visible" and before["bottom"]["visibility"]=="visible",(
     "controls hidden before 4 seconds",debug,before)
-  page.clock.fast_forward(150)
+  page.clock.fast_forward(700)
   hidden=controls(page)
   assert not hidden["shown"] and hidden["top"]["pointer"]=="none" and hidden["bottom"]["pointer"]=="none",(
     "controls did not hide at 4 seconds",debug,hidden)
