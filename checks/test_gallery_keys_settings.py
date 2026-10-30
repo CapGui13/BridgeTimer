@@ -72,7 +72,7 @@ with sync_playwright() as pw:
   assert page.locator("#settings").is_visible()
   for key,count,fullscreen in (("f",1,True),("F",2,False)):
    page.keyboard.press(key)
-   page.wait_for_function("n=>window.__toggleCount===n && !fif",count)
+   page.wait_for_function("n=>window.__toggleCount===n && !fif",arg=count)
    assert page.evaluate("document.body.classList.contains('fs')")==fullscreen
    assert page.locator("#settings").is_visible()
   page.locator("#clubName").focus()
@@ -80,7 +80,7 @@ with sync_playwright() as pw:
   assert page.evaluate("window.__toggleCount")==2,"F must remain an ordinary letter in text fields"
   for count,fullscreen in ((3,True),(4,False)):
    page.keyboard.press("F11")
-   page.wait_for_function("n=>window.__toggleCount===n && !fif",count)
+   page.wait_for_function("n=>window.__toggleCount===n && !fif",arg=count)
    assert page.evaluate("document.body.classList.contains('fs')")==fullscreen
    assert page.locator("#settings").is_visible()
   assert not errors,(live,errors)
