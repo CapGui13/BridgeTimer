@@ -117,5 +117,60 @@ with sync_playwright() as pw:
   assert page.evaluate("!document.querySelector('#settings').classList.contains('hidden')")
   assert not errors,(startwidth,errors)
   page.close()
+
+ # Debug-only entry; interactive preview toolbar stays usable, but the
+ # timer's own top and bottom controls are read-only, in every viewport.
+ for viewport,fullscreen in [((960,720),False),((1600,900),True)]:
+  page=browser.new_page(viewport={"width":viewport[0],"height":viewport[1]})
+  errors=[]
+  page.on("pageerror",lambda e:errors.append(str(e)))
+  page.set_content(html,wait_until="domcontentloaded")
+  assert not page.locator("#spb").is_visible(),("non-Debug must hide test entry",viewport)
+  page.evaluate("_osp()")
+  assert page.locator("#settings").is_visible(),("non-Debug must not open preview",viewport)
+  assert not page.evaluate("!!_sps"),("preview state set without Debug",viewport)
+  page.locator("#debugBtn").click()
+  assert page.locator("#spb").is_visible(),("Debug must reveal test entry",viewport)
+  page.evaluate("on=>q25(on)",fullscreen)
+  page.locator("#spb").click()
+  assert page.evaluate("!!_sps && document.querySelector('#timer').classList.contains('spm')"),viewport
+  assert len(page.locator("#spg .screenPreviewCard").all())==len(NAMES),viewport
+  assert "Simulation — chrono réel inchangé" not in page.locator("#sptb").inner_text()
+  assert "Simulation — chrono réel inchangé" not in page.locator("#spg").inner_text()
+  page.locator("#sps").select_option("jump")
+  assert page.evaluate("spk==='jump'"),viewport
+  assert page.locator("#spc").is_visible(),("preview exit disappeared",viewport)
+  lock=page.evaluate("""()=>{
+    const top=document.querySelector('#timer .topBtns');
+    const bot=document.querySelector('#timer .bottom');
+    return {topInert:top.inert,bottomInert:bot.inert,
+      pointer:getComputedStyle(top).pointerEvents,
+      mode:document.querySelector('#timer').className};
+  }""")
+  assert lock["topInert"] and lock["bottomInert"] and lock["pointer"]=="none",(viewport,lock)
+  page.evaluate("document.body.classList.add('showControls')")
+  for id in ("resumeBtn","messageBtn","settingsBtn","fsBtn"):
+   button=page.locator("#"+id)
+   assert button.is_visible(),(viewport,id,"should still be drawn")
+   r=button.bounding_box()
+   assert r,(viewport,id,"missing button rect")
+   page.mouse.click(r["x"]+r["width"]/2,r["y"]+r["height"]/2)
+   still=page.evaluate("""()=>{
+     return {preview:spk,settingsVisible:!document.querySelector('#settings').classList.contains('hidden'),
+       resumeVisible:!document.querySelector('#resumeOverlay').classList.contains('hidden'),
+       messageVisible:!document.querySelector('#tempMessageOverlay').classList.contains('hidden'),
+       fullscreen:document.body.classList.contains('fs')};
+   }""")
+   assert still["preview"]=="jump" and not still["settingsVisible"],(viewport,id,still)
+   assert not still["resumeVisible"] and not still["messageVisible"],(viewport,id,still)
+   assert still["fullscreen"]==fullscreen,(viewport,id,"fullscreen changed",still)
+  page.locator("#spc").click()
+  assert page.locator("#settings").is_visible(),(viewport,"return to settings")
+  assert not page.evaluate("document.querySelector('#timer .topBtns').inert"),viewport
+  page.locator("#debugBtn").click()
+  assert not page.locator("#spb").is_visible(),("Debug off should hide button immediately",viewport)
+  assert not errors,errors
+  page.close()
  browser.close()
-print("9 fullscreen Screen Tests snapshots match real 1600x900 Timer geometry from two windowed sizes")
+print("9 fullscreen Screen Tests snapshots plus Debug visibility and inert header controls validated")
+
