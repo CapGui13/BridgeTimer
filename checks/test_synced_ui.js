@@ -142,10 +142,12 @@ assert.ok(html.includes('.boardTimeSetting::before{content:"";position:absolute;
 assert.ok(html.includes('<div class="timeEntry boardTimeSetting"><label for="boardMinutes">Temps par donne</label>'),'Complete minutes-seconds element should remain present');
 // Jump advance reminder must have the exact same relief as a temporary message, not a colored glow.
 assert.ok(!html.includes('text-shadow:0 0 22px color-mix(in srgb,var(--warn) 38%,transparent)'),'Legacy green jump-message halo must be removed');
-assert.ok(html.includes('#timer.roundReading #msg{left:50%;right:auto;transform:translateX(-50%);top:65%;height:34%;'),'Round notices share one layout; between-round deliberately uses jump splash');
+assert.ok(html.includes('#timer.roundReading #msg{left:50%;right:auto;transform:translateX(-50%);top:58%;height:41%;'),'Round notices share one layout; between-round deliberately uses jump splash');
 assert.ok(!html.includes('#timer #msg.roundMessageTemporary{text-shadow:'),'No duplicate styling for temporary notices');
-assert.ok(html.includes('#timer.roundReading #msg{height:34%}'),'Later shared notice height rule must not undo larger green message area');
-assert.ok(html.includes('const originalTop=main.clientHeight*.65;'),'Safe notice placement must use the same upper bound as shared CSS');
+assert.ok(html.includes('#timer.roundReading #msg{height:41%}'),'Later shared notice height rule must not undo larger green message area');
+assert.ok(html.includes('const originalTop=main.clientHeight*.58;'),'Safe notice placement must use the same upper bound as shared CSS');
+assert.ok(html.includes('line-height:.82;letter-spacing:-.08em;white-space:normal'),'Green notice typography must maximize real readable size without clock overlap');
+assert.ok(html.includes('main.clientHeight-top-8'),'Green notice must leave 8px reserve before footer');
 // Gallery thumbnails are exactly scaled copies of the 1600x900 timer stage.
 // No separate typography, no 778x595 alternate reflow, and no stage re-scaling
 // inside the iframe. These properties must apply to ALL 10 special screens.
@@ -661,7 +663,7 @@ for(const broken of [
 ])assert.ok(!html.includes(broken),'Old per-message layout must not return: '+broken);
 assert.ok(html.includes('const active=timer.classList.contains("roundReading");'),
  'The round message fitter must not independently lay out the between-round screen');
-assert.ok(html.includes('const max=186,min=22,step=2;'),
+assert.ok(html.includes('const max=216,min=22,step=2;'),
  'All notices must use one shared auto-fit range');
 assert.ok(html.includes('e.style.whiteSpace="normal";'),
  'Long messages must be allowed to wrap');
