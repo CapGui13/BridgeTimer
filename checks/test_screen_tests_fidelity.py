@@ -171,6 +171,55 @@ with sync_playwright() as pw:
   assert not page.locator("#spb").is_visible(),("Debug off should hide button immediately",viewport)
   assert not errors,errors
   page.close()
+ # Regression: the THREE families of round notices must never reach the
+ # approved clock, for either initial duration and in both UI scale modes.
+ # The timer digits themselves must retain their size and position.
+ for viewport in ((1600,900),(960,720),(812,480),(1920,1080)):
+  page=browser.new_page(viewport={"width":viewport[0],"height":viewport[1]})
+  errors=[]
+  page.on("pageerror",lambda e:errors.append(str(e)))
+  page.set_content(html,wait_until="domcontentloaded")
+  for fullscreen in (False,True):
+   page.evaluate("(fs)=>q25(fs)",fullscreen)
+   for long_clock in (False,True):
+    prev_clock=None
+    for kind in ("board","prejump","temporary"):
+     measured=page.evaluate("""([longClock,kind])=>{
+       st.started=true;showTimer();
+       const duration=longClock?3600:1800;
+       const remaining=kind==="prejump"?40:duration-180;
+       Object.assign(s,{mode:"2",eventName:"Tournoi de bridge",positions:8,
+         hours:longClock?1:0,minutes:longClock?0:30,seconds:0,
+         boardProgressNotice:kind==="board",jumpAdvanceNotice:kind==="prejump",
+         jumpRound:3,jumpMessage:"Au prochain tour, les EO sautent une table",
+         quickMessage:"Merci de bien vouloir terminer les donnes avant la fin du tour",
+         sound:false});
+       Object.assign(st,{phase:"round",started:true,running:true,endAt:null,
+         pos:kind==="prejump"?3:2,remaining,roundDuration:duration,
+         longClockAtStart:longClock,roundBoardDuration:duration/8,roundBoards:8});
+       tempMessageUntil=kind==="temporary"?Date.now()+30000:0;
+       render();
+       const clock=$("clock").getBoundingClientRect(),
+          msg=$("msg").getBoundingClientRect(),
+          main=$("msg").parentElement.getBoundingClientRect();
+       const range=document.createRange();range.selectNodeContents($("msg"));
+       const ink=range.getBoundingClientRect();
+       return {clock:[clock.x,clock.y,clock.width,clock.height],
+         clockBottom:clock.bottom,boxTop:msg.top,boxBottom:msg.bottom,
+         inkTop:ink.top,mainBottom:main.bottom,text:$("msg").textContent,
+         scale:Number($("timer").style.getPropertyValue("--stage-scale"))||1};
+     }""",[long_clock,kind])
+     assert measured["text"],(viewport,fullscreen,long_clock,kind,"missing announcement")
+     assert measured["inkTop"]>measured["clockBottom"]+2,(
+       viewport,fullscreen,long_clock,kind,"announcement overlaps timer",measured)
+     assert measured["boxBottom"]<=measured["mainBottom"]+1.5,(
+       viewport,fullscreen,long_clock,kind,"announcement exceeds main",measured)
+     if prev_clock is not None:
+      assert all(abs(x-y)<.15 for x,y in zip(prev_clock,measured["clock"])),(
+        viewport,fullscreen,long_clock,kind,"clock moved during notice",prev_clock,measured)
+     prev_clock=measured["clock"]
+  assert not errors,(viewport,errors)
+  page.close()
  browser.close()
-print("9 fullscreen Screen Tests snapshots plus Debug visibility and inert header controls validated")
+print("Screen Tests fidelity, Debug-only controls and round notice clearance: browser checks passed")
 
