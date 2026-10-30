@@ -156,7 +156,11 @@ with sync_playwright() as pw:
   scroll=page.evaluate("""()=>{
     const e=document.querySelector('#spg');
     e.scrollTop=180;
-    return {position:e.scrollTop,toolbar:document.querySelector('#sptb').getBoundingClientRect().top};
+    return {position:e.scrollTop,toolbar:document.querySelector('#sptb').getBoundingClientRect().top,
+      client:e.clientHeight,scroll:e.scrollHeight,display:getComputedStyle(e).display,
+      overflow:getComputedStyle(e).overflowY,cards:e.children.length,
+      root:document.querySelector('#timer').className,
+      rect:e.getBoundingClientRect().toJSON()};
   }""")
   assert scroll["position"]>0,(viewport,"gallery should scroll independently",scroll)
   assert abs(scroll["toolbar"]-before["toolbar"][1])<.25,(viewport,"gallery scroll moved toolbar",scroll,before)
