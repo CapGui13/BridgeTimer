@@ -142,8 +142,10 @@ assert.ok(html.includes('.boardTimeSetting::before{content:"";position:absolute;
 assert.ok(html.includes('<div class="timeEntry boardTimeSetting"><label for="boardMinutes">Temps par donne</label>'),'Complete minutes-seconds element should remain present');
 // Jump advance reminder must have the exact same relief as a temporary message, not a colored glow.
 assert.ok(!html.includes('text-shadow:0 0 22px color-mix(in srgb,var(--warn) 38%,transparent)'),'Legacy green jump-message halo must be removed');
-assert.ok(html.includes('#timer.roundReading #msg{left:50%;right:auto;transform:translateX(-50%);top:70%;height:29%;'),'Round notices share one layout; between-round deliberately uses jump splash');
+assert.ok(html.includes('#timer.roundReading #msg{left:50%;right:auto;transform:translateX(-50%);top:65%;height:34%;'),'Round notices share one layout; between-round deliberately uses jump splash');
 assert.ok(!html.includes('#timer #msg.roundMessageTemporary{text-shadow:'),'No duplicate styling for temporary notices');
+assert.ok(html.includes('#timer.roundReading #msg{height:34%}'),'Later shared notice height rule must not undo larger green message area');
+assert.ok(html.includes('const originalTop=main.clientHeight*.65;'),'Safe notice placement must use the same upper bound as shared CSS');
 // Gallery thumbnails are exactly scaled copies of the 1600x900 timer stage.
 // No separate typography, no 778x595 alternate reflow, and no stage re-scaling
 // inside the iframe. These properties must apply to ALL 10 special screens.
