@@ -1,4 +1,4 @@
-"""Compare all nine Screen Tests gallery snapshots against the real Timer.
+"""Compare all ten Screen Tests gallery snapshots against the real Timer.
 
 The real Timer is measured inside 'Voir en grand' at an EXACT reference
 1600x900 stage. Gallery iframes must use the same fullscreen CSS and geometry,
@@ -15,7 +15,7 @@ html=html.replace("localStorage","bridgeAuditStorage").replace(
 setItem(k,v){this.data[k]=v},removeItem(k){delete this.data[k]}};
 </script></head><body>""",1)
 
-NAMES=["prejump","jump","between","orange","red","pause","roundend","ended","temporary"]
+NAMES=["board","prejump","jump","between","orange","red","pause","roundend","ended","temporary"]
 SELECTORS=[".top",".bottom","#status","#clock","#msg","#jumpSplash",
            "#jumpSplashTitle","#jumpSplashText","#jumpSplashSeconds",
            "#finishBig","#pauseOverlay","#localTime","#round","#pause",
@@ -90,7 +90,7 @@ with sync_playwright() as pw:
    s.jumpDisplaySecs=15;s.between=20;
    showSettings(false);document.body.classList.add("debugMode");_osp();
   }""")
-  page.wait_for_function("document.querySelectorAll('#spg .screenPreviewCard iframe').length===9")
+  page.wait_for_function("document.querySelectorAll('#spg .screenPreviewCard iframe').length===10")
   page.wait_for_function("""()=>[...document.querySelectorAll('#spg iframe')]
     .every(x=>x.contentDocument&&x.contentDocument.querySelector('#timer .bottom'))""")
   gallery=[]
@@ -104,6 +104,8 @@ with sync_playwright() as pw:
    preview=metrics(content)
    assert abs(preview[".top"]["h"]-80)<2,(kind,preview[".top"])
    assert abs(preview[".bottom"]["h"]-88)<2,(kind,preview[".bottom"])
+   if kind=="board":
+    assert "donne 3" in preview["#msg"]["text"],("board screenshot must show current board 3",preview["#msg"])
    gallery.append(preview)
   # The source now uses a different viewport, to catch accidental inheritance
   # of old windowed font sizes into gallery snapshots.
@@ -112,6 +114,9 @@ with sync_playwright() as pw:
   for ix,kind in enumerate(NAMES):
    page.evaluate("kind=>_ssp(kind)",kind)
    actual=metrics(page)
+   if kind=="board":
+    assert "donne 3" in actual["#msg"]["text"],("live board preview missing",actual["#msg"])
+    assert page.evaluate("!!_spset.boardProgressNotice && zboard() && !_spset.jumpAdvanceNotice"),"board sample should enable actual board progress computation"
    compare(kind,actual,gallery[ix])
   page.evaluate("q25(false);_csp()")
   assert page.evaluate("!document.querySelector('#settings').classList.contains('hidden')")
@@ -135,6 +140,8 @@ with sync_playwright() as pw:
   page.locator("#spb").click()
   assert page.evaluate("!!_sps && document.querySelector('#timer').classList.contains('spm')"),viewport
   assert len(page.locator("#spg .screenPreviewCard").all())==len(NAMES),viewport
+  page.locator("#sps").select_option("board")
+  assert "donne 3" in page.locator("#msg").inner_text(),(viewport,"test selector should display third board")
   assert "Simulation — chrono réel inchangé" not in page.locator("#sptb").inner_text()
   assert "Simulation — chrono réel inchangé" not in page.locator("#spg").inner_text()
   page.locator("#sps").select_option("jump")
@@ -244,5 +251,5 @@ with sync_playwright() as pw:
   assert not errors,(viewport,errors)
   page.close()
  browser.close()
-print("Screen Tests fidelity, Debug-only controls and round notice clearance: browser checks passed")
+print("10 Screen Tests fidelity, Debug-only controls and round notice clearance: browser checks passed")
 
