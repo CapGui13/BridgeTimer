@@ -712,10 +712,10 @@ def main():
             equal(before,measure(page),f"{width}x{height}, fullscreen resize return")
             if (width,height)==(960,720):
                 page.evaluate("showSettings()")
-                page.evaluate("_osp()")
+                page.evaluate("document.body.classList.add('debugMode');_osp()")
                 page.evaluate("_ssp('jump')")
                 page.evaluate("_ssp('between')")
-                page.evaluate("_csp()")
+                page.evaluate("_csp();document.body.classList.remove('debugMode')")
                 page.evaluate("showTimer()")
                 restored=page.evaluate("!document.getElementById('timer').classList.contains('spm') && !document.getElementById('timer').classList.contains('spa')")
                 assert restored,"Preview classes leaked to timer"
