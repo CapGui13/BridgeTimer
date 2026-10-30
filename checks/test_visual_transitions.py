@@ -44,7 +44,7 @@ def check_footer_balance(page, scenario):
     assert d["left"]>3 and d["right"]>3, f"{scenario}: buttons overlap permanent labels: {d}"
 
 
-FIXED_BUTTON_IDS = ["fresh","stopTimer","defaults","debugBtn","spb"]
+FIXED_BUTTON_IDS = ["fresh","stopTimer","defaults","debugBtn"]
 
 def settings_button_slots(page):
     return page.evaluate("""ids => Object.fromEntries(ids.map(id => {
@@ -340,6 +340,7 @@ def main():
                 }""")
             assert solid_settings_footer(), "Windowed Settings footer must be fully opaque"
             initial_slots=settings_button_slots(page)
+            assert page.evaluate("getComputedStyle(document.getElementById('spb')).display==='none'"), "Écrans tests must be hidden when Debug is off"
             for id in FIXED_BUTTON_IDS:
                 assert initial_slots[id]["display"]!="none" and initial_slots[id]["w"]>5, f"Slot absent at startup: {id}={initial_slots[id]}"
             assert initial_slots["stopTimer"]["visible"]=="hidden", "Arrêter must be invisible but RESERVE its slot at startup"
