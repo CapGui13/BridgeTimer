@@ -642,7 +642,7 @@ for(const broken of [
 ])assert.ok(!html.includes(broken),'Old per-message layout must not return: '+broken);
 assert.ok(html.includes('const active=timer.classList.contains("roundReading");'),
  'The round message fitter must not independently lay out the between-round screen');
-assert.ok(html.includes('const max=154,min=22,step=2;'),
+assert.ok(html.includes('const max=162,min=22,step=2;'),
  'All notices must use one shared auto-fit range');
 assert.ok(html.includes('e.style.whiteSpace="normal";'),
  'Long messages must be allowed to wrap');
