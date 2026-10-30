@@ -286,7 +286,7 @@ with sync_playwright() as pw:
      }""",[long_clock,kind])
      assert measured["text"],(viewport,fullscreen,long_clock,kind,"missing announcement")
      realDigitBottom=measured["clockBottom"]-(60*measured["scale"] if long_clock else 0)
-      assert measured["inkTop"]>realDigitBottom+2,(
+     assert measured["inkTop"]>realDigitBottom+2,(
        viewport,fullscreen,long_clock,kind,"announcement overlaps timer",measured)
      assert measured["boxBottom"]<=measured["mainBottom"]+1.5,(
        viewport,fullscreen,long_clock,kind,"announcement exceeds main",measured)
