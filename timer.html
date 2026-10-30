@@ -989,7 +989,7 @@ function _rspg(){
    // srcdoc is serialized through a WebView2 boundary. Numeric entities
    // preserve accented French labels regardless of its encoding fallback.
    const htmlEntities=markup=>markup.replace(/[^\x00-\x7F]/g,c=>'&#'+c.codePointAt(0)+';');
-   const doc=htmlEntities('<!doctype html><html style="'+rootstyle+'"><head><meta charset="utf-8"><style>'+css+'</style><style>html,body{margin:0!important;width:1600px!important;height:900px!important;overflow:hidden!important}#timer{display:grid!important;position:relative!important;left:0!important;top:0!important;transform:none!important;width:1600px!important;height:900px!important;min-height:0!important}</style></head><body class="fs">'+clone.outerHTML+'</body></html>');
+   const doc=htmlEntities('<!doctype html><html style="'+rootstyle+'"><head><meta charset="utf-8"><style>'+css+'</style><style>html,body{margin:0!important;width:1600px!important;height:900px!important;overflow:hidden!important}#timer{display:grid!important;position:relative!important;left:0!important;top:0!important;transform:none!important;width:1600px!important;height:900px!important;min-height:0!important}</style></head><body class="fs showControls">'+clone.outerHTML+'</body></html>');
    const card=document.createElement("article");card.className="screenPreviewCard";
    card.innerHTML='<div class=spHeader><h3>'+names[kind]+'</h3></div><div class=pv></div>';card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Ouvrir '+names[kind]+' (double-clic)');
    const frame=document.createElement("iframe");frame.setAttribute("sandbox","allow-same-origin");frame.setAttribute("aria-hidden","true");frame.tabIndex=-1;
