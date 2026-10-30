@@ -129,7 +129,7 @@ assert.ok(html.includes('id="resumeTime" type="time" value="" required'),'The Re
 assert.ok(html.includes('#resumeTime:invalid:not(:focus){background:#30202a!important;border-color:#94535d!important'),'The empty, unfocused restart input needs a muted red background and border');
 assert.ok(html.includes('#resumeTime::-webkit-calendar-picker-indicator{display:none!important'),'The time picker icon must remain hidden');
 // Visual regression: consistent text relief, no overlay for live temporary notices.
-assert.ok(html.includes('color:var(--message-color);font-size:96px;text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px'),'All shared notices keep the same text relief');
+assert.ok(html.includes('color:var(--message-color);font-size:112px;text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px'),'All shared notices keep the same text relief');
 assert.ok(html.includes('#timer #pauseOverlay .pauseBig{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.5px'),'PAUSE headline needs finish-like text relief');
 assert.ok(html.includes('#timer #pauseOverlay .pauseSmall{text-shadow:0 3px 15px #000c'),'PAUSE instruction needs a readable subtle shadow');
 assert.ok(html.includes('$("msg").classList.toggle("roundMessageTemporary",!!temporary)'),'A real temporary message in a between-round break must receive relief');
@@ -659,7 +659,7 @@ for(const broken of [
 ])assert.ok(!html.includes(broken),'Old per-message layout must not return: '+broken);
 assert.ok(html.includes('const active=timer.classList.contains("roundReading");'),
  'The round message fitter must not independently lay out the between-round screen');
-assert.ok(html.includes('const max=162,min=22,step=2;'),
+assert.ok(html.includes('const max=186,min=22,step=2;'),
  'All notices must use one shared auto-fit range');
 assert.ok(html.includes('e.style.whiteSpace="normal";'),
  'Long messages must be allowed to wrap');
