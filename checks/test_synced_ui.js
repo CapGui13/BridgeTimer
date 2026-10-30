@@ -195,7 +195,7 @@ for(const required of [
  "const singlePreview=!!root.classList?.contains('spm');",
  'const k=singlePreview?Math.min(innerWidth/w,innerHeight/(h+previewToolbar)):standardScale;',
  'const previewToolbar=56;',
-  '#timer.spa #spg{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain}',
+  '#timer.spa #spg{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;grid-auto-rows:max-content;align-content:start}',
  'if(isAll)_rspg();updateStage();',
  'false);updateStage();C=null;showSettings(false);'
 ])assert.ok(html.includes(required),'Single-preview vs gallery stage mismatch: '+required);
