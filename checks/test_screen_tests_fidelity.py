@@ -114,7 +114,7 @@ with sync_playwright() as pw:
    assert abs(preview[".bottom"]["h"]-88)<2,(kind,preview[".bottom"])
    if kind=="board":
     assert "donne 3" in preview["#msg"]["text"],("board screenshot must show current board 3",preview["#msg"])
-   if kind in ("temporary","board","prejump") and size==(1600,900):
+   if kind in ("temporary","board","prejump"):
     minimum={"temporary":120,"board":90,"prejump":90}[kind]
     assert preview["#msg"]["font"]>=minimum,(kind,"Green notice not visibly enlarged",preview["#msg"])
    gallery.append(preview)
