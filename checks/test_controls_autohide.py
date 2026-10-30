@@ -95,5 +95,55 @@ with sync_playwright() as pw:
  assert after["shown"] and after["top"]["opacity"]>.95 and after["bottom"]["opacity"]>.95,(
   "mouse motion must visually restore both rows of buttons",after)
  page.close()
+ # Regression against a small visible shift during control fade-in/fade-out.
+ # The real screen geometry must remain fixed at each frame of both fades,
+ # including the digits, title, notices, header and footer.
+ def geometry(page):
+  return page.evaluate("""()=>{
+   const sels=['#timer .topBtns','#timer .controls','#timer .top',
+     '#timer .bottom','#clock','#status','#msg','#localTime','#round'];
+   const result={};
+   for(const sel of sels){
+    const e=document.querySelector(sel),r=e.getBoundingClientRect(),cs=getComputedStyle(e);
+    result[sel]={box:[r.x,r.y,r.width,r.height],transform:cs.transform,
+      opacity:parseFloat(cs.opacity),transition:cs.transitionProperty};
+   }
+   return result;
+  }""")
+ for viewport in ((960,720),(1600,900),(1650,928)):
+  for long_clock in (False,True):
+   page=browser.new_page(viewport={"width":viewport[0],"height":viewport[1]})
+   errors=[]
+   page.on("pageerror",lambda e:errors.append(str(e)))
+   page.set_content(html,wait_until="domcontentloaded")
+   page.evaluate("""longClock=>{
+    Object.assign(s,{eventName:'Cucksleague - Final',mode:'2',positions:13,
+      hours:longClock?1:0,minutes:longClock?0:14,seconds:28});
+    Object.assign(st,{started:true,running:false,phase:'round',
+      remaining:longClock?3888:868,pos:1,roundDuration:longClock?5400:1800,
+      roundBoards:8,roundBoardDuration:225,longClockAtStart:longClock});
+    showTimer();q25(true);render();
+   }""",long_clock)
+   page.wait_for_timeout(350)
+   baseline=geometry(page)
+   control=baseline["#timer .controls"]
+   assert "transform" not in control["transition"].split(","),(
+     viewport,long_clock,"Transform must never animate on hide/show",control)
+   for shown in (False,True):
+    page.evaluate("value=>document.body.classList.toggle('showControls',value)",shown)
+    for interval in (70,190):
+     page.wait_for_timeout(interval)
+     measured=geometry(page)
+     for selector,expected in baseline.items():
+      current=measured[selector]
+      assert current["transform"]==expected["transform"],(
+       viewport,long_clock,shown,interval,selector,"Transform jumped",expected,current)
+      for a,b in zip(current["box"],expected["box"]):
+       assert abs(a-b)<.25,(
+        viewport,long_clock,shown,interval,selector,"Position or size jumped",expected,current)
+    assert abs(measured["#timer .topBtns"]["opacity"]-(1 if shown else 0))<.04
+    assert abs(measured["#timer .controls"]["opacity"]-(1 if shown else 0))<.04
+   assert not errors,(viewport,long_clock,errors)
+   page.close()
  browser.close()
-print("4-second fullscreen control autohide + Debug + keyboard/mouse + preview + windowed OK")
+print("4-second fullscreen control auto-hide + no visual movement during fades + Debug OK")
