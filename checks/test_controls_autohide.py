@@ -53,7 +53,7 @@ with sync_playwright() as pw:
     "controls hidden before 4 seconds",debug,before)
   page.clock.fast_forward(150)
   hidden=controls(page)
-  assert not hidden["shown"] and hidden["top"]["pointer"]=="none" and hidden["bottom"]["pointer"]=="none" and hidden["top"]["visibility"]=="hidden" and hidden["bottom"]["visibility"]=="hidden",(
+  assert not hidden["shown"] and hidden["top"]["pointer"]=="none" and hidden["bottom"]["pointer"]=="none",(
     "controls did not hide at 4 seconds",debug,hidden)
   page.keyboard.press("Shift")
   awake=controls(page)
@@ -82,8 +82,7 @@ with sync_playwright() as pw:
    assert preview["top"]["pointer"]=="none" and preview["bottom"]["pointer"]=="none",preview
   assert not errors,(debug,errors)
   page.close()
- # Real Chromium/Edge paint check: the buttons must disappear instantly,
- # with no opacity compositor transition or layout reflow.
+ # Real Chromium/Edge paint check: the buttons must fade smoothly without layout reflow.
  page=browser.new_page(viewport={"width":1600,"height":900})
  page.set_content(html,wait_until="domcontentloaded")
  prepare(page,True)
@@ -129,15 +128,19 @@ with sync_playwright() as pw:
    page.wait_for_timeout(350)
    baseline=geometry(page)
    control=baseline["#timer .controls"]
-   assert control["transition"]=="none",(
-     viewport,long_clock,"Controls must have no animation",control)
-   assert baseline["#timer .topBtns"]["transition"]=="none",(
-     viewport,long_clock,"Header controls must have no animation",baseline["#timer .topBtns"])
+   assert "opacity" in control["transition"] and "transform" not in control["transition"],(
+     viewport,long_clock,"Bottom controls must fade without sliding",control)
+   assert "opacity" in baseline["#timer .topBtns"]["transition"] and "transform" not in baseline["#timer .topBtns"]["transition"],(
+     viewport,long_clock,"Header controls must fade without sliding",baseline["#timer .topBtns"])
    for shown in (False,True):
     page.evaluate("value=>document.body.classList.toggle('showControls',value)",shown)
     for interval in (70,190):
      page.wait_for_timeout(interval)
      measured=geometry(page)
+     if interval==70:
+      for selector in ("#timer .controls","#timer .topBtns"):
+       assert .01<measured[selector]["opacity"]<.99,(
+        viewport,long_clock,shown,selector,"Opacity must be partway through its fade",measured[selector])
      for selector,expected in baseline.items():
       current=measured[selector]
       assert current["transform"]==expected["transform"],(
@@ -151,7 +154,14 @@ with sync_playwright() as pw:
         viewport,long_clock,shown,interval,selector,"Position or size jumped",expected,current)
     assert measured["#timer .topBtns"]["visibility"]==("visible" if shown else "hidden")
     assert measured["#timer .controls"]["visibility"]==("visible" if shown else "hidden")
+   # TOUR 9 -> TOUR 10 widens the right-hand label. Controls must not shift.
+   page.evaluate("st.pos=10;render()")
+   shifted=geometry(page)
+   for selector in ("#timer .controls","#timer .topBtns"):
+    assert shifted[selector]["box"]==baseline[selector]["box"],(
+     viewport,long_clock,selector,"Round number changed button position",
+     baseline[selector],shifted[selector])
    assert not errors,(viewport,long_clock,errors)
    page.close()
  browser.close()
-print("4-second fullscreen control auto-hide + no animation/position shift + Debug OK")
+print("4-second auto-hide, smooth opacity-only fade, stationary controls and Debug OK")
