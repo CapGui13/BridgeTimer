@@ -129,7 +129,7 @@ assert.ok(html.includes('id="resumeTime" type="time" value="" required'),'The Re
 assert.ok(html.includes('#resumeTime:invalid:not(:focus){background:#30202a!important;border-color:#94535d!important'),'The empty, unfocused restart input needs a muted red background and border');
 assert.ok(html.includes('#resumeTime::-webkit-calendar-picker-indicator{display:none!important'),'The time picker icon must remain hidden');
 // Visual regression: consistent text relief, no overlay for live temporary notices.
-assert.ok(html.includes('color:var(--message-color);font-size:112px;text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.25px'),'All shared notices keep the same text relief');
+assert.ok(html.includes('color:var(--message-color);font-size:112px;text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:0'),'All shared notices keep the same text relief');
 assert.ok(html.includes('#timer #pauseOverlay .pauseBig{text-shadow:0 6px 26px #000d,0 0 1px #000;-webkit-text-stroke:1.5px'),'PAUSE headline needs finish-like text relief');
 assert.ok(html.includes('#timer #pauseOverlay .pauseSmall{text-shadow:0 3px 15px #000c'),'PAUSE instruction needs a readable subtle shadow');
 assert.ok(html.includes('$("msg").classList.toggle("roundMessageTemporary",!!temporary)'),'A real temporary message in a between-round break must receive relief');
@@ -146,6 +146,8 @@ assert.ok(html.includes('#timer.roundReading #msg{left:50%;right:auto;transform:
 assert.ok(!html.includes('#timer #msg.roundMessageTemporary{text-shadow:'),'No duplicate styling for temporary notices');
 assert.ok(html.includes('#timer.roundReading #msg{height:34%}'),'Later shared notice height rule must not undo larger green message area');
 assert.ok(html.includes('const originalTop=main.clientHeight*.65;'),'Safe notice placement must use the same upper bound as shared CSS');
+assert.ok(html.includes('font-family:Arial,sans-serif;line-height:.72;letter-spacing:-.04em;white-space:normal'),'Green announcements must use compact typographic layout');
+assert.ok(html.includes('const longInset=$("clock").classList.contains("longStartClock")?60:0;'),'Only long-start clock gets verified ink inset; clock itself must not change');
 // Gallery thumbnails are exactly scaled copies of the 1600x900 timer stage.
 // No separate typography, no 778x595 alternate reflow, and no stage re-scaling
 // inside the iframe. These properties must apply to ALL 10 special screens.
