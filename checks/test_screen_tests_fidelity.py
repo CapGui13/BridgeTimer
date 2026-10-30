@@ -1,6 +1,6 @@
 """Compare all ten Screen Tests gallery snapshots against the real Timer.
 
-The real Timer is measured inside 'Voir en grand' at an EXACT reference
+The real Timer is measured in the single-test preview at an EXACT reference
 1600x900 stage. Gallery iframes must use the same fullscreen CSS and geometry,
 not an 812px-window font carried into a 1600px virtual view.
 """
@@ -15,7 +15,7 @@ html=html.replace("localStorage","bridgeAuditStorage").replace(
 setItem(k,v){this.data[k]=v},removeItem(k){delete this.data[k]}};
 </script></head><body>""",1)
 
-NAMES=["board","prejump","jump","between","orange","red","pause","roundend","ended","temporary"]
+NAMES=["temporary","pause","board","prejump","jump","between","orange","red","roundend","ended"]
 SELECTORS=[".top",".bottom","#status","#clock","#msg","#jumpSplash",
            "#jumpSplashTitle","#jumpSplashText","#jumpSplashSeconds",
            "#finishBig","#pauseOverlay","#localTime","#round","#pause",
@@ -93,6 +93,14 @@ with sync_playwright() as pw:
   page.wait_for_function("document.querySelectorAll('#spg .screenPreviewCard iframe').length===10")
   page.wait_for_function("""()=>[...document.querySelectorAll('#spg iframe')]
     .every(x=>x.contentDocument&&x.contentDocument.querySelector('#timer .bottom'))""")
+  assert page.locator("#spg .spHeader h3").all_inner_texts()==[
+    "Message temporaire","Pause","Numéro de donne en cours","Pré-alerte saut",
+    "Saut de table","Temps entre tours","Alerte orange","Alerte rouge",
+    "Fin du tour (Match par 4)","Fin de la séance (Paires)"
+   ],"The 5 requested gallery rows are not in order"
+  assert page.locator("#sps option").evaluate_all("els=>els.map(el=>el.value)")==["all"]+NAMES
+  assert page.locator("#spg button").count()==0,"Removed Voir en grand buttons reappeared"
+  assert "Rendu plein écran" not in page.locator("#spg").inner_text()
   gallery=[]
   for ix,kind in enumerate(NAMES):
    card=page.locator("#spg .screenPreviewCard").nth(ix)
@@ -121,6 +129,59 @@ with sync_playwright() as pw:
   page.evaluate("q25(false);_csp()")
   assert page.evaluate("!document.querySelector('#settings').classList.contains('hidden')")
   assert not errors,(startwidth,errors)
+  page.close()
+
+ # Switching Tous -> single must be a genuine teleportation, not a
+ # change in the scene's origin, zoom, toolbar, or native fullscreen state.
+ # Test both real windowed dimensions and fullscreen, including scrolling
+ # the gallery, the actual user double-click and selector parity.
+ for viewport,fullscreen in [((812,480),False),((960,720),False),((1600,900),True),((1650,928),True)]:
+  page=browser.new_page(viewport={"width":viewport[0],"height":viewport[1]})
+  errors=[]
+  page.on("pageerror",lambda e:errors.append(str(e)))
+  page.set_content(html,wait_until="domcontentloaded")
+  page.evaluate("document.body.classList.add('debugMode');_osp()")
+  page.evaluate("(on)=>q25(on)",fullscreen)
+  def layout():
+   return page.evaluate("""()=>{
+    const t=document.querySelector('#timer');
+    const tb=document.querySelector('#sptb').getBoundingClientRect();
+    const st=t.getBoundingClientRect();
+    const r=el=>[el.x,el.y,el.width,el.height];
+    return {toolbar:r(tb),stage:r(st),scale:parseFloat(t.style.getPropertyValue('--stage-scale')),
+      origin:[parseFloat(t.style.getPropertyValue('--stage-left')),parseFloat(t.style.getPropertyValue('--stage-top'))],
+      fullscreen:document.body.classList.contains('fs')};
+   }""")
+  before=layout()
+  scroll=page.evaluate("""()=>{
+    const e=document.querySelector('#spg');
+    e.scrollTop=180;
+    return {position:e.scrollTop,toolbar:document.querySelector('#sptb').getBoundingClientRect().top};
+  }""")
+  assert scroll["position"]>0,(viewport,"gallery should scroll independently",scroll)
+  assert abs(scroll["toolbar"]-before["toolbar"][1])<.25,(viewport,"gallery scroll moved toolbar",scroll,before)
+  page.evaluate("document.querySelector('#spg').scrollTop=0")
+  first=page.locator("#spg .screenPreviewCard").first
+  first.click()
+  assert page.evaluate("spk==='all'"),(viewport,"single-click must not open a test")
+  first.dblclick()
+  assert page.evaluate("spk==='temporary' && !document.querySelector('#timer').classList.contains('spa')"),(
+    viewport,"double-click did not open the matching single preview")
+  after=layout()
+  assert before["fullscreen"]==after["fullscreen"]==fullscreen,(viewport,"native fullscreen unexpectedly toggled",before,after)
+  for key in ("toolbar","stage","origin"):
+   assert all(abs(a-b)<=.5 for a,b in zip(before[key],after[key])),(viewport,key,"layout jumped",before,after)
+  assert abs(before["scale"]-after["scale"])<1e-9,(viewport,"scale jumped",before,after)
+  clicked=metrics(page)
+  page.locator("#sps").select_option("all")
+  page.locator("#sps").select_option("temporary")
+  selected=metrics(page)
+  compare("temporary (double-click vs selector)",clicked,selected)
+  page.locator("#sps").select_option("all")
+  final=layout()
+  for key in ("toolbar","stage","origin"):
+   assert all(abs(a-b)<=.5 for a,b in zip(before[key],final[key])),(viewport,key,"reverse layout jumped",before,final)
+  assert not errors,(viewport,errors)
   page.close()
 
  # Debug-only entry; interactive preview toolbar stays usable, but the
