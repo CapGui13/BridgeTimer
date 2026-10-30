@@ -18,6 +18,7 @@ def controls(page):
   const top=document.querySelector('#timer .topBtns');
   const bottom=document.querySelector('#timer .controls');
   const report=e=>({opacity:Number(getComputedStyle(e).opacity),
+    visibility:getComputedStyle(e).visibility,
     pointer:getComputedStyle(e).pointerEvents,inert:e.inert});
   return {shown:document.body.classList.contains('showControls'),
     fullscreen:document.body.classList.contains('fs'),
@@ -48,15 +49,15 @@ with sync_playwright() as pw:
   assert controls(page)["shown"],("fullscreen must reveal controls on entry",debug)
   page.clock.fast_forward(3900)
   before=controls(page)
-  assert before["shown"] and before["top"]["pointer"]=="auto" and before["bottom"]["pointer"]=="auto",(
+  assert before["shown"] and before["top"]["pointer"]=="auto" and before["bottom"]["pointer"]=="auto" and before["top"]["visibility"]=="visible" and before["bottom"]["visibility"]=="visible",(
     "controls hidden before 4 seconds",debug,before)
   page.clock.fast_forward(150)
   hidden=controls(page)
-  assert not hidden["shown"] and hidden["top"]["pointer"]=="none" and hidden["bottom"]["pointer"]=="none",(
+  assert not hidden["shown"] and hidden["top"]["pointer"]=="none" and hidden["bottom"]["pointer"]=="none" and hidden["top"]["visibility"]=="hidden" and hidden["bottom"]["visibility"]=="hidden",(
     "controls did not hide at 4 seconds",debug,hidden)
   page.keyboard.press("Shift")
   awake=controls(page)
-  assert awake["shown"] and awake["top"]["pointer"]=="auto",("keyboard action must reveal controls",debug,awake)
+  assert awake["shown"] and awake["top"]["pointer"]=="auto" and awake["top"]["visibility"]=="visible",("keyboard action must reveal controls",debug,awake)
   page.clock.fast_forward(4050)
   assert not controls(page)["shown"],("keyboard reset must expire 4s later",debug)
   page.mouse.move(500,320)
@@ -77,26 +78,27 @@ with sync_playwright() as pw:
    # Test screens keep the header/bottom visible but inactive.
    page.evaluate("showSettings(false);q25(true);_osp();_ssp('board')")
    preview=controls(page)
-   assert preview["preview"] and preview["top"]["inert"] and preview["bottomBandInert"],preview
+   assert preview["preview"] and preview["top"]["inert"] and preview["bottomBandInert"] and preview["top"]["visibility"]=="visible" and preview["bottom"]["visibility"]=="visible",preview
    assert preview["top"]["pointer"]=="none" and preview["bottom"]["pointer"]=="none",preview
   assert not errors,(debug,errors)
   page.close()
- # Real Chromium/Edge paint check: opacity transition must ACTUALLY finish.
+ # Real Chromium/Edge paint check: the buttons must disappear instantly,
+ # with no opacity compositor transition or layout reflow.
  page=browser.new_page(viewport={"width":1600,"height":900})
  page.set_content(html,wait_until="domcontentloaded")
  prepare(page,True)
  page.wait_for_timeout(4500)
  after=controls(page)
- assert not after["shown"] and after["top"]["opacity"]<.05 and after["bottom"]["opacity"]<.05,(
+ assert not after["shown"] and after["top"]["visibility"]=="hidden" and after["bottom"]["visibility"]=="hidden",(
   "4-second idle must visually remove buttons, even with Debug enabled",after)
  page.mouse.move(220,340)
  page.wait_for_timeout(270)
  after=controls(page)
- assert after["shown"] and after["top"]["opacity"]>.95 and after["bottom"]["opacity"]>.95,(
+ assert after["shown"] and after["top"]["visibility"]=="visible" and after["bottom"]["visibility"]=="visible",(
   "mouse motion must visually restore both rows of buttons",after)
  page.close()
- # Regression against a small visible shift during control fade-in/fade-out.
- # The real screen geometry must remain fixed at each frame of both fades,
+ # Regression against a visible shift when commands are hidden and shown.
+ # The real screen geometry must remain fixed across both changes,
  # including the digits, title, notices, header and footer.
  def geometry(page):
   return page.evaluate("""()=>{
@@ -106,7 +108,7 @@ with sync_playwright() as pw:
    for(const sel of sels){
     const e=document.querySelector(sel),r=e.getBoundingClientRect(),cs=getComputedStyle(e);
     result[sel]={box:[r.x,r.y,r.width,r.height],transform:cs.transform,
-      opacity:parseFloat(cs.opacity),transition:cs.transitionProperty};
+      visibility:cs.visibility,opacity:parseFloat(cs.opacity),transition:cs.transitionProperty};
    }
    return result;
   }""")
@@ -127,8 +129,10 @@ with sync_playwright() as pw:
    page.wait_for_timeout(350)
    baseline=geometry(page)
    control=baseline["#timer .controls"]
-   assert "transform" not in control["transition"].split(","),(
-     viewport,long_clock,"Transform must never animate on hide/show",control)
+   assert control["transition"]=="none",(
+     viewport,long_clock,"Controls must have no animation",control)
+   assert baseline["#timer .topBtns"]["transition"]=="none",(
+     viewport,long_clock,"Header controls must have no animation",baseline["#timer .topBtns"])
    for shown in (False,True):
     page.evaluate("value=>document.body.classList.toggle('showControls',value)",shown)
     for interval in (70,190):
@@ -145,9 +149,9 @@ with sync_playwright() as pw:
        if selector=="#localTime" and coordinate==2:continue
        assert abs(a-b)<.25,(
         viewport,long_clock,shown,interval,selector,"Position or size jumped",expected,current)
-    assert abs(measured["#timer .topBtns"]["opacity"]-(1 if shown else 0))<.04
-    assert abs(measured["#timer .controls"]["opacity"]-(1 if shown else 0))<.04
+    assert measured["#timer .topBtns"]["visibility"]==("visible" if shown else "hidden")
+    assert measured["#timer .controls"]["visibility"]==("visible" if shown else "hidden")
    assert not errors,(viewport,long_clock,errors)
    page.close()
  browser.close()
-print("4-second fullscreen control auto-hide + no visual movement during fades + Debug OK")
+print("4-second fullscreen control auto-hide + no animation/position shift + Debug OK")
