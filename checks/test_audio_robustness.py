@@ -70,17 +70,16 @@ with sync_playwright() as pw:
  assert all(abs(g[0]-.07)<1e-7 for g in metrics["gains"]),metrics
  assert metrics["resumes"]==1,metrics
 
- # Muting the tournament suppresses real alerts but never the manual
- # Test son, which is deliberately independent of that setting.
+ # Muting the tournament suppresses real alerts. Keep the internal
+ # audio initialization/recovery callable; the manual Test son UI is removed.
  page.evaluate("s.sound=false")
  assert page.evaluate("q1a()") is False
  assert page.evaluate("q14()") is True
  metrics=page.evaluate("__record")
  assert metrics["freqs"]==[880,1100,880,1100],metrics
- # The real user-facing button must work even when Son is unchecked.
- page.locator("#testSoundBtn").click()
- page.wait_for_function("__record.freqs.length===6")
- assert page.evaluate("!document.querySelector('#testSoundBtn').disabled")
+ # Removing the manual test button must not remove the sound option.
+ assert page.locator("#testSoundBtn").count()==0
+ assert page.locator("#sound").count()==1
  page.evaluate("s.sound=true")
 
  # Prove a stream of 500 independent alerts doesn't multiply oscillators
@@ -91,7 +90,7 @@ with sync_playwright() as pw:
   }
  }""")
  metrics=page.evaluate("__record")
- assert len(metrics["freqs"])==1006,metrics
+ assert len(metrics["freqs"])==1004,metrics
  assert metrics["contexts"]==1,metrics
  assert metrics["resumes"]==1,metrics
 
@@ -125,7 +124,7 @@ with sync_playwright() as pw:
  }""")
  assert page.evaluate("q1a()") is False
  assert len(page.evaluate("__record.freqs"))==count+4
- # Hardware missing: no uncaught error, manual test may report failure.
+ # Hardware missing: no uncaught error, initialization reports failure.
  page.evaluate("audioDropContext();window.AudioContext=undefined;window.webkitAudioContext=undefined")
  assert page.evaluate("q1a()") is False
  assert page.evaluate("q14()") is False
