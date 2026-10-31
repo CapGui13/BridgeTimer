@@ -49,6 +49,7 @@ with sync_playwright() as pw:
    page.set_content(html,wait_until="domcontentloaded")
    page.evaluate(INIT,longRound)
    page.wait_for_timeout(100)
+   original=page.evaluate(MEASURE)
    page.evaluate("""text=>{
      s.quickMessage=text;tempMessageUntil=Date.now()+60000;render();
    }""",TEXT)
@@ -77,7 +78,7 @@ with sync_playwright() as pw:
    page.wait_for_timeout(550)
    gone=page.evaluate(MEASURE)
    assert not gone["active"] and gone["text"]=="",(w,h,longRound,gone)
-   assert abs(float(gone["scale"])-(float(first["scale"])/float(first["active"] and 1 or 1)))<.5,(w,h,longRound,gone)
+   assert abs(float(gone["scale"])-float(original["scale"]))<.012,(w,h,longRound,original,gone)
    assert not errors,(w,h,longRound,errors)
    page.close()
  browser.close()
