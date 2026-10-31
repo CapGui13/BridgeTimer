@@ -217,9 +217,14 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
    Keep the reference text-fitting routine and every other message intact. */
 /* Experimental countdown easing: visual scale never changes font metrics,
    stage dimensions, footer, or fc()'s approved vertical translation. */
+/* 1.15x clock ink height for BOTH MM:SS and H:MM:SS.
+   Lock the TOP of the existing clock box, enlarging only downwards.
+   Horizontal growth is capped by the current stage width (otherwise
+   the approved near-full-width figures would be clipped). Scale is visual:
+   fc() font sizing, short/long glyph ratio and 1600x900 stage never change. */
 #timer.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
- scale:var(--notice-clock-scale,1);
- transform-origin:50% 34%;
+ scale:var(--clock-display-scale-x,1.15) var(--clock-display-scale-y,1.15);
+ transform-origin:50% 0%;
 }
 #timer.noticeMotionReady.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
  transition:scale 420ms cubic-bezier(.22,.75,.25,1);
@@ -1576,6 +1581,29 @@ function updateNoticeMotion(){
   msg.animate([{opacity:.08},{opacity:1}],{duration:260,easing:"ease-out"});
  }
 }
+/* Clock enlargement is separate from the 420ms message easing and its
+   layout. Scale the full clock (digits AND colon marks), with exactly
+   15% extra height. Preserve left/right margins in narrow windows.
+   Do not use getBoundingClientRect() for WIDTH here: it is animated. */
+function updateClockGrowth(){
+ const timer=$("timer"),clock=$("clock");
+ if(!timer.classList.contains("roundReading")||
+    timer.classList.contains("spm")||
+    timer.classList.contains("noticeMotionSnapshot")||
+    timer.classList.contains("hidden")||
+    document.body.classList.contains("settingsLive"))return;
+ const main=clock.parentElement;
+ const baseWidth=Math.max(1,clock.offsetWidth);
+ const maxWidth=Math.max(1,main.clientWidth-24);
+ const horizontalGrowth=Math.min(1.15,maxWidth/baseWidth);
+ const noticeFactor=Number(timer.style.getPropertyValue("--notice-clock-scale"))||1;
+ const x=(horizontalGrowth*noticeFactor).toFixed(5);
+ const y=(1.15*noticeFactor).toFixed(5);
+ if(timer.style.getPropertyValue("--clock-display-scale-x")!==x)
+  timer.style.setProperty("--clock-display-scale-x",x);
+ if(timer.style.getPropertyValue("--clock-display-scale-y")!==y)
+  timer.style.setProperty("--clock-display-scale-y",y);
+}
 let lrf="";
 function q38(){
  const e=$("msg"),timer=$("timer");
@@ -1711,7 +1739,7 @@ if(transition.visible)q40(); // compute size before any visible frame
 phaseMain.classList.toggle("phasePage",transition.visible);
 if(firstPhaseFrame)phasePage.style.visibility="";$("bar").style.width=(total?clamp(st.remaining/total*100,0,100):0)+"%";const paused=st.started&&!st.running&&st.phase!=="ended"&&st.phase!=="roundEnd"&&!$("timer").classList.contains("hidden");$("pauseOverlay").classList.toggle("on",paused);const finished=st.phase==="roundEnd"||st.phase==="ended";
 $("finishOverlay").classList.toggle("on",finished);$("finishBig").textContent=st.phase==="ended"?"FIN DE LA SÉANCE":"FIN DU TOUR";
-$("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+resumeDisplayTime();const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();alignTimerFooterControls();fc();placeRoundNoticeBelowClock();q38();updateNoticeMotion();q40();syncFaithfulMini()}
+$("finishBig").classList.toggle("pairFinish",st.phase==="ended");$("finishResume").textContent="REPRISE À "+resumeDisplayTime();const mini=$("miniTimer"),isJump=st.phase==="jump",isDone=st.phase==="ended",isRoundEnd=st.phase==="roundEnd",pausedMini=st.started&&!st.running&&!isDone&&!isRoundEnd;mini.className="spView"+(isJump?" is-jump":isDone?" is-ended":isRoundEnd?" is-roundend":st.phase==="break"?" is-between":t.classList.contains("dangerState")?" is-red":t.classList.contains("warning")?" is-orange":"")+(pausedMini?" is-pause":"")+(st.phase==="round"&&!$("msg").classList.contains("roundMessageJump")&&!$("msg").classList.contains("roundMessageTemporary")?" noticeBoard":"");$("miniBrand").textContent=$("club").textContent;const ml=$("miniLogo");ml.style.display=s.logoData?"":"none";if(s.logoData&&ml.src!==s.logoData)ml.src=s.logoData;const isTransition=isJump||st.phase==="break";$("miniStatus").textContent=isTransition?$("jumpSplashTitle").textContent:$("status").textContent;$("miniClock").textContent=isTransition?$("jumpSplashSeconds").textContent:$("clock").textContent;$("miniMsg").textContent=isTransition?$("jumpSplashText").textContent:$("msg").textContent;$("miniSub").textContent=isTransition?$("jumpSplashCountdownLabel").textContent:$("submsg").textContent;$("miniAlert").textContent=$("alert").classList.contains("on")?$("alert").textContent:"";$("miniBar").style.width=isTransition?$("jumpSplashBar").style.width:$("bar").style.width;$("miniBar").style.background=t.classList.contains("dangerState")?"var(--danger)":t.classList.contains("warning")?"var(--warn)":"var(--accent)";$("miniRound").textContent=$("round").textContent;$("miniTime").textContent=$("localTime").textContent;$("miniPause").textContent=$("pause").textContent;if(debugActive())_adu();alignTimerFooterControls();fc();placeRoundNoticeBelowClock();q38();updateNoticeMotion();updateClockGrowth();q40();syncFaithfulMini()}
 /* Align the mini-timer's RIGHT EDGE to the settings cards' LEFT BORDER,
    not the footer controls or the keyboard-shortcuts grid.
    Its left and bottom stay at the window edges; CSS derives 16:9 height. */
@@ -1833,7 +1861,7 @@ function syncFaithfulMini(force=false){
  * remains the rollback target if the user dislikes this experiment.
  */
 let fif=false,fff=0;function q1c(){cancelAnimationFrame(fff);fff=requestAnimationFrame(()=>{
- C=null;fc();
+ C=null;fc();updateClockGrowth();
  // WebView2 can finish changing the client dimensions AFTER the fullscreen
  // handler has run. Refit the live temporary notice against the final clock.
  const timer=$("timer"),msg=$("msg");
