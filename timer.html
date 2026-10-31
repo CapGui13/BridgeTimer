@@ -222,7 +222,7 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
    Horizontal growth is capped by the current stage width (otherwise
    the approved near-full-width figures would be clipped). Scale is visual:
    fc() font sizing, short/long glyph ratio and 1600x900 stage never change. */
-#timer.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
+#timer:is(.roundReading,.pairEndState):not(.spm):not(.noticeMotionSnapshot) #clock{
  scale:var(--clock-display-scale-x,1.15) var(--clock-display-scale-y,1.15);
  /* Move down only while NO lower message is displayed. The approved
     top-of-glyph height remains the MAXIMUM when a notice is visible.
@@ -234,7 +234,7 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
     figures do not rise toward the event title. */
  transform-origin:50% -15%;
 }
-#timer.noticeMotionReady.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
+#timer.noticeMotionReady:is(.roundReading,.pairEndState):not(.spm):not(.noticeMotionSnapshot) #clock{
  transition:scale 420ms cubic-bezier(.22,.75,.25,1),
             translate 420ms cubic-bezier(.22,.75,.25,1);
 }
@@ -1578,10 +1578,9 @@ function updateNoticeMotion(){
   const sceneScale=Number(timer.style.getPropertyValue("--stage-scale"))||1;
   const overlap=Math.max(0,bounds.bottom+16*sceneScale-ink.top);
   const clearanceScale=1-overlap/Math.max(1,bounds.height*.66);
-  // Trial: keep the raised, 22px motion and all typography unchanged,
-  // but cap the visual countdown shrink at 15% relative to its resting size.
-  // Single-line notices still aim for -11%; multi-line notices may use -15%.
-  const target=Math.max(.85,Math.min(lineCount>1?.85:.89,clearanceScale));
+  // Never reduce by more than 10% when a lower announcement appears.
+  // Use only the overlap-driven amount of shrink needed, with a .90 floor.
+  const target=Math.max(.90,Math.min(1,clearanceScale));
   timer.style.setProperty("--notice-clock-scale",target.toFixed(3));
  }else timer.style.setProperty("--notice-clock-scale","1");
  timer.classList.toggle("noticeMotionActive",active);
@@ -1599,7 +1598,7 @@ function updateNoticeMotion(){
    Do not use getBoundingClientRect() for WIDTH here: it is animated. */
 function updateClockGrowth(){
  const timer=$("timer"),clock=$("clock");
- if(!timer.classList.contains("roundReading")||
+ if(!(timer.classList.contains("roundReading")||timer.classList.contains("pairEndState"))||
     timer.classList.contains("spm")||
     timer.classList.contains("noticeMotionSnapshot")||
     timer.classList.contains("hidden")||
@@ -1618,7 +1617,7 @@ function updateClockGrowth(){
  // The clock is at its approved, highest position when a notice appears.
  // With no notice, lower it slightly (22 virtual px) to visually centre it.
  // The translate and scale transitions use the SAME 420ms easing curve.
- const rest=timer.classList.contains("noticeMotionActive")?"0px":"22px";
+ const rest=timer.classList.contains("noticeMotionActive")&&timer.classList.contains("roundReading")?"0px":"22px";
  if(timer.style.getPropertyValue("--clock-rest-y")!==rest)
   timer.style.setProperty("--clock-rest-y",rest);
 }
