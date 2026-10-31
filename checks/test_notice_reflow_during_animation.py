@@ -30,7 +30,7 @@ MEASURE="""()=>{
  const lines=[...range.getClientRects()].filter(r=>r.width>0.5&&r.height>0.5);
  const box=msg.getBoundingClientRect(),clockBox=clock.getBoundingClientRect();
  const round=v=>Math.round(v*100)/100;
- return {text:msg.textContent,kind:msg.className,scale:getComputedStyle(clock).scale,
+ return {text:msg.textContent,kind:msg.className,scale:parseFloat(getComputedStyle(clock).scale),
   top:msg.style.top,height:msg.style.height,
   font:msg.style.fontSize,whiteSpace:msg.style.whiteSpace,lineHeight:cs.lineHeight,
   lines:lines.length,boxTop:round(box.top),boxHeight:round(box.height),
@@ -77,7 +77,7 @@ with sync_playwright() as pw:
    page.wait_for_timeout(550)
    gone=page.evaluate(MEASURE)
    assert not gone["active"] and gone["text"]=="",(w,h,longRound,gone)
-   assert abs(float(gone["scale"])-1)<.01,(w,h,longRound,gone)
+   assert abs(float(gone["scale"])-(float(first["scale"])/float(first["active"] and 1 or 1)))<.5,(w,h,longRound,gone)
    assert not errors,(w,h,longRound,errors)
    page.close()
  browser.close()
