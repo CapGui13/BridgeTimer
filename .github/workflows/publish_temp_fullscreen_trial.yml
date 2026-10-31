@@ -1,0 +1,38 @@
+name: Publish fullscreen temporary-message trial EXE
+
+on:
+  push:
+    branches: [fix-temp-msg-fullscreen-reflow-20261031]
+    paths: [.github/workflows/publish_temp_fullscreen_trial.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the validated Windows EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41203437535 -R CapGui13/BridgeTimer -n BridgeTimer-Temporaire-Fullscreen-Stable-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish direct-download trial
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-fullscreen-temporaire"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target 2856f921ef6d9dae52bca66032ffcd1ea77fe45e \
+              --title "Bridge Timer - essai message temporaire stable plein écran (31-10-2026)" \
+              --notes "EXE Windows du run validé 41203437535. Corrige uniquement la stabilité de taille du message temporaire au passage plein écran / fenêtre, y compris sur trois cycles répétés. Version antérieure conservée." \
+              --prerelease
+          fi
