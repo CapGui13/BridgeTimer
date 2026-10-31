@@ -52,7 +52,11 @@ with sync_playwright() as pw:
   assert initial["primed"] and not initial["active"],(w,h,initial)
   assert abs(initial["scale"]-1)<.005,(w,h,initial)
   # A new announcement activates smooth, independent scale interpolation.
-  page.evaluate("s.boardProgressNotice=true;render()")
+  page.evaluate("""()=>{
+    s.quickMessage='Vous êtes censés jouer la donne 1';
+    tempMessageUntil=Date.now()+60000;
+    render();
+  }""")
   page.wait_for_timeout(100)
   halfway=page.evaluate(SAMPLE)
   assert halfway["active"] and "donne 1" in halfway["text"],(w,h,halfway)
@@ -74,7 +78,7 @@ with sync_playwright() as pw:
   assert abs(tick["scale"]-final["scale"])<.012,(w,h,final,tick)
 
   # When notice disappears the digits expand back smoothly.
-  page.evaluate("s.boardProgressNotice=false;render()")
+  page.evaluate("tempMessageUntil=0;render()")
   page.wait_for_timeout(100)
   retract=page.evaluate(SAMPLE)
   assert not retract["active"] and retract["text"]=="",(w,h,retract)
@@ -115,7 +119,11 @@ with sync_playwright() as pw:
  page=browser.new_page(viewport={"width":1600,"height":900},reduced_motion="reduce")
  page.set_content(html,wait_until="domcontentloaded")
  page.evaluate(START);page.wait_for_timeout(100)
- page.evaluate("s.boardProgressNotice=true;render()")
+ page.evaluate("""()=>{
+    s.quickMessage='Vous êtes censés jouer la donne 1';
+    tempMessageUntil=Date.now()+60000;
+    render();
+  }""")
  reduced=page.evaluate(SAMPLE)
  assert reduced["active"] and abs(reduced["scale"]-reduced["target"])<.001,reduced
  page.close()
