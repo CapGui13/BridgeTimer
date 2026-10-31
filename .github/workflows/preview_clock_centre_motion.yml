@@ -2,7 +2,7 @@ name: Visual QA clock rest and notice
 
 on:
   push:
-    branches: [trial-clock-centre-motion-20261031]
+    branches: [trial-clock-centre-motion-20261031, trial-message-shrink-max15-20261031]
     paths: [.github/workflows/preview_clock_centre_motion.yml, checks/preview_clock_centre_motion.py]
   workflow_dispatch:
 
@@ -23,5 +23,5 @@ jobs:
         run: python checks/preview_clock_centre_motion.py
       - uses: actions/upload-artifact@v4
         with:
-          name: BridgeTimer-Screenshots-ClockMotion-QA
+          name: BridgeTimer-Screenshots-15percent-QA
           path: screenshots/*.png
