@@ -1,0 +1,38 @@
+name: Publish Bridge Timer smooth message without line jump
+
+on:
+  push:
+    branches: [fix-notice-reflow-during-animation-20261031]
+    paths: [.github/workflows/publish_notice_no_wrap_jump.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download fully tested Windows EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41211402324 -R CapGui13/BridgeTimer -n BridgeTimer-Animation-Msg-Sans-Saut-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish isolated direct-download trial
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-animation-sans-saut"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target a54bfc7ce9e489ff76628b6699b79918fc34a765 \
+              --title "Bridge Timer - animation fluide sans saut du message (31-10-2026)" \
+              --notes "EXE Windows validé au run 41211402324. Corrige uniquement le recalcul de la zone des messages pendant le redimensionnement animé du chrono, qui faisait passer brutalement « Au prochain tour, les EO sautent une table » d'une ligne à deux. Le fondu et l'homothétie restent inchangés ; version précédente conservée." \
+              --prerelease
+          fi
