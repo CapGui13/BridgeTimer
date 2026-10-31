@@ -1,0 +1,38 @@
+name: Publish BridgeTimer clock centre motion trial
+
+on:
+  push:
+    branches: [trial-clock-centre-motion-20261031]
+    paths: [.github/workflows/publish_clock_center_motion.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download validated Windows EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41219776951 -R CapGui13/BridgeTimer -n BridgeTimer-Chrono-Centre-Animation-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish trial direct download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-chrono-centre"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target 73c52fa5c56bb3f4c42e88aa079c2d6506202494 \
+              --title "Bridge Timer - chrono centre et remontee fluide (31-10-2026)" \
+              --notes "Version d'essai Windows issue de la compilation validée 41219776951. Le chrono reste 22 pixels virtuels plus bas sans message, puis remonte doucement en 420 ms en rétrécissant quand un message apparaît. Il redescend en 420 ms à la disparition du texte. Les deux formats MM:SS et H:MM:SS, l'homothétie, la miniature et les boutons sont préservés. Version ×1,15 précédente intacte." \
+              --prerelease
+          fi
