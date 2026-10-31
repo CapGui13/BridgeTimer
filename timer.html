@@ -222,7 +222,7 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
    Horizontal growth is capped by the current stage width (otherwise
    the approved near-full-width figures would be clipped). Scale is visual:
    fc() font sizing, short/long glyph ratio and 1600x900 stage never change. */
-#timer:is(.roundReading,.pairEndState):not(.spm):not(.noticeMotionSnapshot) #clock{
+#timer:is(.roundReading,.roundEndState):not(.spm):not(.noticeMotionSnapshot) #clock{
  scale:var(--clock-display-scale-x,1.15) var(--clock-display-scale-y,1.15);
  /* Move down only while NO lower message is displayed. The approved
     top-of-glyph height remains the MAXIMUM when a notice is visible.
@@ -234,7 +234,7 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
     figures do not rise toward the event title. */
  transform-origin:50% -15%;
 }
-#timer.noticeMotionReady:is(.roundReading,.pairEndState):not(.spm):not(.noticeMotionSnapshot) #clock{
+#timer.noticeMotionReady:is(.roundReading,.roundEndState):not(.spm):not(.noticeMotionSnapshot) #clock{
  transition:scale 420ms cubic-bezier(.22,.75,.25,1),
             translate 420ms cubic-bezier(.22,.75,.25,1);
 }
@@ -246,12 +246,12 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 /* All preview and mini-timer snapshots are STATIC, never midway through
    a clock resize. The test gallery keeps the original reference geometry. */
 /* Preview clocks freeze at the *settled live* magnification and rest height,
-   not the historical scale:1. Only the animation is disabled. */
-#timer:is(.noticeMotionSnapshot,.spm):is(.roundReading,.pairEndState) #clock{
+   on BOTH end screens (roundEndState), not just Paires. Never animate. */
+#timer:is(.noticeMotionSnapshot,.spm):is(.roundReading,.roundEndState) #clock{
  scale:var(--clock-display-scale-x,1.15) var(--clock-display-scale-y,1.15)!important;
  translate:-50% var(--clock-rest-y,22px)!important;transition:none!important;
 }
-#timer:is(.noticeMotionSnapshot,.spm):not(.roundReading):not(.pairEndState) #clock{
+#timer:is(.noticeMotionSnapshot,.spm):not(.roundReading):not(.roundEndState) #clock{
  scale:1!important;translate:-50% 0!important;transition:none!important;
 }
 #timer.noticeMotionSnapshot #msg,#timer.spm #msg{
@@ -1657,7 +1657,7 @@ function updateClockGrowth(){
  const timer=$("timer"),clock=$("clock");
  const snapshot=!!_sps||timer.classList.contains("spm")||
    timer.classList.contains("noticeMotionSnapshot");
- if(!(timer.classList.contains("roundReading")||timer.classList.contains("pairEndState"))||
+ if(!(timer.classList.contains("roundReading")||timer.classList.contains("roundEndState"))||
     timer.classList.contains("hidden")||
     (!snapshot&&document.body.classList.contains("settingsLive")))return;
  const main=clock.parentElement;
