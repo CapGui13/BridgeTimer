@@ -1,0 +1,38 @@
+name: Publish Bridge Timer 115 percent clock trial
+
+on:
+  push:
+    branches: [trial-clock-115-top-locked-20261031]
+    paths: [.github/workflows/publish_clock115_trial.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows EXE verified by all regression tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41213634422 -R CapGui13/BridgeTimer -n BridgeTimer-EXPERIMENTAL-Chrono115-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish direct-download isolated trial
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-chrono-115"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target 70590cdedbc7a18fbdb85360e5057efdd7e89a8e \
+              --title "Bridge Timer - essai chrono +15% (31 octobre 2026)" \
+              --notes "Version d'essai Windows compilée au run validé 41213634422. Temps augmenté de 1,15 en hauteur dans les deux modes MM:SS et H:MM:SS (chiffres et deux-points). Le haut visible ne remonte pas au-dessus de sa position de référence ; largeur ajustée si nécessaire pour ne pas couper les côtés. L'animation fluide de réduction à l'apparition d'un message et tous les autres éléments sont préservés. Version précédente intacte." \
+              --prerelease
+          fi
