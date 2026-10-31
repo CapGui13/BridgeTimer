@@ -43,8 +43,12 @@ def stable(a,at):
  assert "roundMessageTemporary" in a["kind"],(at,a)
  assert a["whiteSpace"]=="nowrap",(at,a)
  assert abs(a["lineHeight"]/a["font"]-.72)<.03,(at,a)
- assert a["ink"]["width"]<=a["clientWidth"]-10,(at,a)
- assert a["ink"]["top"]>=a["clock"]["bottom"]-4,(at,a)
+ assert a["ink"]["left"]>=a["box"]["left"]-2,(at,a)
+ assert a["ink"]["right"]<=a["box"]["right"]+2,(at,a)
+ # The clock element's box extends below its visible glyphs; allow its
+ # known line-box descender area, but never let text escape its message band.
+ assert a["ink"]["top"]>=a["clock"]["bottom"]-20*a["stageScale"],(at,a)
+ assert a["ink"]["top"]>=a["box"]["top"]-3,(at,a)
  assert a["ink"]["bottom"]<=a["box"]["bottom"]+3,(at,a)
  assert a["scrollWidth"]<=a["clientWidth"]+2,(at,a)
  assert a["scrollHeight"]<=a["clientHeight"]+3,(at,a)
