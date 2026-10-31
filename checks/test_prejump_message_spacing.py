@@ -59,7 +59,12 @@ with sync_playwright() as pw:
        remaining:40,roundDuration:3600,pos:4,longClockAtStart:true});
    showSettings(false);_osp();
   }""")
-  page.wait_for_timeout(200)
+  # On slower Windows runners the sandboxed gallery frames load asynchronously.
+  # Wait for all 10 cloned preview documents before reading their styles.
+  page.wait_for_function("""() => {
+   const frames=[...document.querySelectorAll('.screenPreviewCard iframe')];
+   return frames.length===10 && frames.every(f=>!!f.contentDocument?.querySelector('#msg'));
+  }""",timeout=15000)
   state=page.evaluate(sample_js)
   jump=state["jump"]
   assert jump["text"]=="Au prochain tour, les EO sautent une table",(w,h,jump)
