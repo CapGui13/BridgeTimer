@@ -1,0 +1,38 @@
+name: Publish mini-timer after Screen Tests trial
+
+on:
+  push:
+    branches: [fix-mini-after-screen-tests-20261031]
+    paths: [.github/workflows/publish_mini_after_tests_trial.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified Windows EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41206687272 -R CapGui13/BridgeTimer -n BridgeTimer-Mini-Retour-Ecrans-Tests-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish direct-download prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-mini-retour-tests"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target f24b4ebd37ec3016b02cff9207eac1e9edf2da5c \
+              --title "Bridge Timer - mini-timer apres Ecrans tests (31-10-2026)" \
+              --notes "Version d'essai issue du run Windows validé 41206687272. Corrige uniquement la fuite des styles visuels du chrono et des messages depuis la galerie des Écrans tests vers la miniature des Paramètres. La précédente version reste disponible." \
+              --prerelease
+          fi
