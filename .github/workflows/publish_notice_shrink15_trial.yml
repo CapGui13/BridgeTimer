@@ -1,0 +1,38 @@
+name: Publish BridgeTimer maximum 15 percent shrink trial
+
+on:
+  push:
+    branches: [trial-message-shrink-max15-20261031]
+    paths: [.github/workflows/publish_notice_shrink15_trial.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the verified Windows EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41221235695 -R CapGui13/BridgeTimer -n BridgeTimer-Anim-Chrono-Reduction-Max15-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish directly downloadable prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-reduction-max15"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target a7e3b22eafe6cea0537895816d57aaba9461868a \
+              --title "Bridge Timer - essai reduction maximale 15 pour cent (31-10-2026)" \
+              --notes "Version d'essai Windows construite et validée au run 41221235695. Le chrono ne se réduit désormais jamais de plus de 15% lors de l'apparition d'un message (au lieu de 26%). Son agrandissement 1,15, son léger centrage au repos et sa remontée fluide de 420 ms sont conservés. Les deux formats de temps, le plein écran, le mini-timer et les écrans tests ont passé les contrôles Windows. La version précédente reste disponible." \
+              --prerelease
+          fi
