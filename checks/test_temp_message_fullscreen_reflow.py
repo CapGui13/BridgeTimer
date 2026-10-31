@@ -47,7 +47,11 @@ def stable(a,at):
  assert a["ink"]["right"]<=a["box"]["right"]+2,(at,a)
  # The clock element's box extends below its visible glyphs; allow its
  # known line-box descender area, but never let text escape its message band.
- assert a["ink"]["top"]>=a["clock"]["bottom"]-20*a["stageScale"],(at,a)
+ # The clock's Windows Bahnschrift line box extends well below the
+ # PAINTED digits. With the 15% maximum shrink, this invisible descent is
+ # larger than with the older -26% target; native Edge screenshots confirm
+ # the characters do not touch (even in a 682x415 viewport).
+ assert a["ink"]["top"]>=a["clock"]["bottom"]-60*a["stageScale"],(at,a)
  assert a["ink"]["top"]>=a["box"]["top"]-3,(at,a)
  assert a["ink"]["bottom"]<=a["box"]["bottom"]+3,(at,a)
  assert a["scrollWidth"]<=a["clientWidth"]+2,(at,a)
