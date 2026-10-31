@@ -224,13 +224,19 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
    fc() font sizing, short/long glyph ratio and 1600x900 stage never change. */
 #timer.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
  scale:var(--clock-display-scale-x,1.15) var(--clock-display-scale-y,1.15);
+ /* Move down only while NO lower message is displayed. The approved
+    top-of-glyph height remains the MAXIMUM when a notice is visible.
+    The independent translate property preserves fc()'s inline transform
+    and the existing single 1600x900 stage scale. */
+ translate:-50% var(--clock-rest-y,0px);
  /* Bahnschrift draws its ink ABOVE the CSS line box (~25%).
     Keep the top of the visible ink fixed (and its bottom in view): the
     figures do not rise toward the event title. */
  transform-origin:50% -15%;
 }
 #timer.noticeMotionReady.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
- transition:scale 420ms cubic-bezier(.22,.75,.25,1);
+ transition:scale 420ms cubic-bezier(.22,.75,.25,1),
+            translate 420ms cubic-bezier(.22,.75,.25,1);
 }
 #timer.roundReading:not(.spm):not(.noticeMotionSnapshot) #msg{opacity:0}
 #timer.roundReading.noticeMotionActive:not(.spm):not(.noticeMotionSnapshot) #msg{opacity:1}
@@ -240,7 +246,7 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 /* All preview and mini-timer snapshots are STATIC, never midway through
    a clock resize. The test gallery keeps the original reference geometry. */
 #timer.noticeMotionSnapshot #clock,#timer.spm #clock{
- scale:1!important;transition:none!important;
+ scale:1!important;translate:-50% 0!important;transition:none!important;
 }
 #timer.noticeMotionSnapshot #msg,#timer.spm #msg{
  opacity:1!important;transition:none!important;
@@ -1606,6 +1612,12 @@ function updateClockGrowth(){
   timer.style.setProperty("--clock-display-scale-x",x);
  if(timer.style.getPropertyValue("--clock-display-scale-y")!==y)
   timer.style.setProperty("--clock-display-scale-y",y);
+ // The clock is at its approved, highest position when a notice appears.
+ // With no notice, lower it slightly (22 virtual px) to visually centre it.
+ // The translate and scale transitions use the SAME 420ms easing curve.
+ const rest=timer.classList.contains("noticeMotionActive")?"0px":"22px";
+ if(timer.style.getPropertyValue("--clock-rest-y")!==rest)
+  timer.style.setProperty("--clock-rest-y",rest);
 }
 let lrf="";
 function q38(){
