@@ -6,16 +6,20 @@
 
 ### [Ouvrir BridgeTimer Light en ligne](https://capgui13.github.io/BridgeTimer/)
 
+**Activation initiale nécessaire sur GitHub :** ouvrir [Settings → Pages](https://github.com/CapGui13/BridgeTimer/settings/pages), choisir **Build and deployment → Source : GitHub Actions**, puis lancer le workflow [BridgeTimer Light — web et GitHub Pages](https://github.com/CapGui13/BridgeTimer/actions/workflows/pages-light.yml) avec **Run workflow** (branche `main`). Après ce premier déploiement, le lien ci-dessus ouvrira directement le Timer. Cette activation est un réglage de GitHub qui ne peut pas être effectué par le code du dépôt.
+
 La version web démarre **sans installation** dans une fenêtre du navigateur. Elle fonctionne avec Chrome, Edge, Firefox ou Safari récents, sous réserve des fonctionnalités prises en charge. Pour une projection de tournoi, le bouton **Plein écran** est disponible.
 
 > Le lien `github.com/CapGui13/BridgeTimer` reste obligatoirement l'interface du dépôt GitHub : GitHub ne permet pas de la remplacer par une application. L'application web est publiée sur **GitHub Pages**, à l'adresse ci-dessus.
 
 ## Télécharger pour Windows
 
+**[Dernière publication officielle — Complète + Light](https://github.com/CapGui13/BridgeTimer/releases/latest)**
+
 | Édition | Télécharger | Contenu |
 | --- | --- | --- |
-| **BridgeTimer Complet** | [BridgeTimer.exe — version complète](https://github.com/CapGui13/BridgeTimer/releases/download/bridge-timer-preview-20261031-fin-tour-chrono-identique/BridgeTimer.exe) | Tous les réglages, couleurs et écrans tests |
-| **BridgeTimer Light** | [BridgeTimer.exe — version épurée](https://github.com/CapGui13/BridgeTimer/releases/download/bridge-timer-edition-epuree-20261031/BridgeTimer.exe) | Interface simplifiée, sans accès aux couleurs ni aux écrans tests |
+| **BridgeTimer Complet** | [BridgeTimer.exe — version complète](https://github.com/CapGui13/BridgeTimer/releases/download/v2026.10.31/BridgeTimer-Complet.exe) | Tous les réglages, couleurs et écrans tests |
+| **BridgeTimer Light** | [BridgeTimer.exe — version épurée](https://github.com/CapGui13/BridgeTimer/releases/download/v2026.10.31/BridgeTimer-Light.exe) | Interface simplifiée, sans accès aux couleurs ni aux écrans tests |
 
 Les deux fichiers sont des **EXE portables** sous Windows, sans installateur. Ils ont été compilés et vérifiés sous Windows Edge / WebView2 ; ils restent disponibles séparément. Les exécutables sont actuellement non signés (Windows SmartScreen peut demander une confirmation).
 
