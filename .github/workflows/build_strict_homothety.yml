@@ -7,6 +7,7 @@ on:
       - fix-gallery-keys-20261030
       - fix-retour-tests-remove-test-son-20261030
       - fix-chrono-colon-typographique-20261030
+      - fix-saut-interligne-20261031
   workflow_dispatch:
 
 permissions:
@@ -29,6 +30,8 @@ jobs:
         run: python checks/check_js_syntax.py
       - name: Install Edge browser test dependency
         run: python -m pip install --disable-pip-version-check playwright==1.56.0 pillow==11.3.0
+      - name: Pre-jump message line spacing only
+        run: python checks/test_prejump_message_spacing.py
       - name: Strict homothety at seven sizes + fade/no movement
         run: python checks/test_strict_homothety.py
       - name: Real colon in long clock, without hand-drawn dots
@@ -61,6 +64,6 @@ jobs:
         run: python checks/check_exe_embed.py
       - uses: actions/upload-artifact@v4
         with:
-          name: BridgeTimer-DeuxPoints-Typographiques-30oct2026
+          name: BridgeTimer-Message-Saut-Interligne-31oct2026
           path: dist/BridgeTimer.exe
           if-no-files-found: error
