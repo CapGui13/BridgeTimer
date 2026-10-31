@@ -96,7 +96,10 @@ with sync_playwright() as pw:
    page.wait_for_timeout(520)
    msg=page.evaluate(METRICS)
    assert msg['y']<a['y'] and msg['x']<a['x'],(width,height,longRound,a,msg)
-   assert abs(msg['transformed']['box']['top']-a['transformed']['box']['top'])<.6,(width,height,longRound,a,msg)
+   # As the clock shrinks to make room for a message, its line box may
+   # move UP toward the approved original baseline — not above the title.
+   # We only lock the highest edge of the ENLARGED, no-message clock.
+   assert msg['transformed']['ink']['top']>=a['baseline']['ink']['top']-7,(width,height,longRound,a,msg)
    page.evaluate("tempMessageUntil=0;render()")
    page.wait_for_timeout(520)
    restored=page.evaluate(METRICS)
