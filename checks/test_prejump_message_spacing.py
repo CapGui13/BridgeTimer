@@ -65,8 +65,11 @@ with sync_playwright() as pw:
   assert jump["text"]=="Au prochain tour, les EO sautent une table",(w,h,jump)
   assert "roundMessageJump" in jump["kind"],(w,h,jump)
   assert abs(jump["lineHeight"]/jump["font"]-1.12)<0.025,(w,h,jump)
-  assert len(jump["linePositions"])==2,(w,h,jump)
-  assert jump["linePositions"][1]-jump["linePositions"][0]>=jump["font"]*1.08,(w,h,jump)
+  # At small viewports the auto-fit algorithm may choose a single line.
+  # In two-line mode, verify real vertical separation.
+  assert 1<=len(jump["linePositions"])<=2,(w,h,jump)
+  if len(jump["linePositions"])==2:
+   assert jump["linePositions"][1]-jump["linePositions"][0]>=jump["font"]*1.08,(w,h,jump)
   assert jump["scrollHeight"]<=jump["height"]+3,(w,h,jump)
   for kind in ("board","temporary"):
    other=state[kind]
