@@ -31,6 +31,7 @@ def sample(page):
   const rect=e=>{let r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right}};
   return {text:c.textContent,hasColon:!!colon,
     style:c.className,gap:getComputedStyle(c).gap,
+    growX:parseFloat(getComputedStyle(c).scale),
     root:rect(c),primary:p&&rect(p),colon:colon&&rect(colon),sec:sec&&rect(sec),
     rootFont:parseFloat(getComputedStyle(c).fontSize),
     primaryFont:p&&parseFloat(getComputedStyle(p).fontSize),
@@ -56,7 +57,8 @@ with sync_playwright() as pw:
   assert abs(a["colonFont"]/a["primaryFont"]-.4)<.002,a
   assert a["primary"]["right"]<=a["colon"]["x"]+.5,a
   assert a["colon"]["right"]<=a["sec"]["x"]+.5,a
-  assert abs(a["colon"]["w"]-70*min(w/1600,h/900))<2,a
+  # The actual colon slot grows together with the enlarged countdown.
+  assert abs(a["colon"]["w"]-70*min(w/1600,h/900)*a["growX"])<2,a
   assert a["root"]["x"]>=-2 and a["root"]["right"]<=w+2,a
   # Only the glyph is new: title and message remain part of the reference.
   assert page.locator("#status").count()==1
