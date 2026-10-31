@@ -1,0 +1,105 @@
+name: BridgeTimer trial - notice max10 and session-end rest
+
+on:
+  push:
+    branches:
+      - trial-message-shrink-max10-finish-rest-20261031
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-homothety:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache: true
+      - name: Dependencies
+        run: go mod download
+      - name: Apply verified dark WebView2 title patch
+        run: python patch_webview_dark.py
+      - name: JavaScript syntax
+        run: python checks/check_js_syntax.py
+      - name: Install Edge browser test dependency
+        run: python -m pip install --disable-pip-version-check playwright==1.56.0 pillow==11.3.0
+      - name: Limit animated clock shrink to 10 percent, both modes and session end
+        run: python checks/test_notice_shrink_max10.py
+      - name: Clock descends at rest and rises smoothly when notice appears
+        run: python checks/test_clock_vertical_notice_motion.py
+      - name: Clock 1.15 height, top anchored, no clipping in both formats
+        run: python checks/test_clock_115_top_locked.py
+      - name: Ensure notice does not reflow while clock animates
+        run: python checks/test_notice_reflow_during_animation.py
+      - name: Animate countdown while bottom notice appears, no geometry changes
+        run: python checks/test_notice_clock_animation.py
+      - name: Mini-timer must survive Screen Tests without style leakage
+        run: python checks/test_mini_after_screen_tests.py
+      - name: Temporary notice fullscreen exit/reentry regression
+        run: python checks/test_temp_message_fullscreen_reflow.py
+      - name: Temporary-message mini and test previews only
+        run: python checks/test_temporary_previews_no_overlap.py
+      - name: Board-number and pre-jump message spacing
+        run: python checks/test_prejump_message_spacing.py
+      - name: Strict homothety at seven sizes + fade/no movement
+        run: python checks/test_strict_homothety.py
+      - name: Real colon in long clock, without hand-drawn dots
+        run: python checks/test_long_clock_typographic_colon.py
+      - name: Gallery full footer and Settings F/F11
+        run: python checks/test_gallery_keys_settings.py
+      - name: Audio alerts remain functional without the test button
+        run: python checks/test_audio_robustness.py
+      - name: Four-second controls auto-hide
+        run: python checks/test_controls_autohide.py
+      - name: Event title descenders
+        run: python checks/test_event_title_descenders.py
+      - name: Fullscreen entry/exit
+        run: python checks/test_fullscreen_no_jump.py
+      - name: Windows Go unit tests
+        run: go test ./...
+      - name: Go vet
+        run: go vet ./...
+      - name: Generate Windows resources
+        shell: pwsh
+        run: |
+          go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.7.0
+          goversioninfo -o resource_windows_amd64.syso versioninfo.json
+      - name: Build EXE
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          go build -trimpath -ldflags "-H=windowsgui -s -w" -o dist/BridgeTimer.exe .
+      - name: Verify embedded production HTML
+        run: python checks/check_exe_embed.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BridgeTimer-Reduction-Max10-FinSeance-31oct2026
+          path: dist/BridgeTimer.exe
+          if-no-files-found: error
+
+  publish-preview:
+    needs: windows-homothety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: BridgeTimer-Reduction-Max10-FinSeance-31oct2026
+          path: dist
+      - name: Publish the verified trial as a direct download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          test -s dist/BridgeTimer.exe
+          tag="bridge-timer-preview-20261031-reduction-max10-fin-seance"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target "$GITHUB_SHA" \
+              --title "Bridge Timer - essai reduction max 10% et fin de seance au repos" \
+              --notes "Version d'essai isolee: le chrono recule d'au plus 10% lorsqu'un message apparait. A la fin de la seance Paires, il retrouve le grossissement 1,15 et la position basse du chrono sans message, comme en pause. Animation 420 ms conservee. Build et controles Windows obligatoires avant publication. La version 15% precedente reste disponible." \
+              --prerelease
+          fi
