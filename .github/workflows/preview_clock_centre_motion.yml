@@ -3,7 +3,7 @@ name: Visual QA clock rest and notice
 on:
   push:
     branches: [trial-clock-centre-motion-20261031]
-    paths: [.github/workflows/preview_clock_centre_motion.yml]
+    paths: [.github/workflows/preview_clock_centre_motion.yml, checks/preview_clock_centre_motion.py]
   workflow_dispatch:
 
 permissions:
