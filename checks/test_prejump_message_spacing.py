@@ -1,4 +1,4 @@
-"""Only the pre-jump advance message may gain vertical line spacing.
+"""Pre-jump and board-number notices share comfortable vertical line spacing.
 
 Tests the real 1600x900 gallery preview (same CSS as actual timer) at
 several viewer sizes, and guards the other message styles.
@@ -76,11 +76,19 @@ with sync_playwright() as pw:
   if len(jump["linePositions"])==2:
    assert jump["linePositions"][1]-jump["linePositions"][0]>=jump["font"]*1.08,(w,h,jump)
   assert jump["scrollHeight"]<=jump["height"]+3,(w,h,jump)
-  for kind in ("board","temporary"):
-   other=state[kind]
-   assert "roundMessageJump" not in other["kind"],(w,h,kind,other)
-   assert abs(other["lineHeight"]/other["font"]-.72)<0.025,(w,h,kind,other)
+  # Board-number instruction: use the same vertical breathing space as jump.
+  board=state["board"]
+  assert "roundMessageJump" not in board["kind"],(w,h,board)
+  assert "donne" in board["text"].lower(),(w,h,board)
+  assert abs(board["lineHeight"]/board["font"]-1.12)<0.025,(w,h,board)
+  assert board["scrollHeight"]<=board["height"]+3,(w,h,board)
+  if len(board["linePositions"])>=2:
+   assert all(y-x>=board["font"]*1.08 for x,y in zip(board["linePositions"],board["linePositions"][1:])),(w,h,board)
+  # Temporary message stays untouched.
+  other=state["temporary"]
+  assert "roundMessageJump" not in other["kind"],(w,h,other)
+  assert abs(other["lineHeight"]/other["font"]-.72)<0.025,(w,h,other)
   assert not errors,(w,h,errors)
   page.close()
  browser.close()
-print("Pre-jump spacing only, 2 separated lines, no clipping, other messages unchanged: PASS")
+print("Pre-jump and board instruction spacing, no clipping; temporary unchanged: PASS")
