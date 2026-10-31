@@ -1683,7 +1683,13 @@ function syncFaithfulMini(force=false){
     const clockRect=clock.getBoundingClientRect(),mainRect=main.getBoundingClientRect();
     const top=Math.max(message.offsetTop,clockRect.bottom-mainRect.top+18);
     message.style.top=top+'px';message.style.height=Math.max(40,bottom-top)+'px';
-    const fits=()=>message.scrollWidth<=message.clientWidth+2&&message.scrollHeight<=message.clientHeight+2;
+    const range=doc.createRange();range.selectNodeContents(message);
+    const safeTop=clockRect.bottom+10,safeBottom=mainRect.bottom-8;
+    // WebView2/Windows font ink can extend below its CSS line box.
+    // Test actual rendered glyph bounds, not just scrollHeight.
+    const fits=()=>message.scrollWidth<=message.clientWidth+2&&
+      message.scrollHeight<=message.clientHeight+2&&
+      range.getBoundingClientRect().height<=safeBottom-safeTop;
     const resize=()=>{
      let lo=22,hi=140;
      while(lo<hi){const mid=Math.ceil((lo+hi)/2);message.style.fontSize=mid+'px';if(fits())lo=mid;else hi=mid-1}
@@ -1691,6 +1697,11 @@ function syncFaithfulMini(force=false){
     };
     message.style.whiteSpace='nowrap';resize();
     if(!fits()){message.style.whiteSpace='normal';resize()}
+    // Centre the visible ink in the safe band (clock bottom to footer),
+    // not the line box: essential for Windows Bahnschrift metrics.
+    const ink=range.getBoundingClientRect();
+    const dy=(safeTop+safeBottom-ink.top-ink.bottom)/2;
+    message.style.transform='translate(-50%, '+dy.toFixed(2)+'px)'
    }
   }
   // Retain the live clock's font and transform. Do not independently resize the mini-clock.
