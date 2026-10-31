@@ -1578,7 +1578,10 @@ function updateNoticeMotion(){
   const sceneScale=Number(timer.style.getPropertyValue("--stage-scale"))||1;
   const overlap=Math.max(0,bounds.bottom+16*sceneScale-ink.top);
   const clearanceScale=1-overlap/Math.max(1,bounds.height*.66);
-  const target=Math.max(.74,Math.min(lineCount>1?.80:.89,clearanceScale));
+  // Trial: keep the raised, 22px motion and all typography unchanged,
+  // but cap the visual countdown shrink at 15% relative to its resting size.
+  // Single-line notices still aim for -11%; multi-line notices may use -15%.
+  const target=Math.max(.85,Math.min(lineCount>1?.85:.89,clearanceScale));
   timer.style.setProperty("--notice-clock-scale",target.toFixed(3));
  }else timer.style.setProperty("--notice-clock-scale","1");
  timer.classList.toggle("noticeMotionActive",active);
