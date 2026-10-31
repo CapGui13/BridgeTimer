@@ -17,7 +17,7 @@ INIT="""longRound=>{
  Object.assign(s,{mode:'4',positions:6,pairCount:26,eventName:'AAAA',
   hours:longRound?1:0,minutes:longRound?0:45,seconds:0,
   boardProgressNotice:false,jumpAdvanceNotice:false,sound:false});
- Object.assign(st,{started:true,phase:'round',running:false,
+ Object.assign(st,{started:true,phase:'round',running:true,
   remaining:longRound?3599:2699,
   roundDuration:longRound?3600:2700,roundBoards:8,pos:1,
   longClockAtStart:longRound});
