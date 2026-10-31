@@ -224,7 +224,10 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
    fc() font sizing, short/long glyph ratio and 1600x900 stage never change. */
 #timer.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
  scale:var(--clock-display-scale-x,1.15) var(--clock-display-scale-y,1.15);
- transform-origin:50% 0%;
+ /* Bahnschrift draws its ink ABOVE the CSS line box (~25%).
+    Anchor at its actual top, not the line-box top, so the enlarged
+    figures never rise towards the event title. */
+ transform-origin:50% -25%;
 }
 #timer.noticeMotionReady.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
  transition:scale 420ms cubic-bezier(.22,.75,.25,1);
