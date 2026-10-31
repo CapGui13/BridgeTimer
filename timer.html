@@ -1028,9 +1028,19 @@ function _ssp(kind){if(kind!=="all"&&!_spch.has(kind))return;const isAll=kind===
    original inline typography to prevent the faithful settings mini-preview
    from inheriting the LAST test screen's enlarged clock and message. */
 let galleryReturnTimerStyles=null;
+let galleryReturnClockMotion=null;
 function _osp(){if(!debugActive()||q3b()||_sps)return;read();
  galleryReturnTimerStyles=Object.fromEntries(['clock','msg','status','submsg','bar'].map(id=>
    [id,$(id).getAttribute('style')]));
+ // The 1.15x visual transform lives on the TIMER ROOT (custom properties),
+ // not in the clock's own inline style. Save these along with the original
+ // clock typography so gallery simulations cannot leak into the mini-timer.
+ const motionKeys=["--notice-clock-scale","--clock-display-scale-x",
+   "--clock-display-scale-y","--clock-rest-y"];
+ galleryReturnClockMotion={
+  vars:Object.fromEntries(motionKeys.map(key=>[key,$("timer").style.getPropertyValue(key)])),
+  active:$("timer").classList.contains("noticeMotionActive")
+ };
 $("settings").classList.add("hidden");$("timer").classList.remove("hidden");$("timer").classList.add("spm");$("timer").querySelectorAll(".main,.bottom,.topBtns").forEach(el=>el.inert=true);$("sptb").classList.remove("hidden");$("tempMessageOverlay").classList.add("hidden");_ssp("all");$("sps").focus();}function _csp(){if(!_sps)return;_sps=null;_spset=null;spk=null;$("sptb").classList.add("hidden");$("timer").classList.remove("spm","spa");$("spg").classList.add("hidden");$("timer").scrollTop=0;$("timer").querySelectorAll(".main,.bottom,.topBtns").forEach(el=>el.inert=false);updateStage();C=null;longClockKey="";lrf="";
  // Restore ONLY inline presentation styles changed by the previews. The
  // current tournament, settings and countdown state are not rolled back.
@@ -1039,6 +1049,15 @@ $("settings").classList.add("hidden");$("timer").classList.remove("hidden");$("t
    if(style===null)$(id).removeAttribute('style');else $(id).setAttribute('style',style);
   }
   galleryReturnTimerStyles=null;
+ }
+ if(galleryReturnClockMotion){
+  const timer=$("timer");
+  for(const [key,value] of Object.entries(galleryReturnClockMotion.vars)){
+   if(value)timer.style.setProperty(key,value);
+   else timer.style.removeProperty(key);
+  }
+  timer.classList.toggle("noticeMotionActive",galleryReturnClockMotion.active);
+  galleryReturnClockMotion=null;
  }
  showSettings(false);$("spb").focus();}function _ott(){read();_rtt();$("themeTest").classList.remove("hidden");$("themeTest").setAttribute("aria-hidden","false");$("themeTestGrid").scrollTop=0}function _ctt(){$("themeTest").classList.add("hidden");$("themeTest").setAttribute("aria-hidden","true");fill()}function _roc(){s.accent=def.accent;s.background=def.background;s.menu=def.menu;s.text=def.text;s.messageColor=def.messageColor;s.transitionMessageColor=def.transitionMessageColor;fill();save()}let scp=null;function q9(){return scp?{...colorPresets,saved:{name:"Custom",...scp}}:colorPresets}function q3c(){for(const b of document.querySelectorAll("#resetColors,.colorPreset,#savedColorsBtn")){const p=b.id==="savedColorsBtn"?scp:colorPresets[b.dataset.preset||"original"];b.style.cssText=p?"background:"+p.background+";color:"+p.text+";border-color:"+p.accent:""}}function _usc(){const b=$("savedColorsBtn");if(!b)return;b.disabled=!scp&&!document.body.classList.contains("debugMode");b.textContent="Custom";q3c()}function q33(){scp=q45(COLORKEY,q2a)||{accent:def.accent,background:def.background,menu:def.menu,text:def.text,messageColor:def.messageColor,transitionMessageColor:def.transitionMessageColor};_usc()}const colorSettingIds=["accent","background","menu","text","messageColor","transitionMessageColor"];let colorMenuSnapshot=null;function colorMenuOpen(){return !$('colorMenuOverlay').classList.contains('hidden')}function openColorMenu(){if(colorMenuOpen())return;clearTimeout(autosaveTimer);save();colorMenuSnapshot={values:Object.fromEntries(colorSettingIds.map(id=>[id,$(id).value])),custom:scp?{...scp}:null,preset:slp};$('colorMenuOverlay').classList.remove('hidden');$('colorMenuBtn').setAttribute('aria-expanded','true');$('accent').focus()}function closeColorMenu(confirm=false){if(!colorMenuOpen())return;if(!confirm&&colorMenuSnapshot){for(const id of colorSettingIds){s[id]=colorMenuSnapshot.values[id];$(id).value=colorMenuSnapshot.values[id]}slp=colorMenuSnapshot.preset;scp=colorMenuSnapshot.custom?{...colorMenuSnapshot.custom}:null;if(scp)q41(COLORKEY,scp);_usc();fill();render()}clearTimeout(autosaveTimer);save();colorMenuSnapshot=null;$('colorMenuOverlay').classList.add('hidden');$('colorMenuBtn').setAttribute('aria-expanded','false');if(!$('settings').classList.contains('hidden'))$('colorMenuBtn').focus()}function _scc(){read();scp={accent:s.accent,background:s.background,menu:s.menu,text:s.text,messageColor:s.messageColor,transitionMessageColor:s.transitionMessageColor};q41(COLORKEY,scp);slp="saved";_usc();_rtt()}
 /* Web Audio lifecycle. Keep the approved pair of tones:
