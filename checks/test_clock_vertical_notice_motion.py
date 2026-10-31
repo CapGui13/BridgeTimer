@@ -32,7 +32,7 @@ SAMPLE="""()=>{
  const r=document.createRange();r.selectNodeContents(c);
  const translate=getComputedStyle(c).translate;
  const y=/(-?\d+(?:\.\d+)?)px\s*$/.exec(translate);
- return {y:y?Number(y[1]):null,cssTranslate:translate,
+ return {y:y?Number(y[1]):0,cssTranslate:translate,
   rest:t.style.getPropertyValue('--clock-rest-y'),
   duration:getComputedStyle(c).transitionDuration,
   clock:box(c),ink:box(r),main:box(main),title:box(title),
