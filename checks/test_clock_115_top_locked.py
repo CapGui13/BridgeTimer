@@ -76,7 +76,11 @@ with sync_playwright() as pw:
    assert after['ink']['top']>=before['ink']['top']-1.1,(width,height,longRound,a)
    assert abs(after['box']['height']/before['box']['height']-1.15)<.008,(width,height,longRound,a)
    assert after['box']['bottom']>before['box']['bottom'],(width,height,longRound,a)
-   assert after['ink']['bottom']<=after['main']['bottom']+2,(width,height,longRound,a)
+   # Range ink bounds include Bahnschrift line-height whitespace below
+   # the painted digits; with the intentional 22px lowered rest position,
+   # testing the Range's bottom wrongly reports clipped pixels.
+   # The clock box itself must remain entirely inside the main display.
+   assert after['box']['bottom']<=after['main']['bottom']-4,(width,height,longRound,a)
    assert after['box']['left']>=after['main']['left']-2,(width,height,longRound,a)
    assert after['box']['right']<=after['main']['right']+2,(width,height,longRound,a)
    # The original Bahnschrift ink already extends outside its CSS line box.
