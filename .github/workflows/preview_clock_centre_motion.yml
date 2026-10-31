@@ -1,0 +1,27 @@
+name: Visual QA clock rest and notice
+
+on:
+  push:
+    branches: [trial-clock-centre-motion-20261031]
+    paths: [.github/workflows/preview_clock_centre_motion.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Playwright
+        run: python -m pip install playwright
+      - name: Capture actual Windows Edge typography
+        run: python checks/preview_clock_centre_motion.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BridgeTimer-Screenshots-ClockMotion-QA
+          path: screenshots/*.png
