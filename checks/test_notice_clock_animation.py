@@ -28,7 +28,7 @@ SAMPLE="""()=>{
  const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}};
  const cs=getComputedStyle(c),ms=getComputedStyle(m);
  return {text:m.textContent,active:t.classList.contains('noticeMotionActive'),
-   primed:t.classList.contains('noticeMotionReady'),scale:parseFloat(cs.scale),
+   primed:t.classList.contains('noticeMotionReady'),scale:parseFloat(cs.scale),scaleY:Number(cs.scale.split(/\s+/)[1]||cs.scale),
    target:parseFloat(t.style.getPropertyValue('--notice-clock-scale')||'1'),
    font:parseFloat(cs.fontSize),msgOpacity:parseFloat(ms.opacity),
    stageScale:parseFloat(t.style.getPropertyValue('--stage-scale')),
@@ -50,7 +50,8 @@ with sync_playwright() as pw:
   page.wait_for_timeout(140)
   initial=page.evaluate(SAMPLE)
   assert initial["primed"] and not initial["active"],(w,h,initial)
-  assert abs(initial["scale"]-1)<.005,(w,h,initial)
+  assert initial["scale"]>=0.90 and initial["scale"]<=1.151,(w,h,initial)
+  assert abs(initial["scaleY"]-1.15)<.007,(w,h,initial)
   # A new announcement activates smooth, independent scale interpolation.
   page.evaluate("""()=>{
     s.quickMessage='Vous êtes censés jouer la donne 1';
@@ -61,11 +62,12 @@ with sync_playwright() as pw:
   halfway=page.evaluate(SAMPLE)
   assert halfway["active"] and "donne 1" in halfway["text"],(w,h,halfway)
   assert .73<halfway["target"]<.95,(w,h,halfway)
-  assert halfway["target"]<halfway["scale"]<1,(w,h,halfway)
+  assert initial["scale"]*halfway["target"]<halfway["scale"]<initial["scale"],(w,h,halfway)
   assert 0<halfway["msgOpacity"]<=1,(w,h,halfway)
   page.wait_for_timeout(500)
   final=page.evaluate(SAMPLE)
-  assert abs(final["scale"]-final["target"])<.02,(w,h,final)
+  assert abs(final["scale"]-initial["scale"]*final["target"])<.025,(w,h,final)
+  assert abs(final["scaleY"]-1.15*final["target"])<.025,(w,h,final)
   assert abs(final["font"]-initial["font"])<1.5,(w,h,initial,final)
   assert abs(final["bottom"]["y"]-initial["bottom"]["y"])<.3,(w,h,initial,final)
   assert abs(final["status"]["y"]-initial["status"]["y"])<.3,(w,h,initial,final)
@@ -82,10 +84,11 @@ with sync_playwright() as pw:
   page.wait_for_timeout(100)
   retract=page.evaluate(SAMPLE)
   assert not retract["active"] and retract["text"]=="",(w,h,retract)
-  assert final["scale"]<retract["scale"]<1,(w,h,retract)
+  assert final["scale"]<retract["scale"]<initial["scale"],(w,h,retract)
   page.wait_for_timeout(500)
   restored=page.evaluate(SAMPLE)
-  assert abs(restored["scale"]-1)<.01,(w,h,restored)
+  assert abs(restored["scale"]-initial["scale"])<.012,(w,h,restored)
+  assert abs(restored["scaleY"]-1.15)<.012,(w,h,restored)
   assert abs(restored["clock"]["h"]-initial["clock"]["h"])<1.5,(w,h,initial,restored)
 
   # A longer temporary message uses the same system; its text must be legible.
@@ -97,7 +100,7 @@ with sync_playwright() as pw:
   page.wait_for_timeout(520)
   temp=page.evaluate(SAMPLE)
   assert temp["active"] and temp["text"]=="Au prochain tour, les EO sautent une table",(w,h,temp)
-  assert temp["target"]<1 and abs(temp["scale"]-temp["target"])<.02,(w,h,temp)
+  assert temp["target"]<1 and abs(temp["scale"]-initial["scale"]*temp["target"])<.025,(w,h,temp)
 
   # No animation in Screen Tests, including single-preview and gallery.
   page.evaluate("document.body.classList.add('debugMode');showSettings(false);_osp()")
@@ -125,7 +128,7 @@ with sync_playwright() as pw:
     render();
   }""")
  reduced=page.evaluate(SAMPLE)
- assert reduced["active"] and abs(reduced["scale"]-reduced["target"])<.001,reduced
+ assert reduced["active"] and abs(reduced["scaleY"]-1.15*reduced["target"])<.003,reduced
  page.close()
  browser.close()
 print("Notice scale/fade 420ms, ticking stable, restores clock, static previews, reduced motion: PASS")
