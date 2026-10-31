@@ -31,10 +31,16 @@ METRICS="""()=>{
   };
  const range=document.createRange();range.selectNodeContents(c);
  const r=()=>({box:rect(c),ink:rect(range),status:rect(status),main:rect(main)});
- const transformed=r(),visual=getComputedStyle(c).scale,old=c.style.scale;
- c.style.scale='1';
+ const transformed=r(),visual=getComputedStyle(c).scale,
+  old=c.style.scale,oldTransition=c.style.transition;
+ // Stop the 420ms animation temporarily before taking the baseline:
+ // otherwise layout reads capture the OLD interpolated scale.
+ c.style.transition='none';
+ c.style.scale='1';void c.offsetHeight;
  const baseline=r();
  if(old)c.style.scale=old;else c.style.removeProperty('scale');
+ void c.offsetHeight;
+ if(oldTransition)c.style.transition=oldTransition;else c.style.removeProperty('transition');
  return {clockText:c.textContent,long:c.classList.contains('longStartClock'),
   x:Number(visual.split(/\s+/)[0]),y:Number(visual.split(/\s+/)[1]||visual),
   transformed,baseline,offsetWidth:c.offsetWidth,
@@ -72,7 +78,9 @@ with sync_playwright() as pw:
    assert after['box']['bottom']>before['box']['bottom'],(width,height,longRound,a)
    assert after['box']['left']>=after['main']['left']-2,(width,height,longRound,a)
    assert after['box']['right']<=after['main']['right']+2,(width,height,longRound,a)
-   assert after['ink']['top']>=after['status']['bottom']-2,(width,height,longRound,a)
+   # The original Bahnschrift ink already extends outside its CSS line box.
+   # Compare to that APPROVED visible top, not the title's line box.
+   assert after['ink']['top']>=before['ink']['top']-1.1,(width,height,longRound,a)
    if longRound:
     assert a['clockText']=='1:05:09' and a['colon'],(width,height,a)
     assert abs(a['seconds']/a['primary']-.56)<.002,(width,height,a)
