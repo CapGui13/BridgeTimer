@@ -1512,9 +1512,14 @@ function q38(){
  if(liveTemporary){
   const ink=document.createRange();ink.selectNodeContents(e);
   const fitsOneLine=()=>{
-   const rect=ink.getBoundingClientRect();
-   return rect.width<=e.clientWidth-18&&rect.height<=e.clientHeight-6&&
-     e.scrollHeight<=e.clientHeight+2;
+   // Range bounds are PHYSICAL screen pixels, but clientWidth/Height are
+   // virtual 1600x900 CSS pixels. Compare like with like after scaling.
+   const rect=ink.getBoundingClientRect(),box=e.getBoundingClientRect();
+   const stageScale=Number(timer.style.getPropertyValue("--stage-scale"))||1;
+   const pad=8*stageScale;
+   return rect.left>=box.left+pad&&rect.right<=box.right-pad&&
+     rect.height<=box.height-6*stageScale&&
+     e.scrollWidth<=e.clientWidth+2&&e.scrollHeight<=e.clientHeight+2;
   };
   let lo=min,hi=max;
   for(let i=0;i<10&&lo<hi;i++){
