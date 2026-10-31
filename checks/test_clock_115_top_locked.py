@@ -103,7 +103,10 @@ with sync_playwright() as pw:
    # As the clock shrinks to make room for a message, its line box may
    # move UP toward the approved original baseline — not above the title.
    # We only lock the highest edge of the ENLARGED, no-message clock.
-   assert msg['transformed']['ink']['top']>=a['baseline']['ink']['top']-7,(width,height,longRound,a,msg)
+   # A notice intentionally raises the clock from its NEW lowered rest.
+   # It must still stay beneath the event title. Range bounds include
+   # non-painted Bahnschrift ascent space and are not reliable glyph edges.
+   assert msg['transformed']['box']['top']>=msg['transformed']['status']['bottom']+2,(width,height,longRound,a,msg)
    page.evaluate("tempMessageUntil=0;render()")
    page.wait_for_timeout(520)
    restored=page.evaluate(METRICS)
