@@ -213,6 +213,9 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 #timer .topBtns #fsBtn{width:246px!important;min-width:246px!important;padding:10px 13px!important;font-size:18px!important;white-space:nowrap!important}
 #timer #hint{left:50%;bottom:4px;width:min(980px,calc(100% - 390px));font-size:11px}
 #timer.roundReading #msg{height:34%}
+/* 31 Oct 2026 — jump PRE-ALERT ONLY: prevent overlap of two-line notice.
+   Keep the reference text-fitting routine and every other message intact. */
+#timer.roundReading #msg.roundMessageJump{line-height:1.12}
 
 /* Hide the unnecessary blue time-progress bar in all countdown modes.
    Keep its box in the layout (visibility, not display:none) because fc()
