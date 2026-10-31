@@ -84,10 +84,11 @@ with sync_playwright() as pw:
   assert board["scrollHeight"]<=board["height"]+3,(w,h,board)
   if len(board["linePositions"])>=2:
    assert all(y-x>=board["font"]*1.08 for x,y in zip(board["linePositions"],board["linePositions"][1:])),(w,h,board)
-  # Temporary message stays untouched.
+  # Temporary-message PREVIEWS now have the same comfortable spacing;
+  # the real full-size timer is independently guarded by its dedicated test.
   other=state["temporary"]
   assert "roundMessageJump" not in other["kind"],(w,h,other)
-  assert abs(other["lineHeight"]/other["font"]-.72)<0.025,(w,h,other)
+  assert abs(other["lineHeight"]/other["font"]-1.12)<0.025,(w,h,other)
   assert not errors,(w,h,errors)
   page.close()
  browser.close()
