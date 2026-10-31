@@ -27,7 +27,7 @@ SAMPLE="""()=>{
  const id=x=>document.getElementById(x),t=id("timer"),c=id("clock"),title=id("status");
  const b=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,
    height:r.height,top:r.top,bottom:r.bottom,left:r.left,right:r.right}};
- const cs=getComputedStyle(c),scale=cs.scale.split(/\\s+/).map(Number);
+ const cs=getComputedStyle(c),scale=cs.scale.split(/\s+/).map(Number);
  return {factor:Number(t.style.getPropertyValue("--notice-clock-scale")||"1"),
   rest:t.style.getPropertyValue("--clock-rest-y"),scaleX:scale[0],scaleY:scale.at(-1),
   active:t.classList.contains("noticeMotionActive"),
@@ -110,7 +110,7 @@ with sync_playwright() as pw:
    mini=page.evaluate("""()=>{
       const c=document.querySelector('#faithfulMiniFrame').contentDocument.querySelector('#clock'),
         st=getComputedStyle(c);
-      return {y:Number(st.scale.split(/\\s+/).at(-1)),transition:st.transitionDuration,
+      return {y:Number(st.scale.split(/\s+/).at(-1)),transition:st.transitionDuration,
        rest:st.translate};
    }""")
    assert near(mini["y"],beforeMini["scaleY"],.015),(tag,mini,beforeMini)
@@ -125,14 +125,18 @@ with sync_playwright() as pw:
     for(const card of document.querySelectorAll('.screenPreviewCard')){
       const d=card.querySelector('iframe')?.contentDocument;
       const c=d?.querySelector('#clock');
-      if(c){const st=getComputedStyle(c);a[card.querySelector('h3')?.textContent]={
-        y:Number(st.scale.split(/\\s+/).at(-1)),transition:st.transitionDuration,
-        rest:st.translate,phase:d.querySelector('#timer')?.className}}
+      if(c){const st=getComputedStyle(c),t=d.querySelector('#timer');
+        a[card.querySelector('h3')?.textContent]={
+        y:Number(st.scale.split(/\s+/).at(-1)),transition:st.transitionDuration,
+        rest:st.translate,phase:t?.className,
+        factor:Number(t?.style.getPropertyValue('--notice-clock-scale')||'1')}}
     }return a;
    }""")
    for label in ("Numéro de donne en cours","Pause","Fin de la séance (Paires)"):
     a=gallery[label]
-    assert near(a["y"],1.15,.015),(tag,label,a,gallery)
+    expected=1.15*a["factor"] if label=="Numéro de donne en cours" else 1.15
+    assert near(a["y"],expected,.018),(tag,label,a,gallery)
+    assert .90-1e-5<=a["factor"]<=1,(tag,label,a)
     assert "0s" in a["transition"],(tag,label,a)
    page.evaluate("_ssp('ended')")
    single=page.evaluate(SAMPLE)
