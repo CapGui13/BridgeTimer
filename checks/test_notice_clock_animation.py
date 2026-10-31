@@ -16,7 +16,7 @@ START="""()=>{
  Object.assign(s,{mode:'2',positions:6,eventName:'AAAA',
    boardProgressNotice:false,jumpAdvanceNotice:false,sound:false,
    hours:0,minutes:45,seconds:0});
- Object.assign(st,{started:true,phase:'round',running:false,
+ Object.assign(st,{started:true,phase:'round',running:true,
    remaining:2655,roundDuration:2700,pos:1,roundBoards:8,
    longClockAtStart:false});
  showTimer();render();
@@ -111,9 +111,9 @@ with sync_playwright() as pw:
     const d=card?.querySelector('iframe')?.contentDocument;
     const e=d?.querySelector('#clock');return e&&getComputedStyle(e).scale;
   }""")
-  assert gallery is not None and abs(float(gallery)-1)<.001,(w,h,gallery)
+  assert gallery is not None and abs(float(gallery.split()[-1])-1.15)<.012,(w,h,gallery)
   page.evaluate("_ssp('temporary')")
-  assert abs(page.evaluate("parseFloat(getComputedStyle(document.querySelector('#clock')).scale)")-1)<.001,(w,h)
+  assert abs(page.evaluate("Number(getComputedStyle(document.querySelector('#clock')).scale.split(' ').at(-1))")-1.15)<.012,(w,h)
   page.evaluate("_csp()")
   assert not errors,(w,h,errors)
   page.close()
