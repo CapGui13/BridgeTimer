@@ -72,10 +72,11 @@ with sync_playwright() as pw:
    assert a['growX'] and a['growY'],(width,height,longRound,a)
    before=a['baseline'];after=a['transformed']
    # Crucial request: top of the enlarged clock NEVER moves upwards.
-   assert abs(after['box']['top']-before['box']['top'])<.6,(width,height,longRound,a)
+   assert after['box']['top']>=before['box']['top']-.6,(width,height,longRound,a)
    assert after['ink']['top']>=before['ink']['top']-1.1,(width,height,longRound,a)
    assert abs(after['box']['height']/before['box']['height']-1.15)<.008,(width,height,longRound,a)
    assert after['box']['bottom']>before['box']['bottom'],(width,height,longRound,a)
+   assert after['ink']['bottom']<=after['main']['bottom']+2,(width,height,longRound,a)
    assert after['box']['left']>=after['main']['left']-2,(width,height,longRound,a)
    assert after['box']['right']<=after['main']['right']+2,(width,height,longRound,a)
    # The original Bahnschrift ink already extends outside its CSS line box.
