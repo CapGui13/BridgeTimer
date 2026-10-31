@@ -225,9 +225,9 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 #timer.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
  scale:var(--clock-display-scale-x,1.15) var(--clock-display-scale-y,1.15);
  /* Bahnschrift draws its ink ABOVE the CSS line box (~25%).
-    Anchor at its actual top, not the line-box top, so the enlarged
-    figures never rise towards the event title. */
- transform-origin:50% -25%;
+    Keep the top of the visible ink fixed (and its bottom in view): the
+    figures do not rise toward the event title. */
+ transform-origin:50% -15%;
 }
 #timer.noticeMotionReady.roundReading:not(.spm):not(.noticeMotionSnapshot) #clock{
  transition:scale 420ms cubic-bezier(.22,.75,.25,1);
