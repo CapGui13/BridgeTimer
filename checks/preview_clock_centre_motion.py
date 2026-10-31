@@ -15,7 +15,7 @@ with sync_playwright() as pw:
     Object.assign(s,{mode:"4",positions:6,pairCount:26,eventName:"Festival du Roy René",
      hours:longRound?1:0,minutes:longRound?5:45,seconds:9,
      boardProgressNotice:false,jumpAdvanceNotice:false,sound:false});
-    Object.assign(st,{started:true,running:false,phase:"round",pos:1,
+    Object.assign(st,{started:true,running:true,phase:"round",pos:1,
      remaining:longRound?3909:2709,roundDuration:longRound?3909:2709,
      longClockAtStart:longRound});
     showTimer();render();
