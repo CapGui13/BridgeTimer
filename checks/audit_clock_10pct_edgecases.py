@@ -17,7 +17,7 @@ SETUP="""isLong=>{
   Object.assign(s,{mode:"2",positions:6,eventName:"Compétition",
    hours:isLong?1:0,minutes:isLong?5:45,seconds:9,
    boardProgressNotice:false,jumpAdvanceNotice:false,sound:false});
-  Object.assign(st,{started:true,running:false,phase:"round",pos:1,
+  Object.assign(st,{started:true,running:true,phase:"round",endAt:performance.now()+(isLong?3909:2709)*1000,pos:1,
    remaining:isLong?3909:2709,roundDuration:isLong?3909:2709,
    longClockAtStart:isLong,roundEndSince:null});
   tempMessageUntil=0;s.quickMessage="";
