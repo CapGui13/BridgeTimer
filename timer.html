@@ -1520,12 +1520,18 @@ function placeRoundNoticeBelowClock(){
   return;
  }
  if(!message.textContent||!message.getClientRects().length)return;
- const main=message.parentElement;
- const scale=Number(timer.style.getPropertyValue("--stage-scale"))||1;
- const mainRect=main.getBoundingClientRect(),clockRect=$("clock").getBoundingClientRect();
+ const main=message.parentElement,clock=$("clock");
+ // IMPORTANT: the clock uses a CSS "scale" animation when a notice appears.
+ // getBoundingClientRect() tracks that animation frame by frame, causing
+ // the message's available height and font/wrapping to change suddenly.
+ // Use the UNSCALED layout box + its approved translateY instead. This is
+ // the same position before/during/after animation and remains homothetic.
+ const move=clock.style.transform.match(/translateY\(\s*([-+]?\d+(?:\.\d+)?)px\s*\)/);
+ const yOffset=move?Number(move[1]):0;
+ const stableClockBottom=clock.offsetTop+clock.offsetHeight+yOffset;
  const originalTop=main.clientHeight*.65;
- const longInset=$("clock").classList.contains("longStartClock")?60:0;
- const safeTop=(clockRect.bottom-mainRect.top)/scale+18-longInset;
+ const longInset=clock.classList.contains("longStartClock")?60:0;
+ const safeTop=stableClockBottom+18-longInset;
  if(safeTop<=originalTop){
   message.style.removeProperty("top");
   message.style.removeProperty("height");
