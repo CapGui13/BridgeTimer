@@ -1,0 +1,38 @@
+name: Publish BridgeTimer preview EXE
+
+on:
+  push:
+    branches: [fix-mini-galerie-message-temporaire-20261031]
+    paths: [.github/workflows/publish_preview_exe.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the successfully validated Windows binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41201045686 -R CapGui13/BridgeTimer -n BridgeTimer-Mini-Tests-Msg-Temporaire-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish direct-download prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-mini-tests"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target "${GITHUB_SHA}" \
+              --title "Bridge Timer – essai mini et écrans tests (31-10-2026)" \
+              --notes "EXE Windows de l'exécution validée 41201045686. Corrige uniquement l'affichage du message temporaire dans le mini-timer et les écrans tests. Version d'essai, référence précédente préservée." \
+              --prerelease
+          fi
