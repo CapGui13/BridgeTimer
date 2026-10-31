@@ -1596,7 +1596,22 @@ function updateNoticeMotion(){
  }
  if(active){
   const range=document.createRange();range.selectNodeContents(msg);
-  const ink=range.getBoundingClientRect(),bounds=clock.getBoundingClientRect();
+  const ink=range.getBoundingClientRect();
+  // A CSS transition changes getBoundingClientRect() every animation frame.
+  // Measure a hidden, non-animated COPY at the common 1.15 resting scale,
+  // independent of the previous notice scale and pending resize frames.
+  // This does not move, reflow or mutate the live countdown.
+  const probe=clock.cloneNode(true);
+  const maxWidth=Math.max(1,clock.parentElement.clientWidth-24);
+  const x=Math.min(1.15,maxWidth/Math.max(1,clock.offsetWidth));
+  probe.style.setProperty("scale",x+" 1.15","important");
+  probe.style.setProperty("translate","-50% 22px","important");
+  probe.style.setProperty("transition","none","important");
+  probe.style.setProperty("visibility","hidden","important");
+  probe.style.setProperty("pointer-events","none","important");
+  clock.parentElement.appendChild(probe);
+  const bounds=probe.getBoundingClientRect();
+  probe.remove();
   const sceneScale=Number(timer.style.getPropertyValue("--stage-scale"))||1;
   const overlap=Math.max(0,bounds.bottom+16*sceneScale-ink.top);
   const clearanceScale=1-overlap/Math.max(1,bounds.height*.66);
