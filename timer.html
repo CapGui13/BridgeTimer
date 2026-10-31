@@ -1497,11 +1497,38 @@ function q38(){
  const active=timer.classList.contains("roundReading");
  if(!active||!e.textContent){e.style.fontSize="";e.style.whiteSpace="";lrf="";return}
  if(!e.getClientRects().length)return;
- const key=e.textContent+"|"+e.clientWidth+"|"+e.clientHeight+"|"+timer.clientWidth;
+ const key=e.textContent+"|"+e.className+"|"+e.clientWidth+"|"+e.clientHeight+"|"+timer.clientWidth+"|"+(document.body.classList.contains("fs")?"F":"W");
  if(key===lrf)return;
  lrf=key;
- e.style.fontSize="";e.style.whiteSpace="nowrap";
+ e.style.fontSize="";e.style.whiteSpace="nowrap";e.style.lineHeight="";
  const max=186,min=22,step=2;
+ // A live temporary message must not switch unpredictably between a clean
+ // single line and two overlapping lines after leaving native fullscreen.
+ // Prefer the largest single-line size that fits the same reference stage.
+ // Screen Tests and mini frames retain their dedicated fitting routines.
+ const liveTemporary=e.classList.contains("roundMessageTemporary")&&
+   !timer.classList.contains("spm")&&!timer.classList.contains("galleryTempPreview")&&
+   !timer.classList.contains("miniTempPreview");
+ if(liveTemporary){
+  const ink=document.createRange();ink.selectNodeContents(e);
+  const fitsOneLine=()=>{
+   const rect=ink.getBoundingClientRect();
+   return rect.width<=e.clientWidth-18&&rect.height<=e.clientHeight-6&&
+     e.scrollHeight<=e.clientHeight+2;
+  };
+  let lo=min,hi=max;
+  for(let i=0;i<10&&lo<hi;i++){
+   const mid=Math.ceil((lo+hi)/2);
+   e.style.fontSize=mid+"px";
+   if(fitsOneLine())lo=mid;else hi=mid-1;
+  }
+  e.style.fontSize=lo+"px";
+  if(lo>=48&&fitsOneLine())return;
+  // Only exceptionally long temporary texts wrap; separate their lines
+  // without changing the font/spacing of board and pre-jump notices.
+  e.style.lineHeight="1.12";
+  e.style.whiteSpace="normal";
+ }
  // Single line for short messages, but allow long messages to wrap naturally.
  e.style.fontSize=max+"px";
  if(e.scrollWidth<=e.clientWidth+step&&e.scrollHeight<=e.clientHeight+step)return;
@@ -1714,7 +1741,16 @@ function syncFaithfulMini(force=false){
  * before and after returning from Windows native fullscreen. Main branch
  * remains the rollback target if the user dislikes this experiment.
  */
-let fif=false,fff=0;function q1c(){cancelAnimationFrame(fff);fff=requestAnimationFrame(()=>{C=null;fc()})}function q25(on){document.body.classList.toggle("fs",!!on);$("drawerClose").textContent=on?"Timer":"Retour au timer";if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer");document.body.classList.remove("showControls");updateStage();cacheSettingsHeaderGeometry();syncFullscreenMiniWidth();$("fsBtn").textContent=on?"Quitter plein écran":"Plein écran";$("settingsFullscreenBtn").textContent=on?"Quitter plein écran":"Plein écran";clearTimeout(controlsTimer);if(on)q36();C=null;fc();q1c()}
+let fif=false,fff=0;function q1c(){cancelAnimationFrame(fff);fff=requestAnimationFrame(()=>{
+ C=null;fc();
+ // WebView2 can finish changing the client dimensions AFTER the fullscreen
+ // handler has run. Refit the live temporary notice against the final clock.
+ const timer=$("timer"),msg=$("msg");
+ if(timer&&!timer.classList.contains("hidden")&&timer.classList.contains("roundReading")&&
+    msg?.classList.contains("roundMessageTemporary")){
+  placeRoundNoticeBelowClock();lrf="";q38();
+ }
+})}function q25(on){document.body.classList.toggle("fs",!!on);$("drawerClose").textContent=on?"Timer":"Retour au timer";if(!on)syncNativeView($("timer").classList.contains("hidden")?"settings":"timer");document.body.classList.remove("showControls");updateStage();cacheSettingsHeaderGeometry();syncFullscreenMiniWidth();$("fsBtn").textContent=on?"Quitter plein écran":"Plein écran";$("settingsFullscreenBtn").textContent=on?"Quitter plein écran":"Plein écran";clearTimeout(controlsTimer);if(on)q36();C=null;fc();q1c()}
 // Paint boundaries bracket the native border/size change. The color veil is
 // fully opaque before Win32 changes the window and is removed only after
 // the NEW stage geometry has been painted. No opacity/tween animation.
@@ -1760,7 +1796,7 @@ async function fs(){
   fif=false;
  }
 }const TIMER_CONTROLS_IDLE_MS=4000;function q36(){if(!document.body.classList.contains("fs")||$("timer").classList.contains("hidden")||$("timer").classList.contains("spm"))return;document.body.classList.add("showControls");clearTimeout(controlsTimer);controlsTimer=setTimeout(()=>document.body.classList.remove("showControls"),TIMER_CONTROLS_IDLE_MS)}
-onresize=()=>{updateStage();C=null;fc();syncFaithfulMini(true);const g=$("spg");if(g&&!g.classList.contains("hidden"))fitGalleryFrames()};document.addEventListener("mousemove",q36);document.addEventListener("mousedown",q36);document.addEventListener("touchstart",q36,{passive:true});document.addEventListener("keydown",q36);document.addEventListener("fullscreenchange",()=>q25(!!document.fullscreenElement));if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc()});timerSizeObserver.observe($("timer").querySelector(".main"))}
+onresize=()=>{updateStage();C=null;fc();if($("msg").classList.contains("roundMessageTemporary"))q1c();syncFaithfulMini(true);const g=$("spg");if(g&&!g.classList.contains("hidden"))fitGalleryFrames()};document.addEventListener("mousemove",q36);document.addEventListener("mousedown",q36);document.addEventListener("touchstart",q36,{passive:true});document.addEventListener("keydown",q36);document.addEventListener("fullscreenchange",()=>q25(!!document.fullscreenElement));if(typeof ResizeObserver!=="undefined"){const timerSizeObserver=new ResizeObserver(()=>{C=null;fc();if($("msg").classList.contains("roundMessageTemporary"))q1c()});timerSizeObserver.observe($("timer").querySelector(".main"))}
 $("fresh").onclick=()=>st.started?apply():fresh();$("stopTimer").onclick=q22;$("defaults").onclick=()=>{if(st.started&&!document.body.classList.contains("debugMode"))return;s={...def,mode:"4",positions:6,startPosition:1,boards:8,between:0,pairCount:26,movement:"mitchell"};const per=Math.max(0,(Number(s.boardMinutes)||0)*60+(Number(s.boardSeconds)||0)),total=Math.min(12*3600,8*per);s.hours=Math.floor(total/3600);s.minutes=Math.floor(total%3600/60);s.seconds=total%60;fill();activeFormat="4";formatSession={"4":q12("4"),"2":null};save();zdbg()}
 document.querySelectorAll("#settings input,#settings select,#settings textarea").forEach(el=>{if(el.id!=="pairCount"&&!el.closest("#jumpMsgForm,#betweenMsgForm"))el.addEventListener("input",_asv);if(!el.closest("#jumpMsgForm,#betweenMsgForm"))el.addEventListener("change",_asv)});function qd(el){const cap=Math.min(99,Number(el.max||99)||99);el.max=String(cap);el.maxLength=2;el.setAttribute("inputmode","numeric");let lastValid=el.value;el.addEventListener("focus",()=>{lastValid=el.value});el.addEventListener("beforeinput",e=>{if(!e.inputType?.startsWith("insert")||e.data===null)return;const start=el.selectionStart??el.value.length,end=el.selectionEnd??start;const next=el.value.slice(0,start)+e.data+el.value.slice(end);if(!/^\d{0,2}$/.test(next)||(next!==""&&Number(next)>cap))e.preventDefault();});el.addEventListener("input",()=>{const next=el.value;if(next===""||(/^\d{1,2}$/.test(next)&&Number(next)<=cap))lastValid=next;else{const pos=el.selectionStart??el.value.length;el.value=lastValid;try{el.setSelectionRange(Math.min(pos,el.value.length),Math.min(pos,el.value.length))}catch(err){}}},true);}document.querySelectorAll('#settings input[data-numeric="int"],#settings input[type="tel"]').forEach(el=>{qd(el);const normalize=()=>{let n=Number(el.value);if(!Number.isFinite(n))n=Number(el.min||0)||0;if(el.min!=="")n=Math.max(Number(el.min),n);if(el.max!=="")n=Math.min(Number(el.max),n);el.value=(el.type==="tel"||el.id==="hours")?String(Math.trunc(n)).padStart(2,"0"):Math.trunc(n);if(el.closest("#jumpMsgForm,#betweenMsgForm"))return;read();render();_asv()};el.addEventListener("mousedown",e=>{if(document.activeElement!==el){e.preventDefault();el.focus({preventScroll:true});try{el.select()}catch(err){}}});el.addEventListener("change",normalize)});$("sound").onchange=()=>{read();q14();render();_asv()};$("resetColors").onclick=_roc;document.querySelectorAll(".colorPreset").forEach(btn=>btn.onclick=()=>_acp(btn.dataset.preset));$("savedColorsBtn").onclick=()=>_acp("saved");$("saveColorsBtn").onclick=_scc;$("themeTestBtn").onclick=_ott;$("randomColorsBtn").onclick=q44;$("spb").onclick=_osp;$("sps").onchange=()=>_ssp($("sps").value);$("spc").onclick=_csp;$("themeTestClose").onclick=_ctt;$("quitAppBtn").onclick=q34;$("exitNoBtn").onclick=q21;$("exitYesBtn").onclick=q46;$("exitConfirmOverlay").onclick=e=>{if(e.target===$("exitConfirmOverlay"))q21()};$("diagClose").onclick=q24;$("diagCopy").onclick=q30;$("diagExport").onclick=q19;$("diagOverlay").onclick=e=>{if(e.target===$("diagOverlay"))q24()};$("colorMenuBtn").onclick=openColorMenu;$("colorMenuCancel").onclick=()=>closeColorMenu(false);$("colorMenuConfirm").onclick=()=>closeColorMenu(true);$("jumpMsgBtn").onclick=q47;$("jumpMsgCancel").onclick=()=>q43(false);$("jumpMsgForm").onsubmit=e=>{e.preventDefault();q37()};
 $("betweenMsgBtn").onclick=openBetweenMsgDialog;
