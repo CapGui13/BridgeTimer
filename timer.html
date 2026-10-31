@@ -218,6 +218,8 @@ body.settingsLive #settings .actions #quitAppBtn{grid-column:3;grid-row:1;positi
 #timer.roundReading #msg.roundMessageJump{line-height:1.12}
 /* Trial 31 Oct: BOARD NUMBER notice only. No font-size, layout or other message changes. */
 #timer.roundReading #msg:not(.roundMessageJump):not(.roundMessageTemporary){line-height:1.12}
+/* Temporary messages in PREVIEWS only: no change to the full-size timer. */
+#timer.galleryTempPreview.roundReading #msg.roundMessageTemporary,#timer.spm:not(.spa).roundReading #msg.roundMessageTemporary,#timer.miniTempPreview.roundReading #msg.roundMessageTemporary{line-height:1.12}
 
 /* Hide the unnecessary blue time-progress bar in all countdown modes.
    Keep its box in the layout (visibility, not display:none) because fc()
@@ -935,6 +937,7 @@ function _rspg(){
    const sample=_bsp(kind);_sps=sample.v;_spset=sample.cfg;spk=kind;
    // Recompute BOTH the clock and the special-message font in the final
    // virtual canvas; otherwise the iframe inherits a 812px-window font.
+   tm.classList.toggle("galleryTempPreview",kind==="temporary");
    C=null;longClockKey="";lrf="";lsf="";render();
    const clone=tm.cloneNode(true);clone.classList.remove("spa","spm","hidden");
    // Fullscreen toggles this label before showing the real screen.
@@ -960,6 +963,7 @@ function _rspg(){
   }
  }finally{
   [_sps,_spset,spk]=prev;
+  tm.classList.remove("galleryTempPreview");
   toolbar.style.display=toolbarDisplay;target.style.display=gridDisplay;
   if(prevStageStyle===null)tm.removeAttribute("style");else tm.setAttribute("style",prevStageStyle);
   document.body.classList.toggle("fs",wasFs);
@@ -1660,6 +1664,7 @@ function syncFaithfulMini(force=false){
   doc.body.className=document.body.className;
   const clone=source.cloneNode(true);clone.style.setProperty('--stage-left','0px');clone.style.setProperty('--stage-top','0px');clone.style.setProperty('--stage-scale','1');clone.style.setProperty('--stage-width','1600px');clone.style.setProperty('--stage-height','900px');
   clone.classList.remove('hidden','spm','spa');
+  clone.classList.toggle('miniTempPreview',!!clone.querySelector('#msg.roundMessageTemporary'));
   for(const id of ['sptb','spg','tempMessageOverlay'])clone.querySelector('#'+id)?.remove();
   const overlay=clone.querySelector('#pauseOverlay');
   const paused=st.started&&!st.running&&st.phase!=='ended'&&st.phase!=='roundEnd';
@@ -1668,6 +1673,26 @@ function syncFaithfulMini(force=false){
   const timerClock=clone.querySelector('#clock');
   if(timerClock)timerClock.style.visibility='visible';
   doc.body.replaceChildren(clone);
+  // Fit only the temporary announcement inside the mini-preview's own
+  // 1600x900 stage, below its clock; never resize the live timer or other
+  // messages. The entire mini-frame remains homothetically scaled.
+  if(clone.classList.contains('miniTempPreview')){
+   const message=clone.querySelector('#msg'),clock=clone.querySelector('#clock'),main=clone.querySelector('.main');
+   if(message&&clock&&main){
+    const bottom=message.offsetTop+message.offsetHeight;
+    const clockRect=clock.getBoundingClientRect(),mainRect=main.getBoundingClientRect();
+    const top=Math.max(message.offsetTop,clockRect.bottom-mainRect.top+18);
+    message.style.top=top+'px';message.style.height=Math.max(40,bottom-top)+'px';
+    const fits=()=>message.scrollWidth<=message.clientWidth+2&&message.scrollHeight<=message.clientHeight+2;
+    const resize=()=>{
+     let lo=22,hi=140;
+     while(lo<hi){const mid=Math.ceil((lo+hi)/2);message.style.fontSize=mid+'px';if(fits())lo=mid;else hi=mid-1}
+     message.style.fontSize=lo+'px';
+    };
+    message.style.whiteSpace='nowrap';resize();
+    if(!fits()){message.style.whiteSpace='normal';resize()}
+   }
+  }
   // Retain the live clock's font and transform. Do not independently resize the mini-clock.
  }finally{faithfulMiniBusy=false;}
 }
