@@ -1,0 +1,59 @@
+name: Publish BridgeTimer Complete and Light editions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-editions.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  stable-editions:
+    name: Publish both previously verified Windows EXEs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Retrieve approved Complete Windows build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          mkdir -p dist/complete
+          gh release download bridge-timer-preview-20261031-fin-tour-chrono-identique \
+            --pattern 'BridgeTimer.exe' --dir dist/complete
+          test -s dist/complete/BridgeTimer.exe
+      - name: Retrieve approved Light Windows build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          mkdir -p dist/light
+          gh release download bridge-timer-edition-epuree-20261031 \
+            --pattern 'BridgeTimer.exe' --dir dist/light
+          test -s dist/light/BridgeTimer.exe
+      - name: Give the two editions distinct filenames
+        run: |
+          mkdir -p release
+          cp dist/complete/BridgeTimer.exe release/BridgeTimer-Complet.exe
+          cp dist/light/BridgeTimer.exe release/BridgeTimer-Light.exe
+          sha256sum release/*.exe
+          test -s release/BridgeTimer-Complet.exe
+          test -s release/BridgeTimer-Light.exe
+      - name: Create unified GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag='v2026.10.31'
+          notes="Deux editions Windows portables et testees. **Complete** : reglages avances, couleurs et ecrans tests. **Light** : interface epuree, sans commandes de personnalisation ni ecrans tests. Le site web Light sera accessible sur https://capgui13.github.io/BridgeTimer/ lorsque GitHub Pages sera active dans Settings > Pages > Source : GitHub Actions. La source Complete est timer.html sur main ; la source Light Windows se trouve sur edition-epuree-sans-couleurs-sans-tests-20261031. Deux builds Windows deja valides sous Edge/WebView2, non signes. Versions anterieures conservees."
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" release/BridgeTimer-Complet.exe release/BridgeTimer-Light.exe --clobber
+            gh release edit "$tag" --title "BridgeTimer - Complete et Light (31 octobre 2026)" --notes "$notes" --latest
+          else
+            gh release create "$tag" release/BridgeTimer-Complet.exe release/BridgeTimer-Light.exe \
+              --target "$GITHUB_SHA" --title "BridgeTimer - Complete et Light (31 octobre 2026)" \
+              --notes "$notes" --latest
+          fi
