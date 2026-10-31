@@ -1,0 +1,38 @@
+name: Publish Bridge Timer notice animation trial
+
+on:
+  push:
+    branches: [trial-fluid-message-clock-20261031]
+    paths: [.github/workflows/publish_notice_animation_trial.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the Windows EXE verified by all tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh run download 41209957131 -R CapGui13/BridgeTimer -n BridgeTimer-Essai-Animation-Message-31oct2026 -D dist
+          test -s dist/BridgeTimer.exe
+          file dist/BridgeTimer.exe
+      - name: Publish direct-download experimental EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: CapGui13/BridgeTimer
+        run: |
+          tag="bridge-timer-preview-20261031-animation-message"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/BridgeTimer.exe --clobber
+          else
+            gh release create "$tag" dist/BridgeTimer.exe --target ca6665bc6c98c7356ee623a7999a413181c82ee9 \
+              --title "Bridge Timer - essai animation douce chrono et messages (31-10-2026)" \
+              --notes "Version d'essai Windows issue du build validé 41209957131. Le chrono rétrécit progressivement sur 420 ms quand un message apparaît en bas et reprend sa taille quand le message disparaît. Le texte apparaît en fondu. Aucun changement au moteur, à l'homothétie, aux boutons ou à la version de référence. Les Écrans tests et le mini-timer restent statiques." \
+              --prerelease
+          fi
