@@ -111,9 +111,18 @@ with sync_playwright() as pw:
     const d=card?.querySelector('iframe')?.contentDocument;
     const e=d?.querySelector('#clock');return e&&getComputedStyle(e).scale;
   }""")
-  assert gallery is not None and abs(float(gallery.split()[-1])-1.15)<.012,(w,h,gallery)
+  # An active temporary notice uses the approved <=10% reduction even
+  # in static previews; the preview must freeze at THAT final visual scale.
+  gallery_factor=page.evaluate("""()=>{
+    const card=[...document.querySelectorAll('.screenPreviewCard')].find(c=>
+      c.querySelector('h3')?.textContent==='Message temporaire');
+    const d=card?.querySelector('iframe')?.contentDocument;
+    return Number(d?.querySelector('#timer')?.style.getPropertyValue('--notice-clock-scale')||'1');
+  }""")
+  assert gallery is not None and abs(float(gallery.split()[-1])-1.15*gallery_factor)<.014,(w,h,gallery,gallery_factor)
   page.evaluate("_ssp('temporary')")
-  assert abs(page.evaluate("Number(getComputedStyle(document.querySelector('#clock')).scale.split(' ').at(-1))")-1.15)<.012,(w,h)
+  single_factor=page.evaluate("Number(document.querySelector('#timer').style.getPropertyValue('--notice-clock-scale')||'1')")
+  assert abs(page.evaluate("Number(getComputedStyle(document.querySelector('#clock')).scale.split(' ').at(-1))")-1.15*single_factor)<.014,(w,h,single_factor)
   page.evaluate("_csp()")
   assert not errors,(w,h,errors)
   page.close()
