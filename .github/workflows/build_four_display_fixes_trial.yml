@@ -88,7 +88,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: BridgeTimer-Reduction-Max10-FinSeance-31oct2026
+          name: BridgeTimer-4Corrections-Affichage-31oct2026
           path: dist
       - name: Publish the verified trial as a direct download
         env:
@@ -102,6 +102,6 @@ jobs:
           else
             gh release create "$tag" dist/BridgeTimer.exe --target "$GITHUB_SHA" \
               --title "Bridge Timer - essai 4 corrections affichage" \
-              --notes "Version d'essai isolee: le chrono recule d'au plus 10% lorsqu'un message apparait. A la fin de la seance Paires, il retrouve le grossissement 1,15 et la position basse du chrono sans message, comme en pause. Animation 420 ms conservee. Build et controles Windows obligatoires avant publication. La version 15% precedente reste disponible." \
+              --notes "Essai isole : limite de reduction a 10%, correction du recalcul apres redimensionnement, chrono normal en Pause meme avec un message, miniatures et apercus a l'agrandissement 1,15, evenement fixe sur FIN DU TOUR et FIN DE LA SEANCE. Animation fluide 420 ms preservee ; controles Edge Windows termines avant publication. Version precedente conservee." \
               --prerelease
           fi
