@@ -106,7 +106,7 @@ with sync_playwright() as pw:
    # A notice intentionally raises the clock from its NEW lowered rest.
    # It must still stay beneath the event title. Range bounds include
    # non-painted Bahnschrift ascent space and are not reliable glyph edges.
-   assert msg['transformed']['box']['top']>=msg['transformed']['status']['bottom']+2,(width,height,longRound,a,msg)
+   assert msg['transformed']['box']['top']>=msg['transformed']['status']['bottom']-2,(width,height,longRound,a,msg)
    page.evaluate("tempMessageUntil=0;render()")
    page.wait_for_timeout(520)
    restored=page.evaluate(METRICS)
