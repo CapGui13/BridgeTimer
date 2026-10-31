@@ -1,95 +1,63 @@
-# Bridge Timer
+# BridgeTimer — chronomètre de tournoi de bridge
 
-> **Version de référence validée le 29 octobre 2026 (Windows 10).**
-> Les bandeaux des paramètres, les dimensions adaptatives de fenêtre et les
-> transitions Paramètres/Timer ont été validés en essai utilisateur.
-> Les tests automatisés de géométrie, de chrono, d'alertes et de fenêtre
-> Windows sont obligatoires dans GitHub Actions. L'audibilité réelle des
-> alarmes et la tenue d'une séance prolongée restent à confirmer sur PC.
-> Revenir à `sauvegarde-bridge-timer-valide-20261029` en cas de régression.
+**Deux éditions Windows et une version web, avec un seul moteur de chronométrage.**
 
-> **RÈGLES VISUELLES IMPÉRATIVES — NE PAS INTRODUIRE DE RÉGRESSION :**
-> lire [UI_LAYOUT_CONTRACT.md](UI_LAYOUT_CONTRACT.md) et préserver les tests.
-> **Homothétie** : le mode fenêtré et le plein écran sont EXACTEMENT la même
-> maquette 1600×900 agrandie par un coefficient uniforme unique, pour TOUS
-> les éléments (titre, chrono, boutons, espaces, footer et messages).
-> **Parité court / long** : les grands chiffres et leur position verticale
-> sous l'évènement doivent être les mêmes dans les deux formats.
-> Seuls changent la présentation du temps (`MM:SS` contre `H:MM SS`)
-> et les secondes à **56 %** en format long. Le format est fixé d'après
-> la durée **initiale** du tour. Toute modification doit préserver ces deux
-> invariants.
+## ▶ Utiliser BridgeTimer directement dans le navigateur
 
-Bridge Timer is a portable Windows timer for bridge tournaments.
+### [Ouvrir BridgeTimer Light en ligne](https://capgui13.github.io/BridgeTimer/)
 
-It provides a large projection-friendly countdown, round management, configurable breaks, temporary messages, color customization with a reusable saved color preset, fullscreen display, and local settings persistence.
+La version web démarre **sans installation** dans une fenêtre du navigateur. Elle fonctionne avec Chrome, Edge, Firefox ou Safari récents, sous réserve des fonctionnalités prises en charge. Pour une projection de tournoi, le bouton **Plein écran** est disponible.
 
-The application uses an embedded Microsoft Edge WebView2 view so the timer keeps the HTML/CSS rendering of the original Bridge Timer interface while remaining a standalone Windows application.
+> Le lien `github.com/CapGui13/BridgeTimer` reste obligatoirement l'interface du dépôt GitHub : GitHub ne permet pas de la remplacer par une application. L'application web est publiée sur **GitHub Pages**, à l'adresse ci-dessus.
 
-## Current version
+## Télécharger pour Windows
 
-**1.7.8**
+| Édition | Télécharger | Contenu |
+| --- | --- | --- |
+| **BridgeTimer Complet** | [BridgeTimer.exe — version complète](https://github.com/CapGui13/BridgeTimer/releases/download/bridge-timer-preview-20261031-fin-tour-chrono-identique/BridgeTimer.exe) | Tous les réglages, couleurs et écrans tests |
+| **BridgeTimer Light** | [BridgeTimer.exe — version épurée](https://github.com/CapGui13/BridgeTimer/releases/download/bridge-timer-edition-epuree-20261031/BridgeTimer.exe) | Interface simplifiée, sans accès aux couleurs ni aux écrans tests |
 
-Run `BridgeTimer.exe`. No installer is required.
+Les deux fichiers sont des **EXE portables** sous Windows, sans installateur. Ils ont été compilés et vérifiés sous Windows Edge / WebView2 ; ils restent disponibles séparément. Les exécutables sont actuellement non signés (Windows SmartScreen peut demander une confirmation).
 
-## Features
+La version **Complète** n'a pas été remplacée par la version Light : elle reste la référence pour les réglages avancés.
 
-- configurable time per round, number of rounds and starting round;
-- Paires / Match par 4 tournament modes;
-- tournament structure locked once a session is running; timing changes apply from the next round;
-- Mitchell jump reminder preserved even when the between-round delay is 0 seconds;
-- orange/red warning thresholds;
-- temporary message button and `M` shortcut;
-- Accent / Background / Menu / Text color settings;
-- fullscreen projection mode and Windows-maximized display;
-- automatic local persistence of settings;
-- Per-Monitor DPI Awareness V2;
-- native Windows anti-sleep protection while the timer is running;
-- hidden diagnostics with `Ctrl+Shift+D`;
-- rotating local diagnostic log;
-- backup recovery for settings and saved colors;
-- WebView2 grayscale text antialiasing (`--disable-lcd-text`) for cleaner large timer digits;
-- single-instance Windows application;
-- monotonic countdown timing with delayed-tick catch-up;
-- stable local WebView origin so saved settings persist between launches;
-- centered startup window with dark native/WebView2 rendering to avoid white flashes.
+## Différence entre Complète et Light
 
-## Build
+Les deux éditions conservent les mêmes fonctions de tournoi : Paires et Match par 4, choix du temps, position de départ, changements de tour, messages temporaires, avertissements, pause/reprise, plein écran et mini-timer. Le chrono conserve ses deux formats, l'agrandissement visuel ×1,15 au repos, la réduction maximale de 10 % lorsqu'une annonce apparaît, et l'animation de 420 ms.
 
-Official Windows builds are produced from this repository on GitHub-hosted Windows runners.
+La version **Light** supprime **de l'interface utilisateur** le bouton de personnalisation des couleurs ainsi que l'accès aux écrans tests, y compris en mode Debug. Les composants internes de compatibilité restent présents, afin de ne pas modifier le moteur ni les mécanismes de sauvegarde. Le bloc des paramètres est nommé « Informations affichées » et conserve le club et l'événement. Les couleurs enregistrées antérieurement restent appliquées sur l'édition Windows Light, mais ne peuvent plus être modifiées depuis cette interface.
 
-Before distributing a build, the CI workflow executes:
-- JavaScript syntax and regression checks;
-- Microsoft Edge visual, windowed-band and 15-scenario functional tests;
-- 10 long-countdown, sound and anti-sleep tests;
-- Windows native geometry tests (including a real hidden HWND) and Win32 anti-sleep tests;
-- `go vet`, Windows GUI compilation, and an embedded-HTML consistency check.
+## Version web : précautions utiles
 
-The dependency versions are pinned in `go.mod` and `go.sum`.
-The last tested build can be downloaded from the GitHub Actions run artifacts.
-See [STABILISATION_2026-10-29.md](STABILISATION_2026-10-29.md) for
-reference commits, verification boundaries, and safe rollback instructions.
+- Les paramètres et les éventuelles sauvegardes de séance sont conservés localement **dans le navigateur de l'appareil** (stockage local), indépendamment des données de l'EXE Windows. Ne pas utiliser la navigation privée pour conserver les réglages.
+- Les API natives Windows de WebView2 ne sont pas disponibles sur le web. L'anti-veille repose, si elle est autorisée, sur la fonctionnalité du navigateur (Screen Wake Lock) et non sur l'anti-veille Windows de l'EXE.
+- L'option « Quitter » de la version web revient au dépôt GitHub ; l'application Windows continue de fermer sa propre fenêtre.
+- Le son, le plein écran et la veille peuvent être soumis aux permissions et aux politiques du navigateur. Pour arbitrer une épreuve longue, tester sur le PC et l'écran de projection prévus.
 
-## License
+## Organisation du dépôt
 
-Bridge Timer is open source under the [MIT License](LICENSE).
+| Fichier ou branche | Rôle |
+| --- | --- |
+| [`timer.html`](timer.html) sur `main` | **Source de l'édition Windows Complète** |
+| [`index.html`](index.html) sur `main` | **BridgeTimer Light pour GitHub Pages** — page d'entrée web |
+| [`edition-complete-20261031`](https://github.com/CapGui13/BridgeTimer/tree/edition-complete-20261031) | Point de sauvegarde de la Complète avant publication web |
+| [`edition-epuree-sans-couleurs-sans-tests-20261031`](https://github.com/CapGui13/BridgeTimer/tree/edition-epuree-sans-couleurs-sans-tests-20261031) | Source Windows de l'édition Light |
+| [`.github/workflows/pages-light.yml`](.github/workflows/pages-light.yml) | Tests navigateur et publication automatique du site |
+| [`UI_LAYOUT_CONTRACT.md`](UI_LAYOUT_CONTRACT.md) | Règles de rendu à préserver : homothétie 1600 × 900, parité court/long |
 
-See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party components.
+La publication web est distincte de la compilation Windows. Une mise à jour de `index.html` sur `main` déclenche la vérification en navigateur puis le déploiement GitHub Pages. Un changement du chrono complet suit les vérifications et le circuit de compilation Windows.
 
-## Privacy
+## Construire l'application Windows
 
-See [PRIVACY.md](PRIVACY.md).
+Les sources Go/WebView2 et le moteur HTML sont inclus. La compilation officielle utilise GitHub Actions sur Windows avec Go 1.24, les tests de géométrie et de rendu Microsoft Edge, les tests Go, et une vérification du HTML embarqué dans l'EXE.
 
-This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
+La référence visuelle est une scène **1600 × 900** homothétique en mode fenêtré et plein écran. Les grands chiffres des formats court et long partagent leur taille et leur position. Lire impérativement [AGENTS.md](AGENTS.md) et [UI_LAYOUT_CONTRACT.md](UI_LAYOUT_CONTRACT.md) avant toute modification du rendu.
 
-## Windows executable and signing
+## Licence, confidentialité et distribution
 
-Bridge Timer is distributed as a portable `BridgeTimer.exe`: there is no installer.
+- [Licence MIT](LICENSE)
+- [Mentions des dépendances](THIRD_PARTY_NOTICES.md)
+- [Confidentialité](PRIVACY.md)
+- [Signature du logiciel Windows](CODE_SIGNING_POLICY.md)
 
-Current public builds are unsigned. Windows may therefore show a SmartScreen or reputation warning on first launch. The source and build workflow are public in this repository.
-
-See [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md).
-
-## Removal
-
-Bridge Timer has no installer. Delete `BridgeTimer.exe` to remove it. To also remove its saved local settings, delete `%LOCALAPPDATA%\BridgeTimerWebView2`.
+Pour supprimer l'application Windows, effacer le fichier `BridgeTimer.exe`. Pour retirer également les préférences locales de WebView2, supprimer `%LOCALAPPDATA%\BridgeTimerWebView2`.
