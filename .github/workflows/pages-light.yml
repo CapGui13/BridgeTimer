@@ -1,0 +1,56 @@
+name: Publier BridgeTimer Light
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - .nojekyll
+      - .github/workflows/pages-light.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bridgetimer-light-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy-pages:
+    name: Vérifier et publier la version Light
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier la version web autonome
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html
+          grep -q 'EDITION EPUREE' index.html
+          test ! -e timer.html
+          test ! -e main.go
+          test ! -e go.mod
+          test ! -e checks
+          test ! -e variants
+          test ! -e BridgeTimer.exe
+      - name: Préparer le site statique
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Déployer GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
